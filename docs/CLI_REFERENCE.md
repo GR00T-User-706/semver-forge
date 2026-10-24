@@ -13,7 +13,7 @@ Run `semver-forge --help` for the command index and
 
 | Command | Behavior |
 |---|---|
-| `init [--yes]` | Generate project configuration and VERSION if missing. Existing config requires approval. On Git repositories, stage only generated files and commit them if the index is clean. |
+| `init [--yes]` | Inspect existing project metadata and generate a derived configuration. Create VERSION at 0.1.0 only when no usable version source exists. Conflicting version sources stop initialization. Existing config requires approval. On Git repositories, stage only generated files and commit them if the index is clean. |
 | `doctor` | Inspect Python, Git, repository state, configuration, and version source. |
 | `current` | Show canonical version and source. |
 | `validate VERSION` | Validate a SemVer version. |
@@ -29,7 +29,7 @@ Run `semver-forge --help` for the command index and
 
 ## Initialization behavior
 
-Git is optional for creating project configuration. In a Git repository,
+Git is optional for creating project configuration. Initialization inspects Python, Node, Rust, plain version files, Debian changelog metadata, Arch PKGBUILD metadata, README descriptions, recognized GitHub Actions commands, and existing changelog names. It never executes discovered commands. Conflicting version sources stop initialization before any files are written. Missing test, build, or artifact information remains empty. TOML version fields can be synchronized while preserving surrounding file content. In a Git repository,
 generated files are staged by explicit path and committed with
 `chore(init): initialize SemVer Forge project configuration`. Unrelated staged
 changes are left untouched. A configured remote is pushed after a
