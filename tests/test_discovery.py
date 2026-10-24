@@ -11,8 +11,12 @@ class DiscoveryTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             (root / "pyproject.toml").write_text(
-                '[project]\nname = "sample-app"\ndescription = "A sample application"\nversion = "2.4.1"\n\n'
-                '[build-system]\nrequires = ["setuptools"]\nbuild-backend = "setuptools.build_meta"\n',
+                (
+                    '[project]\nname = "sample-app"\n'
+                    'description = "A sample application"\nversion = "2.4.1"\n\n'
+                    '[build-system]\nrequires = ["setuptools"]\n'
+                    'build-backend = "setuptools.build_meta"\n'
+                ),
                 encoding="utf-8",
             )
             (root / "VERSION").write_text("2.4.1\n", encoding="utf-8")
