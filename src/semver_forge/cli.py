@@ -166,7 +166,7 @@ def main(argv=None):
      except ForgeError as exc:
       record('ERROR','init.commit','failed',error=exc)
       vcs_note=f'commit failed: {exc}. Generated files remain; choose whether to retry the commit or keep them uncommitted'
-   record('INFO','init','completed',path=root)
+   record('INFO','init','completed')
    output({'initialized':str(path),'version_file':str(version),'generated_files':[str(p) for p in generated],
            'committed':committed,'pushed':pushed,'vcs':vcs_note},args.json); return 0
   root=git.root(args.project)
@@ -192,10 +192,11 @@ def main(argv=None):
    if args.explain: data['reason']='highest classified impact since previous release boundary; no impact means current version is retained'
    output(data,args.json)
   elif args.cmd=='sync':
-   version=args.version or str(current); output(sync(root,cfg,version,args.dry_run),args.json)
+   version=args.version or str(current); result=sync(root,cfg,version,args.dry_run); record('INFO','sync','dry-run' if args.dry_run else 'completed'); output(result,args.json)
   elif args.cmd=='release':
    override=args.explicit or args.part
    result=release(root,cfg,override,args.prerelease,args.dry_run,args.notes_only,args.yes,args.build)
+   record('INFO','release','dry-run' if args.dry_run else 'notes-only' if args.notes_only else 'completed')
    output(result,args.json)
   elif args.cmd=='check':
    values=[cfg['version']['source'],*cfg.get('sync',{}).get('targets',[])]; checks=[]
