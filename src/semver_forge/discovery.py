@@ -179,6 +179,28 @@ def discover(root):
         test_commands.append("cargo test")
         build_commands.append("cargo build --release")
         artifact_paths.append("target/release/*")
+    workflow_files = sorted((root / ".github" / "workflows").glob("*.y*ml"))
+    workflow_text = "\\n".join(
+        item.read_text(encoding="utf-8", errors="replace") for item in workflow_files
+    )
+    # Only recognize fixed, known commands. Never copy arbitrary workflow shell
+    # commands into project configuration.
+    for command in (
+        "python -m pytest", "pytest", "tox", "nox",
+        "npm test", "cargo test", "go test ./...",
+    ):
+        if command in workflow_text:
+            test_commands.append(command)
+    for command in (
+        "python -m build", "npm run build",
+        "cargo build --release", "go build ./...",
+    ):
+        if command in workflow_text:
+            build_commands.append(command)
+    test_commands = list(dict.fromkeys(test_commands))
+    build_commands = list(dict.fromkeys(build_commands))
+    artifact_paths = list(dict.fromkeys(artifact_paths))
+
     changelog = next(
         (name for name in ("CHANGELOG.md", "CHANGES.md", "HISTORY.md") if (root / name).is_file()),
         "CHANGELOG.md",
@@ -206,7 +228,7 @@ def discover(root):
             ],
             "version_files": [item["source"]["file"] for item in candidates],
             "tests_detected": has_tests,
-            "python_build_backend_detected": has_python_build,
+            "python_build_backend_detected": has_python_build,\n            "workflow_files": [str(item.relative_to(root)) for item in workflow_files],
         },
     }
 
