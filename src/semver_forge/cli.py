@@ -162,7 +162,17 @@ def main(argv=None):
      else: vcs_note += '; no Git remote configured'
     except ForgeError as exc:
      record('ERROR','init.commit','failed',error=exc)
-     vcs_note=f'commit failed: {exc}. Generated files remain; choose whether to retry the commit or keep them uncommitted'
+     try: answer=input(f"Commit failed ({exc}). Correct the issue and retry the generated-files commit now? [y/N] ").strip().lower()
+     except EOFError: answer=''
+     if answer in ('y','yes'):
+      try:
+       git.run(['commit','--only','-m','chore(init): initialize SemVer Forge project configuration','--',*rel],cwd=root)
+       committed=True; vcs_note='generated files committed after retry'
+      except ForgeError as retry_exc:
+       record('ERROR','init.commit.retry','failed',error=retry_exc)
+       vcs_note=f'retry failed: {retry_exc}. Generated files remain staged; resolve the issue and commit them manually or leave them staged'
+     else:
+      vcs_note='commit not retried; generated files remain staged. You can correct the issue and retry the commit manually, or leave the files staged'
    record('INFO','init','completed')
    output({'initialized':str(path),'version_file':str(version),'generated_files':[str(p) for p in generated],
            'committed':committed,'pushed':pushed,'vcs':vcs_note},args.json); return 0
