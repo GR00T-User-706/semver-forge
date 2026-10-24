@@ -48,7 +48,7 @@ class InitTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             project = Path(directory)
             (project / "pyproject.toml").write_text(
-                '[project]\\nname = "derived-name"\\ndescription = "Derived description"\\nversion = "4.5.6"\\n',
+                '[project]\nname = "derived-name"\ndescription = "Derived description"\nversion = "4.5.6"\n',
                 encoding="utf-8",
             )
             result = self.run_cli(project, "init", "--json")
@@ -64,10 +64,10 @@ class InitTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             project = Path(directory)
             (project / "pyproject.toml").write_text(
-                '[project]\\nname = "derived-name"\\nversion = "1.2.3"\\n',
+                '[project]\nname = "derived-name"\nversion = "1.2.3"\n',
                 encoding="utf-8",
             )
-            (project / "VERSION").write_text("1.2.4\\n", encoding="utf-8")
+            (project / "VERSION").write_text("1.2.4\n", encoding="utf-8")
             result = self.run_cli(project, "init", "--json")
             self.assertNotEqual(result.returncode, 0)
             self.assertIn("conflicting existing version sources", result.stderr)
