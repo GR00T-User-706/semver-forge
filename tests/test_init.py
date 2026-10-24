@@ -44,6 +44,35 @@ class InitTests(unittest.TestCase):
             ).stdout.splitlines()
             self.assertEqual(set(committed), {".semver-forge.toml"})
 
+    def test_init_derives_project_metadata_and_version(self):
+        with tempfile.TemporaryDirectory() as directory:
+            project = Path(directory)
+            (project / "pyproject.toml").write_text(
+                '[project]\\nname = "derived-name"\\ndescription = "Derived description"\\nversion = "4.5.6"\\n',
+                encoding="utf-8",
+            )
+            result = self.run_cli(project, "init", "--json")
+            self.assertEqual(result.returncode, 0, result.stderr)
+            config = (project / ".semver-forge.toml").read_text(encoding="utf-8")
+            self.assertIn('name = "derived-name"', config)
+            self.assertIn('description = "Derived description"', config)
+            self.assertIn('initial = "4.5.6"', config)
+            self.assertIn('file = "pyproject.toml"', config)
+            self.assertFalse((project / "VERSION").exists())
+
+    def test_init_refuses_conflicting_version_sources(self):
+        with tempfile.TemporaryDirectory() as directory:
+            project = Path(directory)
+            (project / "pyproject.toml").write_text(
+                '[project]\\nname = "derived-name"\\nversion = "1.2.3"\\n',
+                encoding="utf-8",
+            )
+            (project / "VERSION").write_text("1.2.4\\n", encoding="utf-8")
+            result = self.run_cli(project, "init", "--json")
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("conflicting existing version sources", result.stderr)
+            self.assertFalse((project / ".semver-forge.toml").exists())
+
     def test_existing_configuration_requires_approval(self):
         with tempfile.TemporaryDirectory() as directory:
             project = Path(directory)
