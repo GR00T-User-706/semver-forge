@@ -136,7 +136,10 @@ def main(argv=None):
     raise ConfigError('conflicting existing version sources; resolve them before initialization: '+details)
    config_text=__import__('semver_forge.discovery',fromlist=['render_config']).render_config(result)
    # Validate the generated TOML and its schema before writing anything.
-   import tomllib
+   try:
+    import tomllib
+   except ModuleNotFoundError:  # Python 3.10
+    import tomli as tomllib
    try: tomllib.loads(config_text)
    except tomllib.TOMLDecodeError as exc: raise ConfigError(f'internal error: generated configuration is invalid TOML: {exc}') from exc
    version_source=result['version']['source']
