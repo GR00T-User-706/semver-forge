@@ -4,12 +4,12 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from .semver import Version
+
 try:
     import tomllib
 except ModuleNotFoundError:  # Python 3.10
     import tomli as tomllib
-
-from .semver import Version
 
 
 VERSION_FILES = (
@@ -69,7 +69,10 @@ def _candidate(root: Path, filename: str, kind: str, key: str | None):
         source["key"] = key
     try:
         value = _read_source(root, source)
-    except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError, tomllib.TOMLDecodeError):
+    except (
+        OSError, ValueError, KeyError, TypeError,
+        json.JSONDecodeError, tomllib.TOMLDecodeError,
+    ):
         return None
     return {"source": source, "version": value}
 
