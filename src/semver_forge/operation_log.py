@@ -49,8 +49,8 @@ def _process_lock(target: Path):
 def _redact(value: str) -> str:
     """Mask common credential assignments before diagnostics reach disk."""
     return re.sub(
-        r"(?i)(token|password|secret|api[_-]?key|authorization)(\\s*[:=]\\s*)([^\\s,;]+)",
-        r"\\1\\2[REDACTED]",
+        r"(?i)(token|password|secret|api[_-]?key|authorization)(\s*[:=]\s*)([^\s,;]+)",
+        r"\1\2[REDACTED]",
         value,
     )
 
@@ -77,7 +77,7 @@ def record(level: str, action: str, outcome: str, *, error: BaseException | None
         event["message"] = _redact(str(error))[:2000]
         event["traceback"] = _redact("".join(traceback.format_exception(error)))[-12000:]
     line = (json.dumps(event, ensure_ascii=False, separators=(",", ":")) + "\n").encode()
-    with _LOCK:
+    with _LOCK, _process_lock(target):
         existing = target.read_bytes() if target.exists() else b""
         data = existing + line
         if len(data) > max_bytes:
