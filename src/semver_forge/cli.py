@@ -1,9 +1,8 @@
 from __future__ import annotations
-import argparse, json, sys, shutil, os, tempfile
+import argparse, json, sys, os, tempfile
 from pathlib import Path
-from importlib.resources import files as resource_files
 from . import __version__, git
-from .semver import Version, SemVerError
+from .semver import Version
 from .config import load, find_config
 from .discovery import discover
 from .errors import ForgeError, ConfigError, ReleaseFailure
