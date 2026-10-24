@@ -11,7 +11,7 @@ This format is based on Keep a Changelog and this project adheres to Semantic Ve
 - A version-control backend protocol with Git as the initial implementation.
 
 ### Fixed
-- Initialization can run outside a Git repository and commits only its own generated files when the Git index is clean.
+- Initialization can run outside a Git repository and commits only its own generated files without disturbing unrelated staged changes.
 - Initialization preserves existing VERSION values and requires approval before replacing existing SemVer Forge configuration.
 
 ## [0.1.0] - YYYY-MM-DD
