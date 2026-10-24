@@ -132,7 +132,7 @@ def main(argv=None):
     if answer not in ('y','yes'): raise ConfigError(f'initialization cancelled; existing configuration preserved: {path}')
    template=resource_files('semver_forge').joinpath('data/project-config.toml')
    generated={path:template.read_text(encoding='utf-8')}
-   if not version.exists(): generated[version]='0.1.0\\n'
+   if not version.exists(): generated[version]='0.1.0\n'
    written=[]
    try:
     for target,contents in generated.items():
