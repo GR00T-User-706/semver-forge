@@ -75,7 +75,7 @@ class CLIHelpTests(unittest.TestCase):
             self.assertIn('initial = "0.1.0"', generated_config)
             self.assertIn('file = "VERSION"', generated_config)
             self.assertNotIn("example-project", generated_config)
-            self.assertEqual((repo / "VERSION").read_text(encoding="utf-8"), "0.1.0\\n")
+            self.assertEqual((repo / "VERSION").read_text(encoding="utf-8"), "0.1.0\n")
             removed = self.run_cli("uninstall", "--prefix", str(prefix))
             self.assertEqual(removed.returncode, 0, removed.stderr)
             self.assertFalse(launcher.exists())
