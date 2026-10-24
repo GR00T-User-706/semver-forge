@@ -31,8 +31,8 @@ Run `semver-forge --help` for the command index and
 
 Git is optional for creating project configuration. In a Git repository,
 generated files are staged by explicit path and committed with
-`chore(init): initialize SemVer Forge project configuration` when the index
-has no pre-existing staged changes. A configured remote is pushed after a
+`chore(init): initialize SemVer Forge project configuration`. Unrelated staged
+changes are left untouched. A configured remote is pushed after a
 successful local commit; push failure preserves the local commit. Existing
 configuration is never overwritten without interactive approval or `--yes`.
 An existing VERSION file is preserved.
