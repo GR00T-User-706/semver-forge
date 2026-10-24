@@ -1,7 +1,9 @@
 """Git subprocess wrapper. Commands are passed as argument arrays, never shell strings."""
 import subprocess
 from pathlib import Path
-from .errors import GitError\n\nname = "git"
+from .errors import GitError
+
+name = "git"
 
 def run(args, cwd=None, check=True, timeout=30):
     try:
