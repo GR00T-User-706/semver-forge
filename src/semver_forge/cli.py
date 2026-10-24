@@ -1,5 +1,5 @@
 from __future__ import annotations
-import argparse, json, sys, shutil, os
+import argparse, json, sys, shutil, os, tempfile
 from pathlib import Path
 from importlib.resources import files as resource_files
 from . import __version__, git
@@ -12,6 +12,7 @@ from .synchronization import sync
 from .release import plan, release, latest_release
 from .changelog import release_notes
 from .installation import install, uninstall
+from .operation_log import record
 
 def parser():
     """Build the public CLI parser with useful command-specific help."""
@@ -45,8 +46,9 @@ def parser():
             formatter_class=argparse.RawDescriptionHelpFormatter,
         )
 
-    command("init", "Create a starter .semver-forge.toml configuration and VERSION file if missing.",
-            "Refuses to overwrite an existing configuration. Review the generated file before committing it.\nExample: semver-forge init")
+    init_cmd = command("init", "Create project version configuration and initialize version control metadata when available.",
+            "Generated files are staged and committed only when Git is available and the index is clean.\nExample: semver-forge init")
+    init_cmd.add_argument("--yes", action="store_true", help="authorize overwriting an existing SemVer Forge configuration")
     command("doctor", "Inspect Git, Python, project configuration, and version-source health.",
             "Example: semver-forge doctor --json")
     command("current", "Print the configured canonical project version and its source.")
@@ -120,13 +122,53 @@ def main(argv=None):
   if args.cmd=='compare':
    a=Version.parse(args.version_a); b=Version.parse(args.version_b); result=a.compare(b); output({'comparison':result,'relation':'less' if result<0 else 'greater' if result>0 else 'equal'},args.json); return 0
   if args.cmd=='init':
-   root=git.root(args.project); path=root/'.semver-forge.toml'
-   if path.exists(): raise ConfigError(f'configuration already exists: {path}')
+   project=Path(args.project or '.').expanduser().resolve()
+   if not project.is_dir(): raise ConfigError(f'project directory does not exist: {project}')
+   root=git.root(project) if git.available(project) else project
+   path=root/'.semver-forge.toml'; version=root/'VERSION'
+   if path.exists() and not args.yes:
+    try: answer=input(f"Overwrite existing configuration {path}? [y/N] ").strip().lower()
+    except EOFError: answer=''
+    if answer not in ('y','yes'): raise ConfigError(f'initialization cancelled; existing configuration preserved: {path}')
    template=resource_files('semver_forge').joinpath('data/project-config.toml')
-   path.write_text(template.read_text(encoding='utf-8'),encoding='utf-8')
-   version=root/'VERSION'
-   if not version.exists(): version.write_text('0.1.0\n',encoding='utf-8')
-   output({'initialized':str(path),'version_file':str(version),'note':'review the configuration and commit the generated files'},args.json); return 0
+   generated={path:template.read_text(encoding='utf-8')}
+   if not version.exists(): generated[version]='0.1.0\\n'
+   written=[]
+   try:
+    for target,contents in generated.items():
+     fd,tmp=tempfile.mkstemp(prefix='.semver-forge-init-',dir=target.parent)
+     try:
+      with os.fdopen(fd,'w',encoding='utf-8',newline='') as stream:
+       stream.write(contents); stream.flush(); os.fsync(stream.fileno())
+      os.replace(tmp,target); written.append(target)
+     finally:
+      if os.path.exists(tmp): os.unlink(tmp)
+   except Exception as exc:
+    record('ERROR','init.generate','failed',error=exc)
+    print(f"Initialization failed. No automatic cleanup was attempted. Inspect generated files: {', '.join(map(str,written))}",file=sys.stderr)
+    raise
+   committed=False; pushed=False
+   vcs_note='no supported VCS detected; files created without a VCS commit'
+   if git.available(root):
+    staged=git.run(['diff','--cached','--quiet'],cwd=root,check=False)
+    if staged.returncode != 0:
+     vcs_note='pre-existing staged changes detected; generated files left uncommitted to protect unrelated staged work'
+    else:
+     try:
+      rel=[str(p.relative_to(root)) for p in generated]
+      git.run(['add','--',*rel],cwd=root)
+      git.run(['commit','-m','chore(init): initialize SemVer Forge project configuration'],cwd=root)
+      committed=True; vcs_note='generated files committed'
+      if git.run(['remote'],cwd=root,check=False).stdout.split():
+       push=git.run(['push'],cwd=root,check=False); pushed=push.returncode==0
+       vcs_note += '; remote push '+('succeeded' if pushed else 'failed; local commit preserved')
+      else: vcs_note += '; no Git remote configured'
+     except ForgeError as exc:
+      record('ERROR','init.commit','failed',error=exc)
+      vcs_note=f'commit failed: {exc}. Generated files remain; choose whether to retry the commit or keep them uncommitted'
+   record('INFO','init','completed',path=root)
+   output({'initialized':str(path),'version_file':str(version),'generated_files':[str(p) for p in generated],
+           'committed':committed,'pushed':pushed,'vcs':vcs_note},args.json); return 0
   root=git.root(args.project)
   config_path=find_config(root)
   if args.cmd=='doctor':
@@ -175,6 +217,8 @@ def main(argv=None):
   else: raise ConfigError(f'command not implemented: {args.cmd}')
   return 0
  except ForgeError as e:
+  record('ERROR',getattr(args,'cmd','cli'),'failed',error=e)
   print(f'error: {e}',file=sys.stderr); return e.exit_code
  except (ValueError, OSError, KeyError, TypeError) as e:
+  record('ERROR',getattr(args,'cmd','cli'),'failed',error=e)
   print(f'error: {e}',file=sys.stderr); return 2
