@@ -104,7 +104,11 @@ def _project_metadata(root: Path):
         except (OSError, tomllib.TOMLDecodeError):
             pass
     readme = next(
-        (root / name for name in ("README.md", "README.rst", "README.txt") if (root / name).is_file()),
+        (
+            root / name
+            for name in ("README.md", "README.rst", "README.txt")
+            if (root / name).is_file()
+        ),
         None,
     )
     if not metadata.get("description") and readme:
