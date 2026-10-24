@@ -15,8 +15,7 @@ class InitTests(unittest.TestCase):
         env["XDG_STATE_HOME"] = str(Path(project) / ".state")
         return subprocess.run(
             [sys.executable, "-m", "semver_forge", "--project", str(project), *args],
-            cwd=ROOT, env=env, text=True, stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE, timeout=20,
+            cwd=ROOT, env=env, text=True, capture_output=True, timeout=20,
         )
 
     def test_init_works_without_git(self):
@@ -33,7 +32,10 @@ class InitTests(unittest.TestCase):
             project = Path(directory)
             subprocess.run(["git", "init", "-q", str(project)], check=True)
             subprocess.run(["git", "-C", str(project), "config", "user.name", "Test"], check=True)
-            subprocess.run(["git", "-C", str(project), "config", "user.email", "test@example.invalid"], check=True)
+            subprocess.run(
+                ["git", "-C", str(project), "config", "user.email", "test@example.invalid"],
+                check=True,
+            )
             (project / "VERSION").write_text("3.1.0\n")
             result = self.run_cli(project, "init", "--json")
             self.assertEqual(result.returncode, 0, result.stderr)
@@ -48,7 +50,10 @@ class InitTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             project = Path(directory)
             (project / "pyproject.toml").write_text(
-                '[project]\nname = "derived-name"\ndescription = "Derived description"\nversion = "4.5.6"\n',
+                (
+                    '[project]\nname = "derived-name"\n'
+                    'description = "Derived description"\nversion = "4.5.6"\n'
+                ),
                 encoding="utf-8",
             )
             result = self.run_cli(project, "init", "--json")
