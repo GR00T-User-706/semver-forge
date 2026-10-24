@@ -4,15 +4,15 @@ This logger never discovers, creates, stages, ignores, or modifies project log f
 """
 from __future__ import annotations
 
-from datetime import datetime, timezone
 import json
 import os
 import re
-from contextlib import contextmanager
-from pathlib import Path
 import tempfile
 import threading
 import traceback
+from contextlib import contextmanager
+from datetime import datetime, timezone
+from pathlib import Path
 
 _MAX_BYTES = 10 * 1024 * 1024
 _LOCK = threading.RLock()
