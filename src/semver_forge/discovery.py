@@ -146,12 +146,39 @@ def discover(root):
     pyproject_text = (
         pyproject.read_text(encoding="utf-8", errors="replace") if pyproject.is_file() else ""
     )
-    python_project = "[project]" in pyproject_text or "[tool.pytest" in pyproject_text
+    python_project = (
+        "[project]" in pyproject_text
+        or "[tool.pytest" in pyproject_text
+        or (root / "setup.py").is_file()
+        or (root / "setup.cfg").is_file()
+    )
     has_tests = (root / "tests").is_dir() or (root / "test").is_dir()
-    has_python_build = "[build-system]" in pyproject_text
+    has_python_build = (
+        "[build-system]" in pyproject_text
+        or (root / "setup.py").is_file()
+        or (root / "setup.cfg").is_file()
+    )
     test_commands = ["python -m pytest"] if python_project and has_tests else []
     build_commands = ["python -m build"] if has_python_build else []
     artifact_paths = ["dist/*"] if has_python_build else []
+
+    package_json = root / "package.json"
+    if package_json.is_file():
+        try:
+            scripts = json.loads(package_json.read_text(encoding="utf-8")).get("scripts", {})
+        except (OSError, json.JSONDecodeError):
+            scripts = {}
+        if "test" in scripts:
+            test_commands.append("npm test")
+        if "build" in scripts:
+            build_commands.append("npm run build")
+            artifact_paths.append("dist/*")
+
+    cargo_manifest = root / "Cargo.toml"
+    if cargo_manifest.is_file():
+        test_commands.append("cargo test")
+        build_commands.append("cargo build --release")
+        artifact_paths.append("target/release/*")
     changelog = next(
         (name for name in ("CHANGELOG.md", "CHANGES.md", "HISTORY.md") if (root / name).is_file()),
         "CHANGELOG.md",
