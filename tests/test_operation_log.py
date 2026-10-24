@@ -16,6 +16,17 @@ class OperationLogTests(unittest.TestCase):
             self.assertEqual(event["action"], "test.action")
             self.assertEqual(event["outcome"], "completed")
 
+    def test_common_credentials_are_redacted(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "semver-forge.log"
+            try:
+                raise RuntimeError("request failed: token=super-secret-value")
+            except RuntimeError as error:
+                record("error", "test.failure", "failed", error=error, path=path)
+            content = path.read_text(encoding="utf-8")
+            self.assertNotIn("super-secret-value", content)
+            self.assertIn("[REDACTED]", content)
+
     def test_log_is_bounded_and_keeps_newest_content(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "semver-forge.log"
