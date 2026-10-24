@@ -148,7 +148,7 @@ def main(argv=None):
    if result['version_status']=='no_existing_version_source':
     if version_path.exists():
      raise ConfigError(f'version destination already exists but could not be recognized: {version_path}')
-    generated[version_path]=result['version']['initial']+'\\n'
+    generated[version_path]=result['version']['initial']+'\n'
    written=[]
    try:
     for target,contents in generated.items():
