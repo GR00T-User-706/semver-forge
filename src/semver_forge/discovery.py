@@ -180,7 +180,7 @@ def discover(root):
         build_commands.append("cargo build --release")
         artifact_paths.append("target/release/*")
     workflow_files = sorted((root / ".github" / "workflows").glob("*.y*ml"))
-    workflow_text = "\\n".join(
+    workflow_text = "\n".join(
         item.read_text(encoding="utf-8", errors="replace") for item in workflow_files
     )
     # Only recognize fixed, known commands. Never copy arbitrary workflow shell
