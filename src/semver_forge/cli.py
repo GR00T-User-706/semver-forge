@@ -188,7 +188,7 @@ def main(argv=None):
        vcs_note=f'retry failed: {retry_exc}. Generated files remain staged'
      else:
       vcs_note='commit not retried; generated files remain staged'
-   record('INFO','init','completed',version_status=result['version_status'])
+   record('INFO','init','completed')
    output({
     'initialized':str(path),
     'version':result['version']['initial'],
