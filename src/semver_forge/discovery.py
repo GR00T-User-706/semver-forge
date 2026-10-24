@@ -1,16 +1,13 @@
-"""Read-only project inspection used by `semver-forge init`.
-
-Discovery never executes project commands and never modifies project files.
-"""
+"""Read-only project inspection used by semver-forge init."""
 from __future__ import annotations
 
 import json
-import re
+from pathlib import Path
+
 try:
     import tomllib
 except ModuleNotFoundError:  # Python 3.10
     import tomli as tomllib
-from pathlib import Path
 
 from .semver import Version
 
@@ -39,16 +36,24 @@ def _read_source(root: Path, source: dict) -> str:
                 data = data[part]
         value = str(data)
     elif kind == "debian":
-        matches = re.findall(r"^Version:\s*(\S+)\s*$", text, re.M)
+        matches = [
+            line.split(":", 1)[1].strip()
+            for line in text.splitlines()
+            if line.startswith("Version:")
+        ]
         if len(matches) != 1:
             raise ValueError("expected one Version field")
         value = matches[0]
     elif kind == "shell":
         key = source["key"]
-        matches = re.findall(rf"^\s*{re.escape(key)}\s*=\s*['\\"]?([^'\\"]+)", text, re.M)
+        matches = []
+        for line in text.splitlines():
+            stripped = line.strip()
+            if stripped.startswith(key + "=") or stripped.startswith(key + " ="):
+                matches.append(stripped.split("=", 1)[1].split("#", 1)[0].strip().strip("'\""))
         if len(matches) != 1:
             raise ValueError(f"expected one {key} assignment")
-        value = matches[0].strip()
+        value = matches[0]
     else:
         raise ValueError(f"unsupported version source: {kind}")
     Version.parse(value)
@@ -95,7 +100,10 @@ def _project_metadata(root: Path):
             metadata.setdefault("description", data.get("description"))
         except (OSError, tomllib.TOMLDecodeError):
             pass
-    readme = next((root / name for name in ("README.md", "README.rst", "README.txt") if (root / name).is_file()), None)
+    readme = next(
+        (root / name for name in ("README.md", "README.rst", "README.txt") if (root / name).is_file()),
+        None,
+    )
     if not metadata.get("description") and readme:
         for line in readme.read_text(encoding="utf-8", errors="replace").splitlines():
             line = line.strip()
@@ -135,14 +143,19 @@ def discover(root):
             targets = [item["source"] for item in candidates[1:]]
 
     pyproject = root / "pyproject.toml"
-    pyproject_text = pyproject.read_text(encoding="utf-8", errors="replace") if pyproject.is_file() else ""
+    pyproject_text = (
+        pyproject.read_text(encoding="utf-8", errors="replace") if pyproject.is_file() else ""
+    )
     python_project = "[project]" in pyproject_text or "[tool.pytest" in pyproject_text
     has_tests = (root / "tests").is_dir() or (root / "test").is_dir()
     has_python_build = "[build-system]" in pyproject_text
     test_commands = ["python -m pytest"] if python_project and has_tests else []
     build_commands = ["python -m build"] if has_python_build else []
     artifact_paths = ["dist/*"] if has_python_build else []
-    changelog = next((name for name in ("CHANGELOG.md", "CHANGES.md", "HISTORY.md") if (root / name).is_file()), "CHANGELOG.md")
+    changelog = next(
+        (name for name in ("CHANGELOG.md", "CHANGES.md", "HISTORY.md") if (root / name).is_file()),
+        "CHANGELOG.md",
+    )
 
     return {
         "project": metadata,
@@ -156,7 +169,14 @@ def discover(root):
         "version_candidates": candidates,
         "version_conflicts": conflicts,
         "evidence": {
-            "project_metadata": [name for name in ("pyproject.toml", "package.json", "Cargo.toml", "README.md", "README.rst", "README.txt") if (root / name).is_file()],
+            "project_metadata": [
+                name
+                for name in (
+                    "pyproject.toml", "package.json", "Cargo.toml",
+                    "README.md", "README.rst", "README.txt",
+                )
+                if (root / name).is_file()
+            ],
             "version_files": [item["source"]["file"] for item in candidates],
             "tests_detected": has_tests,
             "python_build_backend_detected": has_python_build,
@@ -166,34 +186,34 @@ def discover(root):
 
 def render_config(result):
     """Render deterministic TOML using discovered values and safe policy defaults."""
-    def q(value):
+    def quote(value):
         return json.dumps(str(value), ensure_ascii=False)
 
     project = result["project"]
     version = result["version"]
     source = version["source"]
-    source_text = "{ type = " + q(source["type"]) + ", file = " + q(source["file"])
+    source_text = "{ type = " + quote(source["type"]) + ", file = " + quote(source["file"])
     if source.get("key"):
-        source_text += ", key = " + q(source["key"])
+        source_text += ", key = " + quote(source["key"])
     source_text += " }"
     targets = []
     for target in result["sync_targets"]:
-        item = "{ type = " + q(target["type"]) + ", file = " + q(target["file"])
+        item = "{ type = " + quote(target["type"]) + ", file = " + quote(target["file"])
         if target.get("key"):
-            item += ", key = " + q(target["key"])
+            item += ", key = " + quote(target["key"])
         targets.append(item + " }")
 
     def array(values):
-        return "[" + ", ".join(q(value) for value in values) + "]"
+        return "[" + ", ".join(quote(value) for value in values) + "]"
 
     return f'''# Generated by SemVer Forge from existing project metadata.
 # Review the discovery report before changing release policy.
 [project]
-name = {q(project["name"])}
-description = {q(project["description"])}
+name = {quote(project["name"])}
+description = {quote(project["description"])}
 
 [version]
-initial = {q(version["initial"])}
+initial = {quote(version["initial"])}
 source = {source_text}
 
 [git]
@@ -219,7 +239,7 @@ targets = [{", ".join(targets)}]
 [release]
 commit_version = true
 annotated_tag = true
-notes_file = {q(result["notes_file"])}
+notes_file = {quote(result["notes_file"])}
 require_confirmation = true
 release_when_no_changes = false
 test_commands = {array(result["test_commands"])}
