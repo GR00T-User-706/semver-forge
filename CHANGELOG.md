@@ -4,6 +4,15 @@ All notable changes to this project are documented here.
 
 This format is based on Keep a Changelog and this project adheres to Semantic Versioning.
 
+## [Unreleased]
+
+### Added
+- Discovery-first initialization derives project metadata, version sources, synchronization targets, test/build commands, artifact paths, and changelog conventions from recognized project files and CI workflows.
+- Safe TOML version-field synchronization that preserves unrelated project metadata and comments.
+
+### Fixed
+- Initialization rejects conflicting recognized version sources instead of silently selecting one.
+
 ## [0.2.0] - 2026-10-24
 
 ### Added
