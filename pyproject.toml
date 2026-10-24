@@ -3,13 +3,13 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "PROJECT_NAME"
-version = "0.1.0"
-description = "A short description of the project."
+name = "semver-forge"
+version = "0.2.0"
+description = "Semantic versioning, version synchronization, and local release management."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { file = "LICENSE" }
-authors = [{ name = "AUTHOR_NAME" }]
+authors = [{ name = "GR00T-User-706" }]
 keywords = []
 classifiers = [
   "Development Status :: 3 - Alpha",
