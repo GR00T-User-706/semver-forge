@@ -228,7 +228,8 @@ def discover(root):
             ],
             "version_files": [item["source"]["file"] for item in candidates],
             "tests_detected": has_tests,
-            "python_build_backend_detected": has_python_build,\n            "workflow_files": [str(item.relative_to(root)) for item in workflow_files],
+            "python_build_backend_detected": has_python_build,
+            "workflow_files": [str(item.relative_to(root)) for item in workflow_files],
         },
     }
 
