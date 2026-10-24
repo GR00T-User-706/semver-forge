@@ -10,6 +10,14 @@ def run(args, cwd=None, check=True, timeout=30):
     if check and p.returncode: raise GitError(f"git {' '.join(map(str,args))} failed: {p.stderr.strip()}")
     return p
 
+def available(path=None):
+    """Return whether Git is installed and path belongs to a Git worktree."""
+    try:
+        p = run(["rev-parse", "--show-toplevel"], cwd=path, check=False)
+    except GitError:
+        return False
+    return p.returncode == 0
+
 def root(path=None):
     p=run(['rev-parse','--show-toplevel'],cwd=path,check=False)
     if p.returncode: raise GitError('not inside a Git repository')
