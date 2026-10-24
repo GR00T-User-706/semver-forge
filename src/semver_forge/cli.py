@@ -125,14 +125,27 @@ def main(argv=None):
    project=Path(args.project or '.').expanduser().resolve()
    if not project.is_dir(): raise ConfigError(f'project directory does not exist: {project}')
    root=git.root(project) if git.available(project) else project
-   path=root/'.semver-forge.toml'; version=root/'VERSION'
+   path=root/'.semver-forge.toml'
    if path.exists() and not args.yes:
     try: answer=input(f"Overwrite existing configuration {path}? [y/N] ").strip().lower()
     except EOFError: answer=''
     if answer not in ('y','yes'): raise ConfigError(f'initialization cancelled; existing configuration preserved: {path}')
-   template=resource_files('semver_forge').joinpath('data/project-config.toml')
-   generated={path:template.read_text(encoding='utf-8')}
-   if not version.exists(): generated[version]='0.1.0\n'
+   result=discover(root)
+   if result['version_status']=='conflict':
+    details='; '.join(f"{item['source']['file']}={item['version']}" for item in result['version_conflicts'])
+    raise ConfigError('conflicting existing version sources; resolve them before initialization: '+details)
+   config_text=__import__('semver_forge.discovery',fromlist=['render_config']).render_config(result)
+   # Validate the generated TOML and its schema before writing anything.
+   import tomllib
+   try: tomllib.loads(config_text)
+   except tomllib.TOMLDecodeError as exc: raise ConfigError(f'internal error: generated configuration is invalid TOML: {exc}') from exc
+   version_source=result['version']['source']
+   version_path=root/version_source['file']
+   generated={path:config_text}
+   if result['version_status']=='no_existing_version_source':
+    if version_path.exists():
+     raise ConfigError(f'version destination already exists but could not be recognized: {version_path}')
+    generated[version_path]=result['version']['initial']+'\\n'
    written=[]
    try:
     for target,contents in generated.items():
@@ -145,7 +158,7 @@ def main(argv=None):
       if os.path.exists(tmp): os.unlink(tmp)
    except Exception as exc:
     record('ERROR','init.generate','failed',error=exc)
-    print(f"Initialization failed. No automatic cleanup was attempted. Inspect generated files: {', '.join(map(str,written))}",file=sys.stderr)
+    print(f"Initialization failed. Inspect generated files: {', '.join(map(str,written))}",file=sys.stderr)
     raise
    committed=False; pushed=False
    vcs_note='no supported VCS detected; files created without a VCS commit'
@@ -153,7 +166,6 @@ def main(argv=None):
     try:
      rel=[str(p.relative_to(root)) for p in generated]
      git.run(['add','--',*rel],cwd=root)
-     # --only commits exactly these paths and leaves unrelated staged changes untouched.
      git.run(['commit','--only','-m','chore(init): initialize SemVer Forge project configuration','--',*rel],cwd=root)
      committed=True; vcs_note='generated files committed; unrelated staged changes were left untouched'
      if git.run(['remote'],cwd=root,check=False).stdout.split():
@@ -168,17 +180,29 @@ def main(argv=None):
       try:
        git.run(['commit','--only','-m','chore(init): initialize SemVer Forge project configuration','--',*rel],cwd=root)
        committed=True; vcs_note='generated files committed after retry'
-       if git.run(['remote'],cwd=root,check=False).stdout.split():
-        push=git.run(['push'],cwd=root,check=False); pushed=push.returncode==0
-        vcs_note += '; remote push '+('succeeded' if pushed else 'failed; local commit preserved')
       except ForgeError as retry_exc:
        record('ERROR','init.commit.retry','failed',error=retry_exc)
-       vcs_note=f'retry failed: {retry_exc}. Generated files remain staged; resolve the issue and commit them manually or leave them staged'
+       vcs_note=f'retry failed: {retry_exc}. Generated files remain staged'
      else:
-      vcs_note='commit not retried; generated files remain staged. You can correct the issue and retry the commit manually, or leave the files staged'
-   record('INFO','init','completed')
-   output({'initialized':str(path),'version_file':str(version),'generated_files':[str(p) for p in generated],
-           'committed':committed,'pushed':pushed,'vcs':vcs_note},args.json); return 0
+      vcs_note='commit not retried; generated files remain staged'
+   record('INFO','init','completed',version_status=result['version_status'])
+   output({
+    'initialized':str(path),
+    'version':result['version']['initial'],
+    'version_source':result['version']['source'],
+    'generated_files':[str(p) for p in generated],
+    'discovery':result['evidence'],
+    'inferred':{
+     'project':result['project'],
+     'sync_targets':result['sync_targets'],
+     'test_commands':result['test_commands'],
+     'build_commands':result['build_commands'],
+     'artifact_paths':result['artifact_paths'],
+     'notes_file':result['notes_file'],
+    },
+    'committed':committed,'pushed':pushed,'vcs':vcs_note
+   },args.json)
+   return 0
   root=git.root(args.project)
   config_path=find_config(root)
   if args.cmd=='doctor':
