@@ -150,22 +150,19 @@ def main(argv=None):
    committed=False; pushed=False
    vcs_note='no supported VCS detected; files created without a VCS commit'
    if git.available(root):
-    staged=git.run(['diff','--cached','--quiet'],cwd=root,check=False)
-    if staged.returncode != 0:
-     vcs_note='pre-existing staged changes detected; generated files left uncommitted to protect unrelated staged work'
-    else:
-     try:
-      rel=[str(p.relative_to(root)) for p in generated]
-      git.run(['add','--',*rel],cwd=root)
-      git.run(['commit','-m','chore(init): initialize SemVer Forge project configuration'],cwd=root)
-      committed=True; vcs_note='generated files committed'
-      if git.run(['remote'],cwd=root,check=False).stdout.split():
-       push=git.run(['push'],cwd=root,check=False); pushed=push.returncode==0
-       vcs_note += '; remote push '+('succeeded' if pushed else 'failed; local commit preserved')
-      else: vcs_note += '; no Git remote configured'
-     except ForgeError as exc:
-      record('ERROR','init.commit','failed',error=exc)
-      vcs_note=f'commit failed: {exc}. Generated files remain; choose whether to retry the commit or keep them uncommitted'
+    try:
+     rel=[str(p.relative_to(root)) for p in generated]
+     git.run(['add','--',*rel],cwd=root)
+     # --only commits exactly these paths and leaves unrelated staged changes untouched.
+     git.run(['commit','--only','-m','chore(init): initialize SemVer Forge project configuration','--',*rel],cwd=root)
+     committed=True; vcs_note='generated files committed; unrelated staged changes were left untouched'
+     if git.run(['remote'],cwd=root,check=False).stdout.split():
+      push=git.run(['push'],cwd=root,check=False); pushed=push.returncode==0
+      vcs_note += '; remote push '+('succeeded' if pushed else 'failed; local commit preserved')
+     else: vcs_note += '; no Git remote configured'
+    except ForgeError as exc:
+     record('ERROR','init.commit','failed',error=exc)
+     vcs_note=f'commit failed: {exc}. Generated files remain; choose whether to retry the commit or keep them uncommitted'
    record('INFO','init','completed')
    output({'initialized':str(path),'version_file':str(version),'generated_files':[str(p) for p in generated],
            'committed':committed,'pushed':pushed,'vcs':vcs_note},args.json); return 0
