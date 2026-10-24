@@ -1,67 +1,111 @@
-# Python Project Template
+# semver-forge
 
-A reusable starting point for Python libraries, command-line tools, and applications.
+A reusable, local-first Semantic Versioning 2.0.0 and Git release toolkit. It uses Python 3.10+ and Git, has no mandatory third-party runtime dependencies, and does not require network access for local operations.
 
-This repository is a GitHub template. Create a new repository from it, then replace the project placeholders and remove optional components that do not apply.
+## Features
 
-## Quick start
+- Strict SemVer parsing and precedence, including prerelease identifiers and build metadata.
+- Conventional Commit impact classification and highest-impact aggregation.
+- Configuration-driven canonical version source and synchronization targets.
+- Git history boundaries based on the latest valid SemVer tag or explicit baseline.
+- Dry-run planning, changelog generation, configured tests/builds, local annotated tags, and tag verification.
+- User-local installation without root access; usable on Linux, macOS, and Termux when Python/Git are available.
 
-1. Create a repository from this template.
-2. Replace `package_name` with the import package name (valid Python identifier).
-3. Update project metadata in `pyproject.toml`.
-4. Set the initial version consistently in `pyproject.toml`, `src/package_name/__init__.py`, and `CHANGELOG.md`.
-5. Replace this README with the project's purpose, installation, usage, and support information.
-6. Review `AGENTS.md`, `docs/VERSIONING.md`, and `docs/BUILDING.md`.
-7. Add runtime dependencies only when the project actually requires them.
+## Install
 
-## Layout
+From the extracted archive:
 
-```text
-src/package_name/   Importable Python package
-tests/              Automated tests
-docs/               Development, architecture, QA, and release docs
-examples/           Runnable usage examples
-packaging/          Distribution notes and release payload policy
-.github/            CI, issue/PR templates, and review prompts
+```sh
+python3 --version                 # must be 3.10+
+git --version
+./scripts/install.sh --prefix "$HOME/.local"
+export PATH="$HOME/.local/bin:$PATH"
+semver-forge --help
 ```
 
-The `src/` layout prevents tests and repository-root files from accidentally satisfying imports that should resolve from an installed package.
+For one-off use without installation, run `./bin/semver-forge --help`. The source launcher uses the bundled Python package.
 
-## Development
+## First-time setup
 
-Requires Python 3.10 or newer by default. Change the supported range in `pyproject.toml` to match the actual project.
+Inside a Git repository, run `semver-forge init`, inspect `.semver-forge.toml`, and commit the configuration and `VERSION` file. The generated `VERSION` file is only created if missing. Initialization refuses to overwrite existing configuration.
 
-```bash
-python -m venv .venv
-source .venv/bin/activate
-python -m pip install --upgrade pip
-python -m pip install -e ".[dev]"
-pytest
-ruff check .
-ruff format --check .
+```sh
+semver-forge init
+semver-forge doctor --json
+semver-forge current
+semver-forge status
 ```
 
-Windows activation: `.venv\\Scripts\\activate`.
+## Basic commands
 
-## Build distributions
-
-```bash
-python -m pip install build
-python -m build
-python -m pip install --force-reinstall dist/*.whl
+```sh
+semver-forge validate 1.2.3
+semver-forge compare 1.2.3 1.3.0
+semver-forge bump patch                 # calculate only
+semver-forge next --explain
+semver-forge sync --dry-run
+semver-forge check
+semver-forge history --json
+semver-forge changelog --dry-run
+semver-forge release --dry-run
+semver-forge release patch --dry-run
+semver-forge release --version 2.0.0
+semver-forge release --prerelease rc
+semver-forge verify-tag
+semver-forge verify-release
 ```
 
-The resulting `dist/` directory contains the source distribution and wheel. Inspect and test both before publishing.
+## Conventional Commits
 
-## Project standards
+- `fix: handle signed media URLs` selects patch.
+- `feat(cli): add version command` selects minor.
+- `feat!: replace the configuration format` selects major.
+- A `BREAKING CHANGE: ...` footer selects major.
+- Default ignored types include docs, style, refactor, test, build, ci, and chore.
+- If several impacts exist, major wins over minor, and minor wins over patch. Unknown/malformed messages are ignored by default.
 
-- Semantic Versioning: `docs/VERSIONING.md`
-- Release workflow: `docs/RELEASE_PROCESS.md`
-- Build instructions: `docs/BUILDING.md`
-- QA checklist: `docs/QA_CHECKLIST.md`
-- Security reporting: `SECURITY.md`
-- Contribution process: `CONTRIBUTING.md`
+## Release workflow
 
-## Template placeholders
+A release checks repository state, finds the latest valid SemVer tag using the configured prefix, analyzes commits after that tag, validates the version source/targets, generates notes, runs configured tests, synchronizes versions, updates the changelog, optionally commits version files, creates a local tag, and verifies that tag points at HEAD. Releases are local only. No push or publish command is implemented, so the tool cannot claim a release was published.
 
-Search for `package_name`, `PROJECT_NAME`, `AUTHOR_NAME`, and `CONTACT_EMAIL` before publishing a project created from this template.
+`--dry-run` and `--notes-only` do not modify files, run tests/builds, or create tags. Release execution requires a clean tree, including staged and untracked files. Tests are reported as not configured when absent. Builds run only with `--build`; asking for a build with no configured build commands fails.
+
+## Configuration
+
+See `config/semver-forge.example.toml` and [Configuration](docs/CONFIGURATION.md). The canonical source defaults to a plain `VERSION` file. JSON, TOML reading, shell assignments, and Debian `Version:` fields have adapters. Writes to TOML are intentionally rejected because Python's standard library has no structure-preserving TOML writer. YAML requires a separately configured adapter and is not bundled. JSON targets can use a dotted `key` path, e.g. `project.version`. Other target entries use the same `type`, `file`, and optional `key` fields.
+
+## Testing
+
+Run the suite with `./tests/run-tests.sh`. Tests use temporary repositories/directories. No network is required.
+
+## Uninstall
+
+```sh
+./scripts/uninstall.sh --prefix "$HOME/.local"
+```
+
+Only the recognizable `bin/semver-forge` launcher and `lib/semver-forge` tree under the selected prefix are removed. Review the prefix before running.
+
+## Security and limitations
+
+Configuration commands should be treated as executable code when they are run: command strings use a shell for convenience, while `args = [...]` uses direct subprocess invocation. Do not put secrets in command output, configuration, release notes, or environment values that may be logged. Paths in source/target declarations must remain inside the project root. Existing tags are never moved or overwritten. Lock files are atomic and stale locks require manual inspection/removal. See [Security](docs/SECURITY.md).
+
+## Terminal reference and man page
+
+Every subcommand has command-specific help. Use:
+
+```sh
+semver-forge --help
+semver-forge init --help
+semver-forge doctor --help
+semver-forge release --help
+```
+
+The project includes the Unix manual page at `man/semver-forge.1`. The user-local installer places it at `PREFIX/share/man/man1/semver-forge.1` (for the default prefix, `~/.local/share/man/man1/semver-forge.1`). On systems that do not search that directory automatically, add it to `MANPATH`:
+
+```sh
+export MANPATH="$HOME/.local/share/man${MANPATH:+:$MANPATH}"
+man semver-forge
+```
+
+On Termux, if your `man` implementation does not discover the user-local page, use `MANPATH="$HOME/.local/share/man:$PREFIX/share/man" man semver-forge` or read `man/semver-forge.1` directly. The installer refuses to overwrite an existing man page or launcher and the uninstaller validates the ownership marker before removing them.
