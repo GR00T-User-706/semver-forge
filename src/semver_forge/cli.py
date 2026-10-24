@@ -167,7 +167,7 @@ def main(argv=None):
      if answer in ('y','yes'):
       try:
        git.run(['commit','--only','-m','chore(init): initialize SemVer Forge project configuration','--',*rel],cwd=root)
-       committed=True; vcs_note='generated files committed after retry'
+       committed=True; vcs_note='generated files committed after retry'\n       if git.run(['remote'],cwd=root,check=False).stdout.split():\n        push=git.run(['push'],cwd=root,check=False); pushed=push.returncode==0\n        vcs_note += '; remote push '+('succeeded' if pushed else 'failed; local commit preserved')
       except ForgeError as retry_exc:
        record('ERROR','init.commit.retry','failed',error=retry_exc)
        vcs_note=f'retry failed: {retry_exc}. Generated files remain staged; resolve the issue and commit them manually or leave them staged'
