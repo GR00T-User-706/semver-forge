@@ -39,13 +39,13 @@ def _read_source(root: Path, source: dict) -> str:
                 data = data[part]
         value = str(data)
     elif kind == "debian":
-        matches = re.findall(r"^Version:\\s*(\\S+)\\s*$", text, re.M)
+        matches = re.findall(r"^Version:\s*(\S+)\s*$", text, re.M)
         if len(matches) != 1:
             raise ValueError("expected one Version field")
         value = matches[0]
     elif kind == "shell":
         key = source["key"]
-        matches = re.findall(rf"^\\s*{re.escape(key)}\\s*=\\s*['\\"]?([^'\\"]+)", text, re.M)
+        matches = re.findall(rf"^\s*{re.escape(key)}\s*=\s*['\\"]?([^'\\"]+)", text, re.M)
         if len(matches) != 1:
             raise ValueError(f"expected one {key} assignment")
         value = matches[0].strip()
