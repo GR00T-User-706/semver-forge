@@ -1,56 +1,51 @@
 # CLI Reference
 
-Run `semver-forge --help` for the command index and `semver-forge COMMAND --help` for command-specific help. A Unix man page is shipped at `man/semver-forge.1` and installed to `PREFIX/share/man/man1/semver-forge.1`.
+Run `semver-forge --help` for the command index and
+`semver-forge COMMAND --help` for command-specific help.
 
 ## Global options
 
 - `--version`: print the program version.
-- `--project DIR`: select a project directory; defaults to discovery from the current directory.
+- `--project DIR`: select a project directory.
 - `--json`: request JSON output where supported.
-- `-h`, `--help`: display help.
 
 ## Commands
 
-| Command | Behavior | Writes by default? |
-|---|---|---:|
-| `init` | Create `.semver-forge.toml`; create `VERSION` only if missing. Refuses to overwrite existing config. | Yes, starter files |
-| `doctor` | Inspect Python, Git, repository state, configuration, and canonical version source. | No |
-| `current` | Show canonical version and source. | No |
-| `validate VERSION` | Validate a SemVer 2.0.0 version. | No |
-| `compare A B` | Compare versions by SemVer precedence; build metadata is ignored for precedence. | No |
-| `bump patch\|minor\|major` | Calculate an increment; `--write` synchronizes configured targets and `--dry-run` previews. | Only with `--write` and without `--dry-run` |
-| `next [--explain]` | Calculate the next version from commits since the release boundary. | No |
-| `sync [--version VERSION] [--dry-run]` | Synchronize configured version sources. | Yes, unless `--dry-run` |
-| `status` | Summarize repository state, current version, latest tag, and proposed next version. | No |
-| `history` | Show commits since the release boundary. | No |
-| `check` | Check that configured version sources agree. | No |
-| `changelog [--dry-run]` | Preview generated notes. In this implementation the command prints notes; it does not update `CHANGELOG.md`. | No |
-| `release [part]` | Prepare and create a local release. Options: `--version VERSION`, `--prerelease alpha\|beta\|rc`, `--dry-run`, `--notes-only`, `--yes`, `--build`. | Yes, unless dry-run/notes-only |
-| `verify-tag` | Verify the latest recognized SemVer release tag. | No |
-| `verify-release` | Verify the latest recognized tag and whether it points to `HEAD`. | No |
-| `install [--prefix DIR]` | Install the source-tree package, launcher, and man page. | Installation prefix |
-| `uninstall [--prefix DIR]` | Remove recognized installed files. | Installation prefix |
+| Command | Behavior |
+|---|---|
+| `init [--yes]` | Generate project configuration and VERSION if missing. Existing config requires approval. On Git repositories, stage only generated files and commit them if the index is clean. |
+| `doctor` | Inspect Python, Git, repository state, configuration, and version source. |
+| `current` | Show canonical version and source. |
+| `validate VERSION` | Validate a SemVer version. |
+| `compare A B` | Compare versions by SemVer precedence. |
+| `bump patch\|minor\|major` | Calculate an increment; `--write` synchronizes targets. |
+| `next [--explain]` | Calculate the next version from commits since the release boundary. |
+| `sync [--version VERSION] [--dry-run]` | Synchronize configured version sources. |
+| `status`, `history`, `check` | Inspect repository and version state. |
+| `changelog` | Print generated release notes. |
+| `release [part]` | Prepare and create a local release. |
+| `verify-tag`, `verify-release` | Verify the latest recognized SemVer tag. |
+| `install`, `uninstall` | Manage the user-local installation. |
 
-## Examples
+## Initialization behavior
 
-```sh
-semver-forge init
-semver-forge doctor --json
-semver-forge validate 1.2.3-rc.1+build.7
-semver-forge compare 1.2.3 1.3.0
-semver-forge next --explain
-semver-forge sync --dry-run
-semver-forge release --dry-run
-semver-forge release patch --yes
-semver-forge verify-release
-```
+Git is optional for creating project configuration. In a Git repository,
+generated files are staged by explicit path and committed with
+`chore(init): initialize SemVer Forge project configuration` when the index
+has no pre-existing staged changes. A configured remote is pushed after a
+successful local commit; push failure preserves the local commit. Existing
+configuration is never overwritten without interactive approval or `--yes`.
+An existing VERSION file is preserved.
 
-## Important behavior
+## Logging and VCS
 
-- Releases are local. No push or remote publishing command is implemented.
-- Real releases require a clean working tree by default and refuse to overwrite an existing version tag.
-- Tests are not treated as passed if no test commands are configured.
-- A requested build fails when no build commands are configured.
-- `--dry-run` previews release actions and must not update files, commits, or tags.
-- Configured command hooks may execute code. Review configuration before use.
-- TOML is readable as a version source but TOML writing is not implemented. YAML parsing is not bundled.
+SemVer Forge writes its own bounded diagnostic log under the user's local state
+directory. It does not manage project-maintainer log files or their Git tracking
+policy. Git is the only supported VCS backend currently; other backends require
+future implementations.
+
+## Safety
+
+Real releases require a clean working tree by default. Existing tags are never
+moved or overwritten. Configured command hooks may execute code and should be
+reviewed before use. TOML writing and bundled YAML parsing are not implemented.
