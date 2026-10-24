@@ -37,7 +37,7 @@ class SemVerTests(unittest.TestCase):
             "1.0.0-rc.1",
             "1.0.0",
         ]
-        for left, right in zip(sequence, sequence[1:], strict=True):
+        for left, right in zip(sequence, sequence[1:], strict=False):
             self.assertLess(
                 Version.parse(left).compare(Version.parse(right)),
                 0,
