@@ -7,6 +7,8 @@ from __future__ import annotations
 from datetime import datetime, timezone
 import json
 import os
+import re
+from contextlib import contextmanager
 from pathlib import Path
 import tempfile
 import threading
@@ -14,6 +16,43 @@ import traceback
 
 _MAX_BYTES = 10 * 1024 * 1024
 _LOCK = threading.RLock()
+
+
+@contextmanager
+def _process_lock(target: Path):
+    """Serialize log rewrites across processes on POSIX and Windows."""
+    lock_file = target.with_name(target.name + ".lock")
+    with lock_file.open("a+b") as stream:
+        if os.name == "nt":
+            import msvcrt
+            stream.seek(0)
+            if stream.read(1) == b"":
+                stream.seek(0)
+                stream.write(b"0")
+                stream.flush()
+            stream.seek(0)
+            msvcrt.locking(stream.fileno(), msvcrt.LK_LOCK, 1)
+            try:
+                yield
+            finally:
+                stream.seek(0)
+                msvcrt.locking(stream.fileno(), msvcrt.LK_UNLCK, 1)
+        else:
+            import fcntl
+            fcntl.flock(stream.fileno(), fcntl.LOCK_EX)
+            try:
+                yield
+            finally:
+                fcntl.flock(stream.fileno(), fcntl.LOCK_UN)
+
+
+def _redact(value: str) -> str:
+    """Mask common credential assignments before diagnostics reach disk."""
+    return re.sub(
+        r"(?i)(token|password|secret|api[_-]?key|authorization)(\\s*[:=]\\s*)([^\\s,;]+)",
+        r"\\1\\2[REDACTED]",
+        value,
+    )
 
 
 def log_path() -> Path:
@@ -35,8 +74,8 @@ def record(level: str, action: str, outcome: str, *, error: BaseException | None
     }
     if error is not None:
         event["exception"] = type(error).__name__
-        event["message"] = str(error)[:2000]
-        event["traceback"] = "".join(traceback.format_exception(error))[-12000:]
+        event["message"] = _redact(str(error))[:2000]
+        event["traceback"] = _redact("".join(traceback.format_exception(error)))[-12000:]
     line = (json.dumps(event, ensure_ascii=False, separators=(",", ":")) + "\n").encode()
     with _LOCK:
         existing = target.read_bytes() if target.exists() else b""
