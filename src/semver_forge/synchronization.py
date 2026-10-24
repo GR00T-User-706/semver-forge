@@ -1,45 +1,96 @@
+from __future__ import annotations
+
+import os
+import shutil
+import tempfile
 from pathlib import Path
-import os, tempfile, shutil
-from .version_sources import read_version, render_version, _path
-from .errors import ConfigError, SafetyError
-from .semver import Version, SemVerError
+
+from .errors import ConfigError
+from .semver import SemVerError, Version
+from .version_sources import _path, read_version, render_version
+
 
 def sync(root, cfg, version, dry_run=False):
     try:
         version = str(Version.parse(str(version)))
     except SemVerError as exc:
-        raise ConfigError(f'invalid target version {version!r}: {exc}') from exc
-    sources=[cfg['version']['source'], *cfg.get('sync',{}).get('targets',[])]
-    changes=[]
-    for src in sources:
-        p=_path(root,src['file'])
-        if not p.exists(): raise ConfigError(f'synchronization target missing: {p}')
-        old=read_version(root,src)
-        new=render_version(root,src,version)
-        changes.append((p,old,new,src))
-    if dry_run: return [{'file':str(p),'old_version':old,'new_version':version,'changed':old!=version} for p,old,new,src in changes]
+        raise ConfigError(f"invalid target version {version!r}: {exc}") from exc
+
+    sources = [cfg["version"]["source"], *cfg.get("sync", {}).get("targets", [])]
+    changes = []
+    for source in sources:
+        path = _path(root, source["file"])
+        if not path.exists():
+            raise ConfigError(f"synchronization target missing: {path}")
+        old = read_version(root, source)
+        new = render_version(root, source, version)
+        changes.append((path, old, new, source))
+
+    if dry_run:
+        return [
+            {
+                "file": str(path),
+                "old_version": old,
+                "new_version": version,
+                "changed": old != version,
+            }
+            for path, old, _new, _source in changes
+        ]
+
     # Validate every file before any writes; backups are in memory and restored on failure.
-    originals={p:p.read_bytes() for p,_,_,_ in changes}
-    written=[]
+    originals = {path: path.read_bytes() for path, _, _, _ in changes}
+    written = []
     try:
-        for p,old,new,src in changes:
-            if old==version: continue
-            fd,tmp=tempfile.mkstemp(prefix='.semver-forge-',dir=p.parent)
+        for path, old, new, _source in changes:
+            if old == version:
+                continue
+            fd, temporary_path = tempfile.mkstemp(
+                prefix=".semver-forge-",
+                dir=path.parent,
+            )
             try:
-                with os.fdopen(fd,'w',encoding='utf-8',newline='') as f: f.write(new); f.flush(); os.fsync(f.fileno())
-                os.chmod(tmp,p.stat().st_mode)
-                os.replace(tmp,p); written.append(p)
+                with os.fdopen(
+                    fd,
+                    "w",
+                    encoding="utf-8",
+                    newline="",
+                ) as file_handle:
+                    file_handle.write(new)
+                    file_handle.flush()
+                    os.fsync(file_handle.fileno())
+                os.chmod(temporary_path, path.stat().st_mode)
+                os.replace(temporary_path, path)
+                written.append(path)
             finally:
-                if os.path.exists(tmp): os.unlink(tmp)
-        for p,_,_,src in changes:
-            if read_version(root,src)!=version: raise ConfigError(f'post-write verification failed for {p}')
+                if os.path.exists(temporary_path):
+                    os.unlink(temporary_path)
+
+        for path, _old, _new, source in changes:
+            if read_version(root, source) != version:
+                raise ConfigError(f"post-write verification failed for {path}")
     except Exception:
-        for p in reversed(written):
-            fd,tmp=tempfile.mkstemp(prefix='.semver-forge-rollback-',dir=p.parent)
+        for path in reversed(written):
+            fd, temporary_path = tempfile.mkstemp(
+                prefix=".semver-forge-rollback-",
+                dir=path.parent,
+            )
             try:
-                with os.fdopen(fd,'wb') as f: f.write(originals[p]); f.flush(); os.fsync(f.fileno())
-                os.replace(tmp,p)
+                with os.fdopen(fd, "wb") as file_handle:
+                    file_handle.write(originals[path])
+                    file_handle.flush()
+                    os.fsync(file_handle.fileno())
+                os.replace(temporary_path, path)
             finally:
-                if os.path.exists(tmp): os.unlink(tmp)
+                if os.path.exists(temporary_path):
+                    os.unlink(temporary_path)
         raise
-    return [{'file':str(p),'old_version':old,'new_version':version,'changed':old!=version} for p,old,new,src in changes]
+
+    return [
+        {
+            "file": str(path),
+            "old_version": old,
+            "new_version": version,
+            "changed": old != version,
+        }
+        for path, old, _new, _source in changes
+    ]
