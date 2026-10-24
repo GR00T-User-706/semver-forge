@@ -1,7 +1,13 @@
 """Strict TOML configuration loading with explicit defaults."""
 from pathlib import Path
-import tomllib
+
+try:
+    import tomllib
+except ModuleNotFoundError:  # Python 3.10
+    import tomli as tomllib
+
 from .errors import ConfigError
+
 DEFAULTS = {
  'project': {'name': None, 'description': ''},
  'version': {'source': {'type':'text','file':'VERSION'}, 'initial':'0.1.0'},
