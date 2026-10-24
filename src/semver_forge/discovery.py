@@ -6,7 +6,10 @@ from __future__ import annotations
 
 import json
 import re
-import tomllib
+try:
+    import tomllib
+except ModuleNotFoundError:  # Python 3.10
+    import tomli as tomllib
 from pathlib import Path
 
 from .semver import Version
@@ -104,7 +107,7 @@ def _project_metadata(root: Path):
     return metadata
 
 
-def discover_project(root):
+def discover(root):
     """Return inferred config values, evidence, and unresolved version conflicts."""
     root = Path(root).resolve()
     metadata = _project_metadata(root)
