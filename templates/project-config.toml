@@ -1,0 +1,38 @@
+# semver-forge project configuration. Unknown keys are warned about by the CLI.
+[project]
+name = "example-project"
+description = ""
+
+[version]
+initial = "0.1.0"
+source = { type = "text", file = "VERSION" }
+
+[git]
+tag_prefix = "v"
+require_clean = true
+# baseline = "<commit-or-tag>" # optional explicit history boundary
+unknown_commit = "ignore"
+merge_commits = "ignore"
+
+[commits]
+breaking_changes = true
+ignored_types = ["docs", "style", "refactor", "test", "build", "ci", "chore"]
+unknown = "ignore"
+[commits.types]
+feat = "minor"
+fix = "patch"
+perf = "patch"
+revert = "patch"
+
+[sync]
+targets = []
+
+[release]
+commit_version = true
+annotated_tag = true
+notes_file = "CHANGELOG.md"
+require_confirmation = true
+release_when_no_changes = false
+test_commands = []
+build_commands = []
+artifact_paths = []
