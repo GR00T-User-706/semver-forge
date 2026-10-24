@@ -5,7 +5,7 @@ this protocol without changing release-planning policy.
 """
 from __future__ import annotations
 
-from typing import Protocol, Any
+from typing import Any, Protocol
 from pathlib import Path
 
 
