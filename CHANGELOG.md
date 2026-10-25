@@ -12,6 +12,10 @@ This format is based on Keep a Changelog and this project adheres to Semantic Ve
 
 ### Fixed
 - Initialization rejects conflicting recognized version sources instead of silently selecting one.
+- Debian changelog headers are recognized and synchronized using their package/version header.
+- Missing metadata in one manifest no longer blocks fallback discovery from later manifests.
+- TOML version synchronization recognizes table headers with trailing comments.
+- Initialization reports staging failures accurately, preserves unrelated staged changes, and pushes successful retry commits to configured remotes.
 
 ## [0.2.0] - 2026-10-24
 
