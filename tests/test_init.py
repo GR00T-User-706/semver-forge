@@ -121,7 +121,7 @@ class InitTests(unittest.TestCase):
                 ["git", "-C", str(project), "config", "user.email", "test@example.invalid"],
                 check=True,
             )
-            (project / ".gitignore").write_text("/.semver-forge.toml\\n", encoding="utf-8")
+            (project / ".gitignore").write_text("/.semver-forge.toml\n", encoding="utf-8")
             result = self.run_cli(project, "init", "--json")
             self.assertEqual(result.returncode, 2)
             self.assertIn("staging failed", result.stdout)
