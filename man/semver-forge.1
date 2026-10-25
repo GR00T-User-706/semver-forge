@@ -27,7 +27,7 @@ Emit JSON output for commands that support structured output.
 .SH COMMANDS
 .TP
 .B init
-Create a starter .semver-forge.toml and create VERSION only if it does not already exist. Existing configuration is not overwritten.
+Inspect project metadata and create a derived .semver-forge.toml. Create VERSION only when no usable version source exists. Existing configuration requires approval or --yes before replacement. Git is optional. When Git is available, only generated paths are staged and committed; unrelated staged changes are left untouched. Staging failures prevent the commit and are reported. A configured remote is pushed after a successful local commit. Push failure does not undo the local commit.
 .TP
 .B doctor
 Inspect Python, Git, repository state, configuration, and the configured version source.
@@ -89,7 +89,7 @@ semver-forge release patch --yes
 semver-forge verify-release
 .fi
 .SH SAFETY
-Release execution is intended for a clean Git working tree. Existing release tags must not be moved or overwritten. The tool does not push or publish releases remotely. Review project configuration and the dry-run plan before authorizing a real release. Configured hooks and build/test commands may execute code and must be reviewed before use.
+Release execution is intended for a clean Git working tree. Existing release tags must not be moved or overwritten. Initialization may push its generated-files commit to a configured Git remote. Release tags and release artifacts are not pushed or published remotely. Review project configuration and the dry-run plan before authorizing a real release. Configured hooks and build/test commands may execute code and must be reviewed before use.
 .SH FILES
 .TP
 .I .semver-forge.toml
@@ -106,4 +106,4 @@ Optional generated changelog, depending on project configuration.
 .PP
 Project documentation: README.md and docs/CLI_REFERENCE.md.
 .SH LIMITATIONS
-Remote publishing and automatic push are not implemented. TOML writes and YAML parsing are not bundled in the current version-source adapters. See project documentation for current adapter and recovery limitations.
+Remote release publishing is not implemented. Initialization may push its generated-files commit to a configured remote. TOML writes and YAML parsing are not bundled in the current version-source adapters. See project documentation for current adapter and recovery limitations.
