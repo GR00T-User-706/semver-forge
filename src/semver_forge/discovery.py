@@ -101,8 +101,10 @@ def _project_metadata(root: Path):
     if cargo.is_file():
         try:
             data = tomllib.loads(cargo.read_text(encoding="utf-8")).get("package", {})
-            metadata.setdefault("name", data.get("name"))
-            metadata.setdefault("description", data.get("description"))
+            if data.get("name"):
+                metadata.setdefault("name", data["name"])
+            if data.get("description"):
+                metadata.setdefault("description", data["description"])
         except (OSError, tomllib.TOMLDecodeError):
             pass
     readme = next(
