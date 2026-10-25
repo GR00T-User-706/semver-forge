@@ -13,7 +13,7 @@ Run `semver-forge --help` for the command index and
 
 | Command | Behavior |
 |---|---|
-| `init [--yes]` | Inspect existing project metadata and generate a derived configuration. Create VERSION at 0.1.0 only when no usable version source exists. Conflicting version sources stop initialization. Existing config requires approval. On Git repositories, stage only generated files and commit them if the index is clean. |
+| `init [--yes]` | Inspect existing project metadata and generate a derived configuration. Create VERSION at 0.1.0 only when no usable version source exists. Conflicting version sources stop initialization. Existing config requires approval. On Git repositories, stage and commit only generated files; unrelated staged changes are left untouched. Staging failures are reported separately and prevent a commit. |
 | `doctor` | Inspect Python, Git, repository state, configuration, and version source. |
 | `current` | Show canonical version and source. |
 | `validate VERSION` | Validate a SemVer version. |
