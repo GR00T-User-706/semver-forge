@@ -12,7 +12,7 @@ The PyPI release is stale; use the upstream installation instructions.
 From the repository root:
 
 ```sh
-./packaging/termux/build.sh
+bash packaging/termux/build.sh
 ```
 
 The helper reads the canonical VERSION file and passes that value to
