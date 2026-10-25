@@ -46,7 +46,7 @@ def parser():
         )
 
     init_cmd = command("init", "Create project version configuration and initialize version control metadata when available.",
-            "Generated files are staged and committed only when Git is available and the index is clean.\nExample: semver-forge init")
+            "Generated files are staged and committed by explicit path when Git is available. Unrelated staged changes are left untouched.\nExample: semver-forge init")
     init_cmd.add_argument("--yes", action="store_true", help="authorize overwriting an existing SemVer Forge configuration")
     command("doctor", "Inspect Git, Python, project configuration, and version-source health.",
             "Example: semver-forge doctor --json")
@@ -162,31 +162,54 @@ def main(argv=None):
     record('ERROR','init.generate','failed',error=exc)
     print(f"Initialization failed. Inspect generated files: {', '.join(map(str,written))}",file=sys.stderr)
     raise
-   committed=False; pushed=False
+   committed=False; pushed=False; stage_failed=False
+   staged_files=[]
    vcs_note='no supported VCS detected; files created without a VCS commit'
    if git.available(root):
+    rel=[str(p.relative_to(root)) for p in generated]
     try:
-     rel=[str(p.relative_to(root)) for p in generated]
      git.run(['add','--',*rel],cwd=root)
-     git.run(['commit','--only','-m','chore(init): initialize SemVer Forge project configuration','--',*rel],cwd=root)
-     committed=True; vcs_note='generated files committed; unrelated staged changes were left untouched'
-     if git.run(['remote'],cwd=root,check=False).stdout.split():
-      push=git.run(['push'],cwd=root,check=False); pushed=push.returncode==0
-      vcs_note += '; remote push '+('succeeded' if pushed else 'failed; local commit preserved')
-     else: vcs_note += '; no Git remote configured'
-    except ForgeError as exc:
-     record('ERROR','init.commit','failed',error=exc)
-     try: answer=input(f"Commit failed ({exc}). Correct the issue and retry the generated-files commit now? [y/N] ").strip().lower()
-     except EOFError: answer=''
-     if answer in ('y','yes'):
+     staged_files=git.run(['diff','--cached','--name-only','--',*rel],cwd=root,check=False).stdout.splitlines()
+    except ForgeError as stage_exc:
+     stage_failed=True
+     record('ERROR','init.stage','failed',error=stage_exc)
+     staged_files=git.run(['diff','--cached','--name-only','--',*rel],cwd=root,check=False).stdout.splitlines()
+     vcs_note=f'staging failed: {stage_exc}; only these generated paths are staged: {", ".join(staged_files) or "none"}'
+    if not stage_failed:
+     def push_configured_remote():
+      nonlocal pushed
       try:
-       git.run(['commit','--only','-m','chore(init): initialize SemVer Forge project configuration','--',*rel],cwd=root)
-       committed=True; vcs_note='generated files committed after retry'
-      except ForgeError as retry_exc:
-       record('ERROR','init.commit.retry','failed',error=retry_exc)
-       vcs_note=f'retry failed: {retry_exc}. Generated files remain staged'
-     else:
-      vcs_note='commit not retried; generated files remain staged'
+       remotes=git.run(['remote'],cwd=root,check=False).stdout.split()
+      except ForgeError as push_exc:
+       return f'; remote push could not be checked: {push_exc}; local commit preserved'
+      if not remotes:
+       return '; no Git remote configured'
+      try:
+       push=git.run(['push'],cwd=root,check=False)
+       pushed=push.returncode==0
+       return '; remote push '+('succeeded' if pushed else 'failed; local commit preserved')
+      except ForgeError as push_exc:
+       return f'; remote push failed: {push_exc}; local commit preserved'
+     try:
+      git.run(['commit','--only','-m','chore(init): initialize SemVer Forge project configuration','--',*rel],cwd=root)
+      committed=True
+      vcs_note='generated files committed; unrelated staged changes were left untouched'
+      vcs_note += push_configured_remote()
+     except ForgeError as exc:
+      record('ERROR','init.commit','failed',error=exc)
+      try: answer=input(f"Commit failed ({exc}). Correct the issue and retry the generated-files commit now? [y/N] ").strip().lower()
+      except EOFError: answer=''
+      if answer in ('y','yes'):
+       try:
+        git.run(['commit','--only','-m','chore(init): initialize SemVer Forge project configuration','--',*rel],cwd=root)
+        committed=True
+        vcs_note='generated files committed after retry'
+        vcs_note += push_configured_remote()
+       except ForgeError as retry_exc:
+        record('ERROR','init.commit.retry','failed',error=retry_exc)
+        vcs_note=f'retry failed: {retry_exc}; generated files remain staged: {", ".join(staged_files) or "none"}'
+      else:
+       vcs_note=f'commit not retried; generated files remain staged: {", ".join(staged_files) or "none"}'
    record('INFO','init','completed')
    output({
     'initialized':str(path),
@@ -202,9 +225,9 @@ def main(argv=None):
      'artifact_paths':result['artifact_paths'],
      'notes_file':result['notes_file'],
     },
-    'committed':committed,'pushed':pushed,'vcs':vcs_note
+    'committed':committed,'pushed':pushed,'staged_files':staged_files,'vcs':vcs_note
    },args.json)
-   return 0
+   return 2 if stage_failed else 0
   root=git.root(args.project)
   config_path=find_config(root)
   if args.cmd=='doctor':
