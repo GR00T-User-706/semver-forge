@@ -56,7 +56,8 @@ def parser():
 
     init_cmd = command(
         "init",
-        "Create project version configuration and initialize version control metadata when available.",
+        "Create project version configuration and initialize version control "
+        "metadata when available.",
         "Generated files are staged and committed by explicit path when Git is available. Unrelated staged changes are left untouched.\nExample: semver-forge init",
     )
     init_cmd.add_argument(
@@ -114,7 +115,8 @@ def parser():
     sy = command(
         "sync",
         "Synchronize configured version targets to the selected version.",
-        "This changes project files unless --dry-run is supplied. All targets are validated before writes.",
+        "This changes project files unless --dry-run is supplied. "
+        "All targets are validated before writes.",
     )
     sy.add_argument("--dry-run", action="store_true", help="show proposed changes without writing")
     sy.add_argument(
@@ -123,9 +125,11 @@ def parser():
 
     r = command(
         "release",
-        "Prepare and create a local release with notes, configured checks, version metadata, and a Git tag.",
+        "Prepare and create a local release with notes, configured checks, "
+        "version metadata, and a Git tag.",
         "Examples:\n  semver-forge release --dry-run\n  semver-forge release patch --dry-run\n  semver-forge release --version 2.0.0 --yes\n  semver-forge release --prerelease rc --yes\n\n"
-        "Dry runs and notes-only mode do not write project files, create commits/tags, run checks, or publish. "
+        "Dry runs and notes-only mode do not write project files, create commits/tags, "
+        "run checks, or publish. "
         "Actual releases require a clean working tree and never push to a remote.",
     )
     r.add_argument(
@@ -265,7 +269,8 @@ def main(argv=None):
             if result["version_status"] == "no_existing_version_source":
                 if version_path.exists():
                     raise ConfigError(
-                        f"version destination already exists but could not be recognized: {version_path}"
+                        "version destination already exists but could not be recognized: "
+                        f"{version_path}"
                     )
                 generated[version_path] = result["version"]["initial"] + "\n"
             written = []
@@ -307,13 +312,19 @@ def main(argv=None):
                     staged_files = git.run(
                         ["diff", "--cached", "--name-only", "--", *rel], cwd=root, check=False
                     ).stdout.splitlines()
-                    vcs_note = f"staging failed: {stage_exc}; only these generated paths are staged: {', '.join(staged_files) or 'none'}"
+                    staged_list = ', '.join(staged_files) or 'none'
+                    vcs_note = (
+                        f"staging failed: {stage_exc}; only these generated paths "
+                        f"are staged: {staged_list}"
+                    )
                 if not stage_failed:
 
                     def push_configured_remote():
                         nonlocal pushed
                         try:
-                            remotes = git.run(["remote"], cwd=root, check=False).stdout.split()
+                            remotes = git.run(
+                                ["remote"], cwd=root, check=False
+                            ).stdout.split()
                         except ForgeError as push_exc:
                             return f"; remote push could not be checked: {push_exc}; local commit preserved"
                         if not remotes:
@@ -340,7 +351,10 @@ def main(argv=None):
                             cwd=root,
                         )
                         committed = True
-                        vcs_note = "generated files committed; unrelated staged changes were left untouched"
+                        vcs_note = (
+                            "generated files committed; unrelated staged changes "
+                            "were left untouched"
+                        )
                         vcs_note += push_configured_remote()
                         staged_files = []
                     except ForgeError as exc:
@@ -348,7 +362,9 @@ def main(argv=None):
                         try:
                             answer = (
                                 input(
-                                    f"Commit failed ({exc}). Correct the issue and retry the generated-files commit now? [y/N] "
+                                    "Commit failed ("
+                                    f"{exc}). Correct the issue and retry the generated-files "
+                                    "commit now? [y/N] "
                                 )
                                 .strip()
                                 .lower()
@@ -374,9 +390,17 @@ def main(argv=None):
                                 staged_files = []
                             except ForgeError as retry_exc:
                                 record("ERROR", "init.commit.retry", "failed", error=retry_exc)
-                                vcs_note = f"retry failed: {retry_exc}; generated files remain staged: {', '.join(staged_files) or 'none'}"
+                                staged_list = ', '.join(staged_files) or 'none'
+                                vcs_note = (
+                                    f"retry failed: {retry_exc}; generated files "
+                                    f"remain staged: {staged_list}"
+                                )
                         else:
-                            vcs_note = f"commit not retried; generated files remain staged: {', '.join(staged_files) or 'none'}"
+                            staged_list = ', '.join(staged_files) or 'none'
+                            vcs_note = (
+                                "commit not retried; generated files remain staged: "
+                                f"{staged_list}"
+                            )
             record("INFO", "init", "completed")
             output(
                 {
@@ -461,7 +485,8 @@ def main(argv=None):
             }
             if args.explain:
                 data["reason"] = (
-                    "highest classified impact since previous release boundary; no impact means current version is retained"
+                    "highest classified impact since previous release boundary; "
+                    "no impact means current version is retained"
                 )
             output(data, args.json)
         elif args.cmd == "sync":
