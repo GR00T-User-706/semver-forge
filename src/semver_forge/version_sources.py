@@ -51,6 +51,15 @@ def read_version(root, source):
         if len(matches) != 1:
             raise ConfigError(f"{path}: expected exactly one Version field")
         return matches[0]
+    if kind == "debian-changelog":
+        lines = text.splitlines()
+        match = re.match(
+            r"^(\S+\s+\()([^)]+)(\)\s+\S+;\s*urgency=.*)$",
+            lines[0] if lines else "",
+        )
+        if not match:
+            raise ConfigError(f"{path}: expected a standard Debian changelog header")
+        return match.group(2)
     if kind == "yaml":
         raise ConfigError("YAML support requires an explicit adapter; no YAML parser is bundled")
     raise ConfigError(f"unsupported version source type: {kind}")
@@ -83,10 +92,11 @@ def render_version(root, source, version):
         )
         in_section = False
         matches = []
+        table_pattern = re.compile(r"^\s*\[[^\]]+\]\s*(?:#.*)?$")
         for index, line in enumerate(lines):
-            stripped = line.strip()
-            if stripped.startswith("[") and stripped.endswith("]"):
-                in_section = bool(section_pattern.match(line.rstrip("\r\n")))
+            candidate = line.rstrip("\r\n")
+            if table_pattern.match(candidate):
+                in_section = bool(section_pattern.match(candidate))
             elif in_section:
                 match = field_pattern.match(line)
                 if match:
@@ -124,6 +134,17 @@ def render_version(root, source, version):
         )
         if count != 1:
             raise ConfigError(f"{path}: expected exactly one Version field")
+        return updated
+    if kind == "debian-changelog":
+        updated, count = re.subn(
+            r"^(\S+\s+\()[^)]+(\)\s+\S+;\s*urgency=.*)$",
+            lambda match: match.group(1) + version + match.group(2),
+            text,
+            count=1,
+            flags=re.M,
+        )
+        if count != 1:
+            raise ConfigError(f"{path}: expected a standard Debian changelog header")
         return updated
     if kind == "yaml":
         raise ConfigError("YAML support requires an explicit adapter; no YAML parser is bundled")
