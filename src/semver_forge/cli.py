@@ -317,7 +317,7 @@ def main(argv=None):
                     staged_files = git.run(
                         ["diff", "--cached", "--name-only", "--", *rel], cwd=root, check=False
                     ).stdout.splitlines()
-                    staged_list = ', '.join(staged_files) or 'none'
+                    staged_list = ", ".join(staged_files) or "none"
                     vcs_note = (
                         f"staging failed: {stage_exc}; only these generated paths "
                         f"are staged: {staged_list}"
@@ -327,9 +327,7 @@ def main(argv=None):
                     def push_configured_remote():
                         nonlocal pushed
                         try:
-                            remotes = git.run(
-                                ["remote"], cwd=root, check=False
-                            ).stdout.split()
+                            remotes = git.run(["remote"], cwd=root, check=False).stdout.split()
                         except ForgeError as push_exc:
                             return (
                                 f"; remote push could not be checked: {push_exc}; "
@@ -399,17 +397,14 @@ def main(argv=None):
                                 staged_files = []
                             except ForgeError as retry_exc:
                                 record("ERROR", "init.commit.retry", "failed", error=retry_exc)
-                                staged_list = ', '.join(staged_files) or 'none'
+                                staged_list = ", ".join(staged_files) or "none"
                                 vcs_note = (
                                     f"retry failed: {retry_exc}; generated files "
                                     f"remain staged: {staged_list}"
                                 )
                         else:
-                            staged_list = ', '.join(staged_files) or 'none'
-                            vcs_note = (
-                                "commit not retried; generated files remain staged: "
-                                f"{staged_list}"
-                            )
+                            staged_list = ", ".join(staged_files) or "none"
+                            vcs_note = f"commit not retried; generated files remain staged: {staged_list}"
             record("INFO", "init", "completed")
             output(
                 {
