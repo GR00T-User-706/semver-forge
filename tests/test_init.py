@@ -84,6 +84,22 @@ class InitTests(unittest.TestCase):
             self.assertIn("conflicting existing version sources", result.stderr)
             self.assertFalse((project / ".semver-forge.toml").exists())
 
+    def test_version_conflict_is_reported_before_overwrite_prompt(self):
+        with tempfile.TemporaryDirectory() as directory:
+            project = Path(directory)
+            (project / "pyproject.toml").write_text(
+                '[project]\nname = "sample"\nversion = "1.2.3"\n',
+                encoding="utf-8",
+            )
+            (project / "VERSION").write_text("1.2.4\n", encoding="utf-8")
+            config = project / ".semver-forge.toml"
+            config.write_text("preserve me", encoding="utf-8")
+            result = self.run_cli(project, "init")
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("conflicting existing version sources", result.stderr)
+            self.assertNotIn("Overwrite existing configuration", result.stdout)
+            self.assertEqual(config.read_text(encoding="utf-8"), "preserve me")
+
     def test_existing_configuration_requires_approval(self):
         with tempfile.TemporaryDirectory() as directory:
             project = Path(directory)

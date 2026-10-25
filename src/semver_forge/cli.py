@@ -232,6 +232,19 @@ def main(argv=None):
                 raise ConfigError(f"project directory does not exist: {project}")
             root = git.root(project) if git.available(project) else project
             path = root / ".semver-forge.toml"
+            # Discover and validate the project before asking permission to overwrite
+            # configuration. A rejected initialization must never prompt for a write
+            # that cannot safely happen.
+            result = discover(root)
+            if result["version_status"] == "conflict":
+                details = "; ".join(
+                    f"{item['source']['file']}={item['version']}"
+                    for item in result["version_conflicts"]
+                )
+                raise ConfigError(
+                    "conflicting existing version sources; resolve them before initialization: "
+                    + details
+                )
             if path.exists() and not args.yes:
                 try:
                     answer = (
@@ -243,16 +256,6 @@ def main(argv=None):
                     raise ConfigError(
                         f"initialization cancelled; existing configuration preserved: {path}"
                     )
-            result = discover(root)
-            if result["version_status"] == "conflict":
-                details = "; ".join(
-                    f"{item['source']['file']}={item['version']}"
-                    for item in result["version_conflicts"]
-                )
-                raise ConfigError(
-                    "conflicting existing version sources; resolve them before initialization: "
-                    + details
-                )
             config_text = __import__(
                 "semver_forge.discovery", fromlist=["render_config"]
             ).render_config(result)
