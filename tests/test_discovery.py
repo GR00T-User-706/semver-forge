@@ -104,6 +104,26 @@ class DiscoveryTests(unittest.TestCase):
             )
             self.assertIn("sample-app (2.4.1-1) unstable; urgency=medium", updated)
 
+    def test_toml_table_header_with_trailing_comment_is_updated(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            path = root / "pyproject.toml"
+            original = (
+                '[project] # project metadata\\n'
+                'name = "sample-app"\\n'
+                'version = "1.2.3" # keep version comment\\n'
+                '[tool.example] # unrelated table\\n'
+                'value = true\\n'
+            )
+            path.write_text(original, encoding="utf-8")
+            source = {"type": "toml", "file": "pyproject.toml", "key": "project.version"}
+            updated = render_version(root, source, "1.2.4")
+            path.write_text(updated, encoding="utf-8")
+            self.assertEqual(read_version(root, source), "1.2.4")
+            self.assertIn('[project] # project metadata', updated)
+            self.assertIn('version = "1.2.4" # keep version comment', updated)
+            self.assertIn('[tool.example] # unrelated table', updated)
+
 
 if __name__ == "__main__":
     unittest.main()
