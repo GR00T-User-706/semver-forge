@@ -25,8 +25,7 @@ class GitTests(unittest.TestCase):
                     "feat: initial",
                 ],
                 check=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                capture_output=True,
             )
             self.assertEqual(git.root(d), Path(d).resolve())
             self.assertFalse(git.is_dirty(d))
