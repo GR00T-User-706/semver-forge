@@ -1,0 +1,76 @@
+# Termux package manifest for SemVer Forge.
+# Build with: ./packaging/termux/build.sh
+# The build script overrides this fallback with the canonical VERSION file.
+
+control:
+  Package: semver-forge
+  Version: "0.2.0"
+  Architecture: all
+  Maintainer: GR00T-User-706
+  Depends:
+    - python
+    - git
+  Section: devel
+  Priority: optional
+  Homepage: https://github.com/GR00T-User-706/semver-forge
+  Description: Semantic versioning and Git release management toolkit
+    Local-first Semantic Versioning 2.0.0 tooling with version discovery,
+    synchronization, Conventional Commit analysis, changelog generation,
+    and local Git release management.
+
+installation_prefix: /data/data/com.termux/files/usr
+deb_dir: dist/termux
+deb_name: semver-forge.deb
+tar_compression: xz
+
+data_files:
+  bin/semver-forge:
+    source: packaging/termux/semver-forge
+    perm: "755"
+
+  lib/semver-forge/semver_forge/__init__.py:
+    source: src/semver_forge/__init__.py
+  lib/semver-forge/semver_forge/__main__.py:
+    source: src/semver_forge/__main__.py
+  lib/semver-forge/semver_forge/build.py:
+    source: src/semver_forge/build.py
+  lib/semver-forge/semver_forge/changelog.py:
+    source: src/semver_forge/changelog.py
+  lib/semver-forge/semver_forge/cli.py:
+    source: src/semver_forge/cli.py
+  lib/semver-forge/semver_forge/config.py:
+    source: src/semver_forge/config.py
+  lib/semver-forge/semver_forge/conventional_commits.py:
+    source: src/semver_forge/conventional_commits.py
+  lib/semver-forge/semver_forge/discovery.py:
+    source: src/semver_forge/discovery.py
+  lib/semver-forge/semver_forge/errors.py:
+    source: src/semver_forge/errors.py
+  lib/semver-forge/semver_forge/git.py:
+    source: src/semver_forge/git.py
+  lib/semver-forge/semver_forge/installation.py:
+    source: src/semver_forge/installation.py
+  lib/semver-forge/semver_forge/locking.py:
+    source: src/semver_forge/locking.py
+  lib/semver-forge/semver_forge/operation_log.py:
+    source: src/semver_forge/operation_log.py
+  lib/semver-forge/semver_forge/release.py:
+    source: src/semver_forge/release.py
+  lib/semver-forge/semver_forge/reporting.py:
+    source: src/semver_forge/reporting.py
+  lib/semver-forge/semver_forge/safety.py:
+    source: src/semver_forge/safety.py
+  lib/semver-forge/semver_forge/semver.py:
+    source: src/semver_forge/semver.py
+  lib/semver-forge/semver_forge/synchronization.py:
+    source: src/semver_forge/synchronization.py
+  lib/semver-forge/semver_forge/vcs.py:
+    source: src/semver_forge/vcs.py
+  lib/semver-forge/semver_forge/version_sources.py:
+    source: src/semver_forge/version_sources.py
+
+  lib/semver-forge/semver_forge/data/project-config.toml:
+    source: src/semver_forge/data/project-config.toml
+
+  share/man/man1/semver-forge.1:
+    source: man/semver-forge.1
