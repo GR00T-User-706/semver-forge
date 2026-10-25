@@ -103,6 +103,11 @@ class DiscoveryTests(unittest.TestCase):
                 root, result["version"]["source"], "2.4.1-1"
             )
             self.assertIn("sample-app (2.4.1-1) unstable; urgency=medium", updated)
+            changelog.write_text(updated, encoding="utf-8")
+            self.assertEqual(
+                read_version(root, result["version"]["source"]),
+                "2.4.1-1",
+            )
 
     def test_toml_table_header_with_trailing_comment_is_updated(self):
         with tempfile.TemporaryDirectory() as directory:
