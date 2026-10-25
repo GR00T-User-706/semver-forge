@@ -88,10 +88,10 @@ class InitTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             project = Path(directory)
             (project / "pyproject.toml").write_text(
-                '[project]\\nname = "sample"\\nversion = "1.2.3"\\n',
+                '[project]\nname = "sample"\nversion = "1.2.3"\n',
                 encoding="utf-8",
             )
-            (project / "VERSION").write_text("1.2.4\\n", encoding="utf-8")
+            (project / "VERSION").write_text("1.2.4\n", encoding="utf-8")
             config = project / ".semver-forge.toml"
             config.write_text("preserve me", encoding="utf-8")
             result = self.run_cli(project, "init")
