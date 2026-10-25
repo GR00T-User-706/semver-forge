@@ -11,7 +11,7 @@ Configuration file: `.semver-forge.toml` or `semver-forge.toml` at repository ro
 
 Commands may be configured as strings (shell execution) or tables with `args = ["program", "arg"]`, `cwd`, `timeout`, and `env`. Prefer `args` to avoid shell interpretation. Current release flow runs configured tests automatically; build commands run only with `release --build`. `require_confirmation` is retained as policy metadata; this CLI currently does not prompt interactively and expects an explicit command invocation. Use `--dry-run` first.
 
-Version source adapters: `text` (whole file), `json` (dotted `key`, defaults to `version`), `toml` (dotted `key`, defaults to `project.version`), `shell` (one assignment; defaults to `VERSION`), and `debian` (one `Version:` field). TOML updates replace only the selected key's value and preserve surrounding text and comments. `yaml` fails with actionable guidance until an adapter is supplied. The canonical source and targets are validated before synchronization.
+Version source adapters: `text` (whole file), `json` (dotted `key`, defaults to `version`), `toml` (dotted `key`, defaults to `project.version`), `shell` (one assignment; defaults to `VERSION`), and `debian` (one `Version:` field) and `debian-changelog` (the first standard Debian changelog package/version header). TOML updates replace only the selected key's value and preserve surrounding text and comments. `yaml` fails with actionable guidance until an adapter is supplied. The canonical source and targets are validated before synchronization.
 
 ## Discovery during initialization
 
