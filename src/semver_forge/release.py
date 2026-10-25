@@ -118,7 +118,8 @@ def release(
             and not cfg["release"].get("release_when_no_changes", False)
         ):
             raise ReleaseFailure(
-                "no release-relevant commits; use an explicit bump or configure release_when_no_changes"
+                "no release-relevant commits; use an explicit bump or configure "
+                "release_when_no_changes"
             )
         if cfg["release"].get("require_confirmation", True) and not yes:
             try:
