@@ -26,8 +26,7 @@ class SafetyTests(unittest.TestCase):
                     "init",
                 ],
                 check=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                capture_output=True,
             )
             (Path(d) / "untracked").write_text("x")
             with self.assertRaises(SafetyError):
