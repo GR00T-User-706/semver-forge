@@ -195,6 +195,7 @@ def main(argv=None):
       committed=True
       vcs_note='generated files committed; unrelated staged changes were left untouched'
       vcs_note += push_configured_remote()
+      staged_files=[]
      except ForgeError as exc:
       record('ERROR','init.commit','failed',error=exc)
       try: answer=input(f"Commit failed ({exc}). Correct the issue and retry the generated-files commit now? [y/N] ").strip().lower()
@@ -205,6 +206,7 @@ def main(argv=None):
         committed=True
         vcs_note='generated files committed after retry'
         vcs_note += push_configured_remote()
+        staged_files=[]
        except ForgeError as retry_exc:
         record('ERROR','init.commit.retry','failed',error=retry_exc)
         vcs_note=f'retry failed: {retry_exc}; generated files remain staged: {", ".join(staged_files) or "none"}'
