@@ -25,9 +25,10 @@ class DiscoveryTests(unittest.TestCase):
             self.assertEqual(result["project"]["name"], "sample-app")
             self.assertEqual(result["project"]["description"], "A sample application")
             self.assertEqual(result["version"]["initial"], "2.4.1")
-            self.assertEqual(result["version"]["source"], {
-                "type": "toml", "file": "pyproject.toml", "key": "project.version"
-            })
+            self.assertEqual(
+                result["version"]["source"],
+                {"type": "toml", "file": "pyproject.toml", "key": "project.version"},
+            )
             self.assertEqual(result["sync_targets"], [{"type": "text", "file": "VERSION"}])
             self.assertEqual(result["test_commands"], ["python -m pytest"])
             self.assertEqual(result["build_commands"], ["python -m build"])
@@ -74,13 +75,15 @@ class DiscoveryTests(unittest.TestCase):
             updated = render_version(root, source, "1.2.4")
             path.write_text(updated, encoding="utf-8")
             self.assertEqual(read_version(root, source), "1.2.4")
-            self.assertIn('# keep this comment', updated)
+            self.assertIn("# keep this comment", updated)
             self.assertIn('description = "unchanged"', updated)
 
     def test_later_manifest_fills_missing_python_metadata(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            (root / "pyproject.toml").write_text("[build-system]\nrequires = []\n", encoding="utf-8")
+            (root / "pyproject.toml").write_text(
+                "[build-system]\nrequires = []\n", encoding="utf-8"
+            )
             (root / "package.json").write_text(
                 '{"name": "node-project", "description": "Node description"}',
                 encoding="utf-8",
@@ -99,9 +102,7 @@ class DiscoveryTests(unittest.TestCase):
             result = discover(root)
             self.assertEqual(result["version"]["initial"], "2.4.0-1")
             self.assertEqual(result["version"]["source"]["type"], "debian-changelog")
-            updated = render_version(
-                root, result["version"]["source"], "2.4.1-1"
-            )
+            updated = render_version(root, result["version"]["source"], "2.4.1-1")
             self.assertIn("sample-app (2.4.1-1) unstable; urgency=medium", updated)
             changelog.write_text(updated, encoding="utf-8")
             self.assertEqual(
@@ -114,20 +115,20 @@ class DiscoveryTests(unittest.TestCase):
             root = Path(directory)
             path = root / "pyproject.toml"
             original = (
-                '[project] # project metadata\n'
+                "[project] # project metadata\n"
                 'name = "sample-app"\n'
                 'version = "1.2.3" # keep version comment\n'
-                '[tool.example] # unrelated table\n'
-                'value = true\n'
+                "[tool.example] # unrelated table\n"
+                "value = true\n"
             )
             path.write_text(original, encoding="utf-8")
             source = {"type": "toml", "file": "pyproject.toml", "key": "project.version"}
             updated = render_version(root, source, "1.2.4")
             path.write_text(updated, encoding="utf-8")
             self.assertEqual(read_version(root, source), "1.2.4")
-            self.assertIn('[project] # project metadata', updated)
+            self.assertIn("[project] # project metadata", updated)
             self.assertIn('version = "1.2.4" # keep version comment', updated)
-            self.assertIn('[tool.example] # unrelated table', updated)
+            self.assertIn("[tool.example] # unrelated table", updated)
 
 
 if __name__ == "__main__":

@@ -22,9 +22,7 @@ def _ids(value: str | None, prerelease: bool = False) -> tuple[str, ...]:
     if prerelease:
         for part in parts:
             if part.isdigit() and len(part) > 1 and part[0] == "0":
-                raise SemVerError(
-                    f"numeric prerelease identifier has leading zero: {part}"
-                )
+                raise SemVerError(f"numeric prerelease identifier has leading zero: {part}")
     return parts
 
 
@@ -68,8 +66,7 @@ class Version:
             else (
                 0,
                 tuple(
-                    (0, int(value)) if value.isdigit() else (1, value)
-                    for value in self.prerelease
+                    (0, int(value)) if value.isdigit() else (1, value) for value in self.prerelease
                 ),
             )
         )
@@ -110,9 +107,7 @@ class Version:
 
     def prerelease_next(self, label: str = "alpha") -> Version:
         if not re.fullmatch(r"[0-9A-Za-z-]+", label) or label.isdigit():
-            raise SemVerError(
-                "prerelease label must be a nonnumeric SemVer identifier"
-            )
+            raise SemVerError("prerelease label must be a nonnumeric SemVer identifier")
         if not self.prerelease:
             return Version(self.major, self.minor, self.patch, (label, "1"))
         identifiers = list(self.prerelease)

@@ -15,7 +15,11 @@ class InitTests(unittest.TestCase):
         env["XDG_STATE_HOME"] = str(Path(project) / ".state")
         return subprocess.run(
             [sys.executable, "-m", "semver_forge", "--project", str(project), *args],
-            cwd=ROOT, env=env, text=True, capture_output=True, timeout=20,
+            cwd=ROOT,
+            env=env,
+            text=True,
+            capture_output=True,
+            timeout=20,
         )
 
     def test_init_works_without_git(self):
@@ -42,7 +46,9 @@ class InitTests(unittest.TestCase):
             self.assertEqual((project / "VERSION").read_text(), "3.1.0\n")
             committed = subprocess.run(
                 ["git", "-C", str(project), "show", "--pretty=format:", "--name-only", "HEAD"],
-                check=True, text=True, stdout=subprocess.PIPE,
+                check=True,
+                text=True,
+                stdout=subprocess.PIPE,
             ).stdout.splitlines()
             self.assertEqual(set(committed), {".semver-forge.toml"})
 
@@ -103,12 +109,16 @@ class InitTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             committed = subprocess.run(
                 ["git", "-C", str(project), "show", "--pretty=format:", "--name-only", "HEAD"],
-                check=True, text=True, stdout=subprocess.PIPE,
+                check=True,
+                text=True,
+                stdout=subprocess.PIPE,
             ).stdout.splitlines()
             self.assertEqual(set(committed), {".semver-forge.toml", "VERSION"})
             staged = subprocess.run(
                 ["git", "-C", str(project), "diff", "--cached", "--name-only"],
-                check=True, text=True, stdout=subprocess.PIPE,
+                check=True,
+                text=True,
+                stdout=subprocess.PIPE,
             ).stdout.splitlines()
             self.assertEqual(staged, ["unrelated.txt"])
 
@@ -129,7 +139,8 @@ class InitTests(unittest.TestCase):
             self.assertIn('"staged_files"', result.stdout)
             head = subprocess.run(
                 ["git", "-C", str(project), "rev-parse", "--verify", "HEAD"],
-                text=True, capture_output=True,
+                text=True,
+                capture_output=True,
             )
             self.assertNotEqual(head.returncode, 0)
 

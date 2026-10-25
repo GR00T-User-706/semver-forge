@@ -1,14 +1,19 @@
 """User-local installation and removal of files owned by semver-forge."""
-from pathlib import Path
+
 import os
 import shlex
 import shutil
 import sys
+from pathlib import Path
 
 
 def install(prefix=None):
     source = Path(__file__).resolve().parents[2]
-    prefix = Path(prefix or os.environ.get("SEMVER_FORGE_HOME", Path.home() / ".local")).expanduser().resolve()
+    prefix = (
+        Path(prefix or os.environ.get("SEMVER_FORGE_HOME", Path.home() / ".local"))
+        .expanduser()
+        .resolve()
+    )
     bin_dir = prefix / "bin"
     lib_dir = prefix / "lib" / "semver-forge"
     man_dir = prefix / "share" / "man" / "man1"
@@ -30,7 +35,7 @@ def install(prefix=None):
     launcher.write_text(
         "#!/bin/sh\n"
         f"PYTHONPATH={shlex.quote(str(lib_dir))}${{PYTHONPATH:+:$PYTHONPATH}} "
-        f"exec {shlex.quote(sys.executable)} -m semver_forge \"$@\"\n",
+        f'exec {shlex.quote(sys.executable)} -m semver_forge "$@"\n',
         encoding="utf-8",
     )
     launcher.chmod(0o755)
@@ -43,7 +48,11 @@ def install(prefix=None):
 
 
 def uninstall(prefix=None):
-    prefix = Path(prefix or os.environ.get("SEMVER_FORGE_HOME", Path.home() / ".local")).expanduser().resolve()
+    prefix = (
+        Path(prefix or os.environ.get("SEMVER_FORGE_HOME", Path.home() / ".local"))
+        .expanduser()
+        .resolve()
+    )
     launcher = prefix / "bin" / "semver-forge"
     lib_dir = prefix / "lib" / "semver-forge"
     manpage = prefix / "share" / "man" / "man1" / "semver-forge.1"

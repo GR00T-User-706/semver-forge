@@ -3,10 +3,11 @@
 SemVer Forge currently ships a Git backend. Other VCS implementations can satisfy
 this protocol without changing release-planning policy.
 """
+
 from __future__ import annotations
 
-from typing import Any, Protocol
 from pathlib import Path
+from typing import Any, Protocol
 
 
 class VCSBackend(Protocol):

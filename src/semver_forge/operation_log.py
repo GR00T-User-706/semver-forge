@@ -2,6 +2,7 @@
 
 This logger never discovers, creates, stages, ignores, or modifies project log files.
 """
+
 from __future__ import annotations
 
 import json
@@ -25,6 +26,7 @@ def _process_lock(target: Path):
     with lock_file.open("a+b") as stream:
         if os.name == "nt":
             import msvcrt
+
             stream.seek(0)
             if stream.read(1) == b"":
                 stream.seek(0)
@@ -39,6 +41,7 @@ def _process_lock(target: Path):
                 msvcrt.locking(stream.fileno(), msvcrt.LK_UNLCK, 1)
         else:
             import fcntl
+
             fcntl.flock(stream.fileno(), fcntl.LOCK_EX)
             try:
                 yield
@@ -61,8 +64,15 @@ def log_path() -> Path:
     return base / "semver-forge" / "semver-forge.log"
 
 
-def record(level: str, action: str, outcome: str, *, error: BaseException | None = None,
-           path: Path | None = None, max_bytes: int = _MAX_BYTES) -> None:
+def record(
+    level: str,
+    action: str,
+    outcome: str,
+    *,
+    error: BaseException | None = None,
+    path: Path | None = None,
+    max_bytes: int = _MAX_BYTES,
+) -> None:
     """Append one structured event and retain the newest max_bytes of history."""
     target = path or log_path()
     target.parent.mkdir(parents=True, exist_ok=True)
@@ -84,7 +94,7 @@ def record(level: str, action: str, outcome: str, *, error: BaseException | None
             data = data[-max_bytes:]
             newline = data.find(b"\n")
             if newline >= 0:
-                data = data[newline + 1:]
+                data = data[newline + 1 :]
         fd, temp_name = tempfile.mkstemp(prefix=".semver-forge-log-", dir=target.parent)
         try:
             with os.fdopen(fd, "wb") as stream:

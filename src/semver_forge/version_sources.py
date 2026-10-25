@@ -1,4 +1,5 @@
 """Version source adapters for project metadata."""
+
 from __future__ import annotations
 
 import json

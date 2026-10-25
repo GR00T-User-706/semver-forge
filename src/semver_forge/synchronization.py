@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import os
 import tempfile
-from pathlib import Path
 
 from .errors import ConfigError
 from .semver import SemVerError, Version
