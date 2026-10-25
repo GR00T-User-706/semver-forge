@@ -1,0 +1,5 @@
+#!/data/data/com.termux/files/usr/bin/sh
+# Package-managed launcher. The package owns the library under $PREFIX.
+: "${PREFIX:=/data/data/com.termux/files/usr}"
+export PYTHONPATH="$PREFIX/lib/semver-forge${PYTHONPATH:+:$PYTHONPATH}"
+exec python -m semver_forge "$@"
