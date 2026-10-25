@@ -40,8 +40,7 @@ def run_commands(commands, root, stage, dry_run=False):
                 env=e,
                 shell=shell,
                 text=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                capture_output=True,
                 timeout=timeout,
             )
         except subprocess.TimeoutExpired as ex:
