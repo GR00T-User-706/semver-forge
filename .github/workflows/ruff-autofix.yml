@@ -2,6 +2,11 @@ name: Ruff Autofix
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - feature/logging-init-vcs-boundary
+    paths:
+      - .github/workflows/ruff-autofix.yml
 
 permissions:
   contents: write
