@@ -87,6 +87,52 @@ class InitTests(unittest.TestCase):
             self.assertNotEqual(result.returncode, 0)
             self.assertEqual(config.read_text(), "preserve me")
 
+    def test_git_init_preserves_unrelated_staged_changes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            project = Path(directory)
+            subprocess.run(["git", "init", "-q", str(project)], check=True)
+            subprocess.run(["git", "-C", str(project), "config", "user.name", "Test"], check=True)
+            subprocess.run(
+                ["git", "-C", str(project), "config", "user.email", "test@example.invalid"],
+                check=True,
+            )
+            unrelated = project / "unrelated.txt"
+            unrelated.write_text("staged before init")
+            subprocess.run(["git", "-C", str(project), "add", "unrelated.txt"], check=True)
+            result = self.run_cli(project, "init", "--json")
+            self.assertEqual(result.returncode, 0, result.stderr)
+            committed = subprocess.run(
+                ["git", "-C", str(project), "show", "--pretty=format:", "--name-only", "HEAD"],
+                check=True, text=True, stdout=subprocess.PIPE,
+            ).stdout.splitlines()
+            self.assertEqual(set(committed), {".semver-forge.toml", "VERSION"})
+            staged = subprocess.run(
+                ["git", "-C", str(project), "diff", "--cached", "--name-only"],
+                check=True, text=True, stdout=subprocess.PIPE,
+            ).stdout.splitlines()
+            self.assertEqual(staged, ["unrelated.txt"])
+
+    def test_git_init_reports_staging_failure_without_claiming_commit(self):
+        with tempfile.TemporaryDirectory() as directory:
+            project = Path(directory)
+            subprocess.run(["git", "init", "-q", str(project)], check=True)
+            subprocess.run(["git", "-C", str(project), "config", "user.name", "Test"], check=True)
+            subprocess.run(
+                ["git", "-C", str(project), "config", "user.email", "test@example.invalid"],
+                check=True,
+            )
+            (project / ".gitignore").write_text("/.semver-forge.toml\\n", encoding="utf-8")
+            result = self.run_cli(project, "init", "--json")
+            self.assertEqual(result.returncode, 2)
+            self.assertIn("staging failed", result.stdout)
+            self.assertIn('"committed": false', result.stdout)
+            self.assertIn('"staged_files"', result.stdout)
+            head = subprocess.run(
+                ["git", "-C", str(project), "rev-parse", "--verify", "HEAD"],
+                text=True, capture_output=True,
+            )
+            self.assertNotEqual(head.returncode, 0)
+
 
 if __name__ == "__main__":
     unittest.main()
