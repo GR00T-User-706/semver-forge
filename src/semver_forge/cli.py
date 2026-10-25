@@ -404,10 +404,8 @@ def main(argv=None):
                                 )
                         else:
                             staged_list = ", ".join(staged_files) or "none"
-                            vcs_note = (
-                                "commit not retried; generated files remain staged: "
-                                + staged_list
-                            )
+                            vcs_note = "commit not retried; generated files remain staged"
+                            vcs_note += f": {staged_list}"
             record("INFO", "init", "completed")
             output(
                 {
