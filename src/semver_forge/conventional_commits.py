@@ -4,7 +4,9 @@ import re
 from dataclasses import dataclass
 
 HEADER = re.compile(
-    r"^(?P<type>[A-Za-z][A-Za-z0-9-]*)(?:\((?P<scope>[^()\r\n]+)\))?(?P<bang>!)?: (?P<description>.+)$"
+    r"^(?P<type>[A-Za-z][A-Za-z0-9-]*)"
+    r"(?:\((?P<scope>[^()\r\n]+)\))?(?P<bang>!)?: "
+    r"(?P<description>.+)$"
 )
 
 
