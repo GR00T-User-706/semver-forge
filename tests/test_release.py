@@ -11,9 +11,7 @@ class ReleaseTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
 
             def run(*a):
-                return subprocess.run(
-                    a, cwd=d, check=True, capture_output=True
-                )
+                return subprocess.run(a, cwd=d, check=True, capture_output=True)
 
             run("git", "init", "-q")
             run("git", "config", "user.name", "Test")
