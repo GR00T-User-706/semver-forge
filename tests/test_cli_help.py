@@ -19,8 +19,7 @@ class CLIHelpTests(unittest.TestCase):
             cwd=ROOT,
             env=ENV,
             text=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            capture_output=True,
             timeout=10,
         )
 
@@ -85,8 +84,7 @@ class CLIHelpTests(unittest.TestCase):
             help_result = subprocess.run(
                 [str(launcher), "doctor", "--help"],
                 text=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                capture_output=True,
                 timeout=10,
             )
             self.assertEqual(help_result.returncode, 0, help_result.stderr)
@@ -94,8 +92,7 @@ class CLIHelpTests(unittest.TestCase):
             root_help = subprocess.run(
                 [str(launcher)],
                 text=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                capture_output=True,
                 timeout=10,
             )
             self.assertEqual(root_help.returncode, 0, root_help.stderr)
@@ -107,8 +104,7 @@ class CLIHelpTests(unittest.TestCase):
             initialized = subprocess.run(
                 [str(launcher), "--project", str(repo), "init"],
                 text=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                capture_output=True,
                 timeout=10,
             )
             self.assertEqual(initialized.returncode, 0, initialized.stderr)
