@@ -58,7 +58,8 @@ def parser():
         "init",
         "Create project version configuration and initialize version control "
         "metadata when available.",
-        "Generated files are staged and committed by explicit path when Git is available. Unrelated staged changes are left untouched.\nExample: semver-forge init",
+        "Generated files are staged and committed by explicit path when Git is available. "
+        "Unrelated staged changes are left untouched.\nExample: semver-forge init",
     )
     init_cmd.add_argument(
         "--yes",
@@ -127,7 +128,10 @@ def parser():
         "release",
         "Prepare and create a local release with notes, configured checks, "
         "version metadata, and a Git tag.",
-        "Examples:\n  semver-forge release --dry-run\n  semver-forge release patch --dry-run\n  semver-forge release --version 2.0.0 --yes\n  semver-forge release --prerelease rc --yes\n\n"
+        "Examples:\n  semver-forge release --dry-run\n"
+        "  semver-forge release patch --dry-run\n"
+        "  semver-forge release --version 2.0.0 --yes\n"
+        "  semver-forge release --prerelease rc --yes\n\n"
         "Dry runs and notes-only mode do not write project files, create commits/tags, "
         "run checks, or publish. "
         "Actual releases require a clean working tree and never push to a remote.",
@@ -290,7 +294,8 @@ def main(argv=None):
             except Exception as exc:
                 record("ERROR", "init.generate", "failed", error=exc)
                 print(
-                    f"Initialization failed. Inspect generated files: {', '.join(map(str, written))}",
+                    "Initialization failed. Inspect generated files: "
+                    f"{', '.join(map(str, written))}",
                     file=sys.stderr,
                 )
                 raise
@@ -326,7 +331,10 @@ def main(argv=None):
                                 ["remote"], cwd=root, check=False
                             ).stdout.split()
                         except ForgeError as push_exc:
-                            return f"; remote push could not be checked: {push_exc}; local commit preserved"
+                            return (
+                                f"; remote push could not be checked: {push_exc}; "
+                                "local commit preserved"
+                            )
                         if not remotes:
                             return "; no Git remote configured"
                         try:
@@ -378,7 +386,8 @@ def main(argv=None):
                                         "commit",
                                         "--only",
                                         "-m",
-                                        "chore(init): initialize SemVer Forge project configuration",
+                                        "chore(init): initialize SemVer Forge "
+                                        "project configuration",
                                         "--",
                                         *rel,
                                     ],
