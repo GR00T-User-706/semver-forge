@@ -91,8 +91,10 @@ def _project_metadata(root: Path):
     if package.is_file():
         try:
             data = json.loads(package.read_text(encoding="utf-8"))
-            metadata.setdefault("name", data.get("name"))
-            metadata.setdefault("description", data.get("description"))
+            if data.get("name"):
+                metadata.setdefault("name", data["name"])
+            if data.get("description"):
+                metadata.setdefault("description", data["description"])
         except (OSError, json.JSONDecodeError):
             pass
     cargo = root / "Cargo.toml"
