@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 from .semver import Version
@@ -19,7 +20,7 @@ VERSION_FILES = (
     ("VERSION", "text", None),
     ("version.txt", "text", None),
     ("version", "text", None),
-    ("debian/changelog", "debian", None),
+    ("debian/changelog", "debian-changelog", None),
     ("PKGBUILD", "shell", "pkgver"),
 )
 
@@ -35,15 +36,12 @@ def _read_source(root: Path, source: dict) -> str:
             if part:
                 data = data[part]
         value = str(data)
-    elif kind == "debian":
-        matches = [
-            line.split(":", 1)[1].strip()
-            for line in text.splitlines()
-            if line.startswith("Version:")
-        ]
-        if len(matches) != 1:
-            raise ValueError("expected one Version field")
-        value = matches[0]
+    elif kind == "debian-changelog":
+        first_line = text.splitlines()[0] if text.splitlines() else ""
+        match = re.match(r"^\S+\s+\(([^)]+)\)\s+\S+;\s*urgency=", first_line)
+        if not match:
+            raise ValueError("expected a standard Debian changelog header")
+        value = match.group(1)
     elif kind == "shell":
         key = source["key"]
         matches = []
@@ -83,8 +81,10 @@ def _project_metadata(root: Path):
     if pyproject.is_file():
         try:
             project = tomllib.loads(pyproject.read_text(encoding="utf-8")).get("project", {})
-            metadata["name"] = project.get("name")
-            metadata["description"] = project.get("description")
+            if project.get("name"):
+                metadata["name"] = project["name"]
+            if project.get("description"):
+                metadata["description"] = project["description"]
         except (OSError, tomllib.TOMLDecodeError):
             pass
     package = root / "package.json"
