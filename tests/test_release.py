@@ -12,7 +12,7 @@ class ReleaseTests(unittest.TestCase):
 
             def run(*a):
                 return subprocess.run(
-                    a, cwd=d, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+                    a, cwd=d, check=True, capture_output=True
                 )
 
             run("git", "init", "-q")
