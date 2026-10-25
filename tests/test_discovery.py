@@ -77,6 +77,33 @@ class DiscoveryTests(unittest.TestCase):
             self.assertIn('# keep this comment', updated)
             self.assertIn('description = "unchanged"', updated)
 
+    def test_later_manifest_fills_missing_python_metadata(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "pyproject.toml").write_text("[build-system]\nrequires = []\n", encoding="utf-8")
+            (root / "package.json").write_text(
+                '{"name": "node-project", "description": "Node description"}',
+                encoding="utf-8",
+            )
+            result = discover(root)
+            self.assertEqual(result["project"]["name"], "node-project")
+            self.assertEqual(result["project"]["description"], "Node description")
+
+    def test_debian_changelog_version_is_discovered_and_synchronized(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            changelog = root / "debian" / "changelog"
+            changelog.parent.mkdir()
+            original = "sample-app (2.4.0-1) unstable; urgency=medium\\n\\n  * Initial release\\n"
+            changelog.write_text(original, encoding="utf-8")
+            result = discover(root)
+            self.assertEqual(result["version"]["initial"], "2.4.0-1")
+            self.assertEqual(result["version"]["source"]["type"], "debian-changelog")
+            updated = render_version(
+                root, result["version"]["source"], "2.4.1-1"
+            )
+            self.assertIn("sample-app (2.4.1-1) unstable; urgency=medium", updated)
+
 
 if __name__ == "__main__":
     unittest.main()
