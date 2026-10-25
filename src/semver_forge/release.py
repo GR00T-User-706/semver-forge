@@ -57,7 +57,8 @@ def plan(root, cfg, override=None, prerelease=None):
         nextv = Version.parse(override)
         if nextv.compare(current) <= 0:
             raise ReleaseFailure(
-                f"explicit release version {nextv} must be greater than current version {current}"
+                "explicit release version "
+                f"{nextv} must be greater than current version {current}"
             )
     elif prerelease:
         base = current.bump(impact or "patch") if not current.prerelease else current
