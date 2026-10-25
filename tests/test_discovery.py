@@ -94,7 +94,7 @@ class DiscoveryTests(unittest.TestCase):
             root = Path(directory)
             changelog = root / "debian" / "changelog"
             changelog.parent.mkdir()
-            original = "sample-app (2.4.0-1) unstable; urgency=medium\\n\\n  * Initial release\\n"
+            original = "sample-app (2.4.0-1) unstable; urgency=medium\n\n  * Initial release\n"
             changelog.write_text(original, encoding="utf-8")
             result = discover(root)
             self.assertEqual(result["version"]["initial"], "2.4.0-1")
@@ -109,11 +109,11 @@ class DiscoveryTests(unittest.TestCase):
             root = Path(directory)
             path = root / "pyproject.toml"
             original = (
-                '[project] # project metadata\\n'
-                'name = "sample-app"\\n'
-                'version = "1.2.3" # keep version comment\\n'
-                '[tool.example] # unrelated table\\n'
-                'value = true\\n'
+                '[project] # project metadata\n'
+                'name = "sample-app"\n'
+                'version = "1.2.3" # keep version comment\n'
+                '[tool.example] # unrelated table\n'
+                'value = true\n'
             )
             path.write_text(original, encoding="utf-8")
             source = {"type": "toml", "file": "pyproject.toml", "key": "project.version"}
