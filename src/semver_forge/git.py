@@ -14,8 +14,7 @@ def run(args, cwd=None, check=True, timeout=30):
             ["git", *map(str, args)],
             cwd=cwd,
             text=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            capture_output=True,
             timeout=timeout,
         )
     except (OSError, subprocess.TimeoutExpired) as e:
