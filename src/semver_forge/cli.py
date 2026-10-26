@@ -14,7 +14,7 @@ from .discovery import discover
 from .errors import ConfigError, ForgeError, ReleaseFailure
 from .installation import install, uninstall
 from .operation_log import record
-from .release import latest_release, plan, release
+from .release import latest_release, plan, release, resolve_changelog_path
 from .semver import Version
 from .synchronization import sync
 from .version_sources import read_version
@@ -185,7 +185,11 @@ def _format_output(data, indent=0):
             + (
                 "\n" + _format_output(value, indent + 2)
                 if isinstance(value, (dict, list)) and value
-                else f" {value}" if not isinstance(value, (dict, list)) else " {}" if isinstance(value, dict) else " []"
+                else (
+                    f" {value}"
+                    if not isinstance(value, (dict, list))
+                    else " {}" if isinstance(value, dict) else " []"
+                )
             )
             for key, value in data.items()
         )
@@ -578,7 +582,14 @@ def main(argv=None):
             p = plan(root, cfg)
             notes = release_notes(p["commits"], p["rules"])
             notes_file = cfg.get("release", {}).get("notes_file") or "CHANGELOG.md"
-            changelog_path = Path(root) / notes_file
+            if (
+                p["impact"] is None
+                and not cfg.get("release", {}).get("release_when_no_changes", False)
+            ):
+                raise ReleaseFailure(
+                    "no release-relevant commits; changelog was not modified"
+                )
+            changelog_path = resolve_changelog_path(root, notes_file)
             content = update_changelog(
                 changelog_path,
                 str(p["next"]),
