@@ -111,16 +111,6 @@ def release(
         tag = prefix + version
         if tag in backend.tags(root):
             raise ReleaseFailure(f"tag already exists: {tag}; refusing to move or overwrite it")
-        if (
-            p["impact"] is None
-            and not override
-            and not prerelease
-            and not cfg["release"].get("release_when_no_changes", False)
-        ):
-            raise ReleaseFailure(
-                "no release-relevant commits; use an explicit bump or configure "
-                "release_when_no_changes"
-            )
         notes = release_notes(p["commits"], p["rules"])
         result = {
             "current": str(p["current"]),
@@ -134,6 +124,16 @@ def release(
         }
         if notes_only or dry_run:
             return result
+        if (
+            p["impact"] is None
+            and not override
+            and not prerelease
+            and not cfg["release"].get("release_when_no_changes", False)
+        ):
+            raise ReleaseFailure(
+                "no release-relevant commits; use an explicit bump or configure "
+                "release_when_no_changes"
+            )
         if cfg["release"].get("require_confirmation", True) and not yes:
             try:
                 answer = (
