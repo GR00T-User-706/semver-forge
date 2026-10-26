@@ -227,7 +227,7 @@ def main(argv=None):
             if not project.is_dir():
                 raise ConfigError(f"project directory does not exist: {project}")
             root = git.root(project) if git.available(project) else project
-            path = root / ".semver-forge.toml"
+            path = find_config(root) or (root / ".semver-forge.toml")
             # Discover and validate the project before asking permission to overwrite
             # configuration. A rejected initialization must never prompt for a write
             # that cannot safely happen.
@@ -416,9 +416,6 @@ def main(argv=None):
                     "inferred": {
                         "project": result["project"],
                         "sync_targets": result["sync_targets"],
-                        "test_commands": result["test_commands"],
-                        "build_commands": result["build_commands"],
-                        "artifact_paths": result["artifact_paths"],
                         "notes_file": result["notes_file"],
                     },
                     "committed": committed,
