@@ -89,6 +89,15 @@ Common canonical version source.
 .TP
 .I CHANGELOG.md
 Optional generated changelog.
+.SH EXAMPLES
+.nf
+semver-forge init
+semver-forge doctor --json
+semver-forge next --explain
+semver-forge release --dry-run
+semver-forge release patch --yes
+semver-forge verify-release
+.fi
 .SH SAFETY
 Release execution requires a clean working tree by default. Existing tags are never moved or overwritten. SemVer Forge does not build, test, publish, or push release artifacts.
 .SH LIMITATIONS
