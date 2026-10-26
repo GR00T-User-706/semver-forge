@@ -8,7 +8,7 @@ A reusable, local-first Semantic Versioning 2.0.0 and Git release toolkit. It us
 - Conventional Commit impact classification and highest-impact aggregation.
 - Configuration-driven canonical version source and synchronization targets.
 - Git history boundaries based on the latest valid SemVer tag or explicit baseline.
-- Dry-run planning, changelog generation, version synchronization, local annotated tags, and tag verification.
+- Dry-run planning, changelog generation and file updates, version synchronization, local annotated tags, and tag verification.
 - User-local installation without root access; usable on Linux, macOS, and Termux when Python/Git are available.
 
 ## Install
@@ -46,7 +46,7 @@ semver-forge next --explain
 semver-forge sync --dry-run
 semver-forge check
 semver-forge history --json
-semver-forge changelog --dry-run
+semver-forge changelog --dry-run                 # preview the complete CHANGELOG.md update
 semver-forge release --dry-run
 semver-forge release patch --dry-run
 semver-forge release --version 2.0.0
@@ -66,7 +66,7 @@ semver-forge verify-release
 
 ## Release workflow
 
-A release checks repository state, finds the latest valid SemVer tag using the configured prefix, analyzes commits after that tag, validates the version source/targets, generates notes, synchronizes versions, updates the changelog, optionally commits version files, creates a local tag, and verifies that tag points at HEAD. Releases are local only. No push or publish command is implemented, so the tool cannot claim a release was published.
+`semver-forge changelog` inserts the proposed version section into the configured changelog; `--dry-run` previews the complete result without writing. A release checks repository state, finds the latest valid SemVer tag using the configured prefix, analyzes commits after that tag, validates the version source/targets, generates notes, synchronizes versions, updates the changelog, optionally commits version files, creates a local tag, and verifies that tag points at HEAD. Releases are local only. No push or publish command is implemented, so the tool cannot claim a release was published.
 
 `--dry-run` and `--notes-only` do not modify files or create tags. Release execution requires a clean tree, including staged and untracked files. SemVer Forge does not run tests, build packages, collect artifacts, or publish. Those responsibilities belong to CI and the project's packaging workflow.
 
