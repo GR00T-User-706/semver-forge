@@ -126,7 +126,7 @@ def parser():
 
     r = command(
         "release",
-        "Prepare and create a local release with notes, synchronized version metadata, and a Git tag.",
+        "Prepare a local release with notes, synchronized versions, and a Git tag.",
         "Examples:\n  semver-forge release --dry-run\n"
         "  semver-forge release patch --dry-run\n"
         "  semver-forge release --version 2.0.0 --yes\n"
