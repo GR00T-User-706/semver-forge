@@ -1,4 +1,4 @@
-#!/bin/sh
-set -eu
-ROOT=$(CDPATH= cd "$(dirname "$0")/.." && pwd)
-PYTHONPATH="$ROOT/src${PYTHONPATH:+:$PYTHONPATH}" exec python3 -m semver_forge install "$@"
+#!/data/data/com.termux/files/usr/bin/bash
+
+apt install ./dist/termux/semver-forge_$(cat VERSION)_all.deb
+
