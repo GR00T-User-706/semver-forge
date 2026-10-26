@@ -8,7 +8,7 @@ import tempfile
 from pathlib import Path
 
 from . import __version__, git
-from .changelog import release_notes
+from .changelog import release_notes, update_changelog
 from .config import find_config, load
 from .discovery import discover
 from .errors import ConfigError, ForgeError, ReleaseFailure
@@ -157,10 +157,15 @@ def parser():
     )
 
     ch = command(
-        "changelog", "Generate release notes from the commits in the proposed release range."
+        "changelog",
+        "Generate and insert the proposed release notes into the configured changelog.",
+        "Writes the proposed version section to the configured release.notes_file. "
+        "--dry-run prints the complete proposed changelog without writing it.",
     )
     ch.add_argument(
-        "--dry-run", action="store_true", help="preview notes without writing a changelog"
+        "--dry-run",
+        action="store_true",
+        help="show the complete updated changelog without writing the file",
     )
     ins = command(
         "install", "Install the current Semver Forge source tree into a user-local prefix."
@@ -543,7 +548,23 @@ def main(argv=None):
         elif args.cmd == "changelog":
             p = plan(root, cfg)
             notes = release_notes(p["commits"], p["rules"])
-            output({"version": str(p["next"]), "notes": notes, "dry_run": args.dry_run}, args.json)
+            notes_file = cfg.get("release", {}).get("notes_file") or "CHANGELOG.md"
+            changelog_path = Path(root) / notes_file
+            content = update_changelog(
+                changelog_path,
+                str(p["next"]),
+                notes,
+                dry_run=args.dry_run,
+            )
+            output(
+                {
+                    "version": str(p["next"]),
+                    "file": str(changelog_path),
+                    "dry_run": args.dry_run,
+                    "content": content if args.dry_run else "Changelog updated.",
+                },
+                args.json,
+            )
         elif args.cmd in ("verify-tag", "verify-release"):
             prev, tag = latest_release(root, cfg)
             if not tag:
