@@ -26,7 +26,7 @@ class InitTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             project = Path(directory)
             legacy = project / "semver-forge.toml"
-            legacy.write_text('[version]\\ninitial = "1.0.0"\\n')
+            legacy.write_text('[version]\ninitial = "1.0.0"\n')
             result = self.run_cli(project, "init", "--yes")
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertTrue(legacy.is_file())
