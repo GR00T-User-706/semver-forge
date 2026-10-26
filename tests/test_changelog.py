@@ -35,11 +35,11 @@ class ChangelogUpdateTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "CHANGELOG.md"
             path.write_text(
-                "# Changelog\\n\\n## [1.1.0]\\n\\n- old entry\\n\\n"
-                "## [1.0.0]\\n\\n- prior release\\n",
+                "# Changelog\n\n## [1.1.0]\n\n- old entry\n\n"
+                "## [1.0.0]\n\n- prior release\n",
                 encoding="utf-8",
             )
-            result = update_changelog(path, "1.1.0", "- updated entry\\n")
+            result = update_changelog(path, "1.1.0", "- updated entry\n")
             self.assertIn("- updated entry", result)
             self.assertNotIn("- old entry", result)
             self.assertIn("- prior release", result)
@@ -47,11 +47,14 @@ class ChangelogUpdateTests(unittest.TestCase):
     def test_duplicate_version_is_rejected_without_modifying_file(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "CHANGELOG.md"
-            original = "# Changelog\n\n## [1.1.0]\n\n- existing entry\n"
+            original = (
+                "# Changelog\n\n## [1.1.0]\n\n- first entry\n\n"
+                "## [1.1.0]\n\n- duplicate entry\n"
+            )
             path.write_text(original, encoding="utf-8")
 
-            with self.assertRaisesRegex(ValueError, "already contains version 1.1.0"):
-                update_changelog(path, "1.1.0", "- duplicate entry")
+            with self.assertRaisesRegex(ValueError, "duplicate headings"):
+                update_changelog(path, "1.1.0", "- replacement")
 
             self.assertEqual(path.read_text(encoding="utf-8"), original)
 
