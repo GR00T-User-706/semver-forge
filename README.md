@@ -72,7 +72,7 @@ A release checks repository state, finds the latest valid SemVer tag using the c
 
 ## Configuration
 
-See `config/semver-forge.example.toml` and [Configuration](docs/CONFIGURATION.md). Keep exactly one of `.semver-forge.toml` or `semver-forge.toml`; both at once are rejected. `pyproject.toml`, `package.json`, and other manifests are project metadata and version sources, not competing SemVer Forge settings files. The canonical source defaults to a plain `VERSION` file. JSON, TOML reading, shell assignments, and Debian `Version:` fields have adapters. Writes to TOML are intentionally rejected because Python's standard library has no structure-preserving TOML writer. YAML is not currently a supported version adapter. JSON targets can use a dotted `key` path, e.g. `project.version`. Other target entries use the same `type`, `file`, and optional `key` fields.
+See `config/semver-forge.example.toml` and [Configuration](docs/CONFIGURATION.md). Keep exactly one of `.semver-forge.toml` or `semver-forge.toml`; both at once are rejected. `pyproject.toml`, `package.json`, and other manifests are project metadata and version sources, not competing SemVer Forge settings files. The canonical source defaults to a plain `VERSION` file. JSON, TOML reading, shell assignments, and Debian `Version:` fields have adapters. TOML targets are updated in place while preserving surrounding text and comments. YAML is not currently a supported version adapter. JSON targets can use a dotted `key` path, e.g. `project.version`. Other target entries use the same `type`, `file`, and optional `key` fields.
 
 ## Testing
 
