@@ -68,7 +68,9 @@ def load(path):
         "debian",
         "debian-changelog",
     ):
-        raise ConfigError("version.source.type must be text, json, toml, shell, debian, or debian-changelog")
+        raise ConfigError(
+            "version.source.type must be text, json, toml, shell, debian, or debian-changelog"
+        )
     if not source.get("file"):
         raise ConfigError("version.source.file is required")
     known = {x: set(v) for x, v in DEFAULTS.items()}
