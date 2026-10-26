@@ -13,6 +13,22 @@ from .synchronization import sync
 from .vcs import backend_for
 
 
+def resolve_changelog_path(root, notes_file):
+    """Return a changelog path confined to the project root."""
+    project_root = Path(root).resolve()
+    configured = Path(notes_file)
+    if configured.is_absolute():
+        raise ReleaseFailure("release.notes_file must be a relative path inside the project")
+    destination = (project_root / configured).resolve()
+    try:
+        destination.relative_to(project_root)
+    except ValueError as exc:
+        raise ReleaseFailure(
+            "release.notes_file must resolve to a path inside the project root"
+        ) from exc
+    return destination
+
+
 def latest_release(root, cfg):
     backend = backend_for(root)
     prefix = cfg["git"].get("tag_prefix", "v")
@@ -95,6 +111,16 @@ def release(
         tag = prefix + version
         if tag in backend.tags(root):
             raise ReleaseFailure(f"tag already exists: {tag}; refusing to move or overwrite it")
+        if (
+            p["impact"] is None
+            and not override
+            and not prerelease
+            and not cfg["release"].get("release_when_no_changes", False)
+        ):
+            raise ReleaseFailure(
+                "no release-relevant commits; use an explicit bump or configure "
+                "release_when_no_changes"
+            )
         notes = release_notes(p["commits"], p["rules"])
         result = {
             "current": str(p["current"]),
@@ -108,16 +134,6 @@ def release(
         }
         if notes_only or dry_run:
             return result
-        if (
-            p["impact"] is None
-            and not override
-            and not prerelease
-            and not cfg["release"].get("release_when_no_changes", False)
-        ):
-            raise ReleaseFailure(
-                "no release-relevant commits; use an explicit bump or configure "
-                "release_when_no_changes"
-            )
         if cfg["release"].get("require_confirmation", True) and not yes:
             try:
                 answer = (
@@ -134,14 +150,8 @@ def release(
         sync_result = sync(root, cfg, version)
         notes_file = cfg["release"].get("notes_file")
         if notes_file:
-            changelog_path = Path(root) / notes_file
-            existing_changelog = (
-                changelog_path.read_text(encoding="utf-8") if changelog_path.exists() else ""
-            )
-            # A separately generated changelog entry for this exact release is
-            # already complete. Preserve it rather than failing or duplicating it.
-            if f"## [{version}]" not in existing_changelog:
-                update_changelog(changelog_path, version, notes)
+            changelog_path = resolve_changelog_path(root, notes_file)
+            update_changelog(changelog_path, version, notes)
         if cfg["release"].get("commit_version", True):
             files = [x["file"] for x in sync_result if x["changed"]]
             if notes_file:
