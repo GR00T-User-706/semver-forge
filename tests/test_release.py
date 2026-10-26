@@ -3,10 +3,31 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from semver_forge.release import plan
+from semver_forge.errors import ReleaseFailure
+from semver_forge.release import plan, resolve_changelog_path
 
 
 class ReleaseTests(unittest.TestCase):
+    def test_changelog_paths_cannot_escape_project(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.assertEqual(resolve_changelog_path(root, "CHANGELOG.md"), root / "CHANGELOG.md")
+            for unsafe in ("../outside.md", "/tmp/outside.md"):
+                with self.subTest(path=unsafe), self.assertRaises(ReleaseFailure):
+                    resolve_changelog_path(root, unsafe)
+
+    def test_changelog_symlink_cannot_escape_project(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            outside = root.parent / "semver-forge-outside-test.md"
+            outside.write_text("protected", encoding="utf-8")
+            try:
+                (root / "CHANGELOG.md").symlink_to(outside)
+                with self.assertRaises(ReleaseFailure):
+                    resolve_changelog_path(root, "CHANGELOG.md")
+            finally:
+                outside.unlink(missing_ok=True)
+
     def test_plan_from_history(self):
         with tempfile.TemporaryDirectory() as d:
 
