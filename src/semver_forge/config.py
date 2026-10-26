@@ -64,12 +64,11 @@ def load(path):
         "text",
         "json",
         "toml",
-        "yaml",
         "shell",
         "debian",
         "debian-changelog",
     ):
-        raise ConfigError("version.source.type must be text, json, toml, yaml, shell, debian, or debian-changelog")
+        raise ConfigError("version.source.type must be text, json, toml, shell, debian, or debian-changelog")
     if not source.get("file"):
         raise ConfigError("version.source.file is required")
     known = {x: set(v) for x, v in DEFAULTS.items()}
@@ -85,7 +84,8 @@ def load(path):
 
 def find_config(root):
     root = Path(root)
-    found = [root / name for name in (".semver-forge.toml", "semver-forge.toml") if (root / name).is_file()]
+    names = (".semver-forge.toml", "semver-forge.toml")
+    found = [root / name for name in names if (root / name).is_file()]
     if len(found) > 1:
         raise ConfigError(
             "multiple SemVer Forge configuration files found: "
