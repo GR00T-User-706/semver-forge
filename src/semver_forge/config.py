@@ -31,9 +31,6 @@ DEFAULTS = {
         "annotated_tag": True,
         "notes_file": "CHANGELOG.md",
         "require_confirmation": True,
-        "test_commands": [],
-        "build_commands": [],
-        "artifact_paths": [],
         "release_when_no_changes": False,
     },
 }
@@ -86,8 +83,12 @@ def load(path):
 
 
 def find_config(root):
-    for name in (".semver-forge.toml", "semver-forge.toml"):
-        p = Path(root) / name
-        if p.is_file():
-            return p
-    return None
+    root = Path(root)
+    found = [root / name for name in (".semver-forge.toml", "semver-forge.toml") if (root / name).is_file()]
+    if len(found) > 1:
+        raise ConfigError(
+            "multiple SemVer Forge configuration files found: "
+            + ", ".join(str(path) for path in found)
+            + "; keep one and remove or rename the duplicate"
+        )
+    return found[0] if found else None
