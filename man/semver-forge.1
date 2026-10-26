@@ -51,7 +51,7 @@ Calculate the next version from commits since the latest recognized release boun
 Synchronize the canonical version and configured targets.
 .TP
 .B changelog [--dry-run]
-Preview release notes generated from commits in the proposed release range.
+Generate release notes from commits in the proposed release range and insert a version section into the configured changelog file. With --dry-run, print the complete proposed changelog without writing it. An existing section for the proposed version is an error.
 .TP
 .B release [patch|minor|major] [options]
 Update configured version files and changelog, optionally commit those changes, and create a local Git tag. Options include --version VERSION, --prerelease alpha|beta|rc, --dry-run, --notes-only, and --yes. There is no --build option.
