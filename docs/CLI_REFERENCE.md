@@ -22,7 +22,7 @@ Run `semver-forge --help` for the command index and
 | `next [--explain]` | Calculate the next version from commits since the release boundary. |
 | `sync [--version VERSION] [--dry-run]` | Synchronize configured version sources. |
 | `status`, `history`, `check` | Inspect repository and version state. |
-| `changelog` | Print generated release notes. |
+| `changelog [--dry-run]` | Insert the proposed version's generated notes into the configured changelog. `--dry-run` prints the complete proposed file without writing. |
 | `release [part]` | Prepare and create a local release. |
 | `verify-tag`, `verify-release` | Verify the latest recognized SemVer tag. |
 | `install`, `uninstall` | Manage the user-local installation. |
@@ -48,4 +48,4 @@ future implementations.
 
 Real releases require a clean working tree by default. Existing tags are never
 moved or overwritten. Configured command hooks may execute code and should be
-reviewed before use. TOML writing and bundled YAML parsing are not implemented.
+reviewed before use. TOML targets are updated in place. YAML version adapters are not implemented.
