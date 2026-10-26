@@ -147,10 +147,10 @@ def release(
                 raise ReleaseFailure(
                     "release cancelled; rerun with --yes to authorize without an interactive prompt"
                 )
-        sync_result = sync(root, cfg, version)
         notes_file = cfg["release"].get("notes_file")
-        if notes_file:
-            changelog_path = resolve_changelog_path(root, notes_file)
+        changelog_path = resolve_changelog_path(root, notes_file) if notes_file else None
+        sync_result = sync(root, cfg, version)
+        if changelog_path:
             update_changelog(changelog_path, version, notes)
         if cfg["release"].get("commit_version", True):
             files = [x["file"] for x in sync_result if x["changed"]]
