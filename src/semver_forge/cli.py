@@ -176,12 +176,41 @@ def parser():
     return p
 
 
+def _format_output(data, indent=0):
+    """Format command results consistently, including lists and nested values."""
+    prefix = " " * indent
+    if isinstance(data, dict):
+        return "\n".join(
+            f"{prefix}{key}:"
+            + (
+                "\n" + _format_output(value, indent + 2)
+                if isinstance(value, (dict, list)) and value
+                else f" {value}" if not isinstance(value, (dict, list)) else " {}" if isinstance(value, dict) else " []"
+            )
+            for key, value in data.items()
+        )
+    if isinstance(data, list):
+        if not data:
+            return f"{prefix}[]"
+        return "\n".join(
+            f"{prefix}-"
+            + (
+                "\n" + _format_output(item, indent + 2)
+                if isinstance(item, (dict, list))
+                else f" {item}"
+            )
+            for item in data
+        )
+    return f"{prefix}{data}"
+
+
 def output(data, as_json=False):
-    print(
-        json.dumps(data, indent=2, sort_keys=True, default=str)
-        if as_json
-        else (data if isinstance(data, str) else "\n".join(f"{k}: {v}" for k, v in data.items()))
-    )
+    if as_json:
+        print(json.dumps(data, indent=2, sort_keys=True, default=str))
+    elif isinstance(data, str):
+        print(data)
+    else:
+        print(_format_output(data))
 
 
 def main(argv=None):
