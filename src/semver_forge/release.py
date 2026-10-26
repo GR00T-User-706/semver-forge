@@ -134,7 +134,14 @@ def release(
         sync_result = sync(root, cfg, version)
         notes_file = cfg["release"].get("notes_file")
         if notes_file:
-            update_changelog(Path(root) / notes_file, version, notes)
+            changelog_path = Path(root) / notes_file
+            existing_changelog = (
+                changelog_path.read_text(encoding="utf-8") if changelog_path.exists() else ""
+            )
+            # A separately generated changelog entry for this exact release is
+            # already complete. Preserve it rather than failing or duplicating it.
+            if f"## [{version}]" not in existing_changelog:
+                update_changelog(changelog_path, version, notes)
         if cfg["release"].get("commit_version", True):
             files = [x["file"] for x in sync_result if x["changed"]]
             if notes_file:
