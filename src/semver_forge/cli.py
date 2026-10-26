@@ -126,14 +126,13 @@ def parser():
 
     r = command(
         "release",
-        "Prepare and create a local release with notes, configured checks, "
-        "version metadata, and a Git tag.",
+        "Prepare and create a local release with notes, synchronized version metadata, and a Git tag.",
         "Examples:\n  semver-forge release --dry-run\n"
         "  semver-forge release patch --dry-run\n"
         "  semver-forge release --version 2.0.0 --yes\n"
         "  semver-forge release --prerelease rc --yes\n\n"
         "Dry runs and notes-only mode do not write project files, create commits/tags, "
-        "run checks, or publish. "
+        "run package builds, or publish. "
         "Actual releases require a clean working tree and never push to a remote.",
     )
     r.add_argument(
@@ -155,9 +154,6 @@ def parser():
     )
     r.add_argument(
         "--yes", action="store_true", help="authorize execution without an interactive confirmation"
-    )
-    r.add_argument(
-        "--build", action="store_true", help="run configured build commands before synchronization"
     )
 
     ch = command(
@@ -458,7 +454,7 @@ def main(argv=None):
             output(data, args.json)
             return 0
         if not config_path:
-            raise ConfigError("no .semver-forge.toml found; run semver-forge init")
+            raise ConfigError("no SemVer Forge configuration found; run semver-forge init")
         cfg, unknown = load(config_path)
         if unknown:
             print("warning: unknown configuration keys: " + ", ".join(unknown), file=sys.stderr)
@@ -512,7 +508,6 @@ def main(argv=None):
                 args.dry_run,
                 args.notes_only,
                 args.yes,
-                args.build,
             )
             record(
                 "INFO",
