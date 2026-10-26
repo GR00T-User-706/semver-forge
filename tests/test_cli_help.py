@@ -64,6 +64,11 @@ class CLIHelpTests(unittest.TestCase):
                     "usage: semver-forge " + command + " [-h]\n\noptions:", result.stdout
                 )
 
+    def test_release_help_does_not_offer_package_building(self):
+        result = self.run_cli("release", "--help")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertNotIn("--build", result.stdout)
+
     def test_manpage_exists_and_mentions_safety(self):
         manpage = ROOT / "man" / "semver-forge.1"
         self.assertTrue(manpage.is_file())
