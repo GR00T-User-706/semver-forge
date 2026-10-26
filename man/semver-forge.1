@@ -1,4 +1,4 @@
-.TH SEMVER-FORGE 1 "2026-10-25" "semver-forge 0.2.0" "User Commands"
+.TH SEMVER-FORGE 1 "2026-10-25" "semver-forge 1.0.0" "User Commands"
 .SH NAME
 semver-forge \- semantic version calculation and local Git release management
 .SH SYNOPSIS
@@ -27,7 +27,7 @@ Emit JSON output where supported.
 .SH COMMANDS
 .TP
 .B init
-Discover project metadata and version files, report conflicting version values, and create one SemVer Forge configuration. Existing configuration files are reused; duplicate SemVer Forge TOML files are an error.
+Discover project metadata and version files, report conflicting version values, and create one SemVer Forge configuration. Existing configuration files are reused; duplicate SemVer Forge TOML files are an error. If a Git remote is configured, init pushes its generated-files commit after committing locally.
 .TP
 .B doctor
 Inspect Git, Python, repository state, configuration, and version-source health.
@@ -51,7 +51,7 @@ Calculate the next version from commits since the latest recognized release boun
 Synchronize the canonical version and configured targets.
 .TP
 .B changelog [--dry-run]
-Generate release notes from commits in the proposed release range and insert a version section into the configured changelog file. With --dry-run, print the complete proposed changelog without writing it. An existing section for the proposed version is an error.
+Generate release notes from commits in the proposed release range and insert a version section into the configured changelog file. With --dry-run, print the complete proposed changelog without writing it. An existing section for the proposed version is refreshed with the current release notes.
 .TP
 .B release [patch|minor|major] [options]
 Update configured version files and changelog, optionally commit those changes, and create a local Git tag. Options include --version VERSION, --prerelease alpha|beta|rc, --dry-run, --notes-only, and --yes. There is no --build option.
@@ -99,6 +99,6 @@ semver-forge release patch --yes
 semver-forge verify-release
 .fi
 .SH SAFETY
-Release execution requires a clean working tree by default. Existing tags are never moved or overwritten. SemVer Forge does not build, test, publish, or push release artifacts.
+Release execution requires a clean working tree by default. Existing tags are never moved or overwritten. SemVer Forge does not build, test, or publish release artifacts. The init command pushes its generated-files commit when a Git remote is configured.
 .SH LIMITATIONS
 Git is the implemented VCS backend. Version synchronization is limited to the adapters documented in docs/CONFIGURATION.md.
