@@ -7,6 +7,9 @@ and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Planned
+- No unreleased changes are recorded yet.
+
 ## [1.0.0] - 2026-10-26
 
 ### Removed
