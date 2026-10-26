@@ -2,7 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from semver_forge.config import load
+from semver_forge.config import find_config, load
 from semver_forge.errors import ConfigError
 
 
