@@ -188,7 +188,9 @@ def _format_output(data, indent=0):
                 else (
                     f" {value}"
                     if not isinstance(value, (dict, list))
-                    else " {}" if isinstance(value, dict) else " []"
+                    else " {}"
+                    if isinstance(value, dict)
+                    else " []"
                 )
             )
             for key, value in data.items()
@@ -582,13 +584,10 @@ def main(argv=None):
             p = plan(root, cfg)
             notes = release_notes(p["commits"], p["rules"])
             notes_file = cfg.get("release", {}).get("notes_file") or "CHANGELOG.md"
-            if (
-                p["impact"] is None
-                and not cfg.get("release", {}).get("release_when_no_changes", False)
+            if p["impact"] is None and not cfg.get("release", {}).get(
+                "release_when_no_changes", False
             ):
-                raise ReleaseFailure(
-                    "no release-relevant commits; changelog was not modified"
-                )
+                raise ReleaseFailure("no release-relevant commits; changelog was not modified")
             changelog_path = resolve_changelog_path(root, notes_file)
             content = update_changelog(
                 changelog_path,
