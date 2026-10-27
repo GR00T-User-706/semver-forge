@@ -16,11 +16,7 @@ class OutputFormattingTests(unittest.TestCase):
 
         self.assertEqual(
             _format_output(result),
-            "-\n"
-            "  file: VERSION\n"
-            "  old_version: 3.2.1\n"
-            "  new_version: 3.2.2\n"
-            "  changed: True",
+            "-\n  file: VERSION\n  old_version: 3.2.1\n  new_version: 3.2.2\n  changed: True",
         )
 
     def test_formats_nested_lists_without_python_repr(self):
@@ -31,11 +27,7 @@ class OutputFormattingTests(unittest.TestCase):
 
         self.assertEqual(
             _format_output(result),
-            "latest_tag: v3.2.0\n"
-            "commits:\n"
-            "  -\n"
-            "    hash: abc123\n"
-            "    subject: fix: example",
+            "latest_tag: v3.2.0\ncommits:\n  -\n    hash: abc123\n    subject: fix: example",
         )
 
     def test_formats_empty_collections(self):
