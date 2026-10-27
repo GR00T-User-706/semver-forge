@@ -35,8 +35,7 @@ class ChangelogUpdateTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "CHANGELOG.md"
             path.write_text(
-                "# Changelog\n\n## [1.1.0]\n\n- old entry\n\n"
-                "## [1.0.0]\n\n- prior release\n",
+                "# Changelog\n\n## [1.1.0]\n\n- old entry\n\n## [1.0.0]\n\n- prior release\n",
                 encoding="utf-8",
             )
             result = update_changelog(path, "1.1.0", "- updated entry\n")
@@ -48,8 +47,7 @@ class ChangelogUpdateTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "CHANGELOG.md"
             original = (
-                "# Changelog\n\n## [1.1.0]\n\n- first entry\n\n"
-                "## [1.1.0]\n\n- duplicate entry\n"
+                "# Changelog\n\n## [1.1.0]\n\n- first entry\n\n## [1.1.0]\n\n- duplicate entry\n"
             )
             path.write_text(original, encoding="utf-8")
 
