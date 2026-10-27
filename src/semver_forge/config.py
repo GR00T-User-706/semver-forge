@@ -31,9 +31,6 @@ DEFAULTS = {
         "annotated_tag": True,
         "notes_file": "CHANGELOG.md",
         "require_confirmation": True,
-        "test_commands": [],
-        "build_commands": [],
-        "artifact_paths": [],
         "release_when_no_changes": False,
     },
 }
@@ -67,11 +64,13 @@ def load(path):
         "text",
         "json",
         "toml",
-        "yaml",
         "shell",
         "debian",
+        "debian-changelog",
     ):
-        raise ConfigError("version.source.type must be text, json, toml, yaml, shell, or debian")
+        raise ConfigError(
+            "version.source.type must be text, json, toml, shell, debian, or debian-changelog"
+        )
     if not source.get("file"):
         raise ConfigError("version.source.file is required")
     known = {x: set(v) for x, v in DEFAULTS.items()}
@@ -86,8 +85,13 @@ def load(path):
 
 
 def find_config(root):
-    for name in (".semver-forge.toml", "semver-forge.toml"):
-        p = Path(root) / name
-        if p.is_file():
-            return p
-    return None
+    root = Path(root)
+    names = (".semver-forge.toml", "semver-forge.toml")
+    found = [root / name for name in names if (root / name).is_file()]
+    if len(found) > 1:
+        raise ConfigError(
+            "multiple SemVer Forge configuration files found: "
+            + ", ".join(str(path) for path in found)
+            + "; keep one and remove or rename the duplicate"
+        )
+    return found[0] if found else None

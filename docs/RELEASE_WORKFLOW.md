@@ -1,11 +1,21 @@
 # Release workflow
 
+SemVer Forge owns version planning, version-file synchronization, changelog generation, and local Git release tags. It does **not** run project tests, build packages, collect artifacts, or publish packages. Those jobs belong to the project's CI pipeline and packaging tool (such as PKGforge).
+
 1. Commit all intended changes and ensure the tree is clean.
-2. Review `semver-forge doctor`, `status`, `next --explain`, and `release --dry-run`.
-3. Configure test commands in `[release].test_commands`; configure build commands if needed.
-4. Run `semver-forge release` or an explicit bump. Add `--build` to run configured build commands.
-5. Inspect the final report and run `semver-forge verify-release`.
+2. Run `semver-forge doctor`, `status`, `next --explain`, and `release --dry-run`.
+3. Run the project's tests and build independently, using its documented commands or CI workflow.
+4. If you want to prepare the changelog separately, run `semver-forge changelog`, review the new version section, and commit the changelog update. Use `semver-forge changelog --dry-run` to preview without writing. The release command requires a clean working tree.
+5. Run `semver-forge release` or an explicit bump.
+6. Inspect the synchronization report and run `semver-forge verify-release`.
 
-Calculating a version only predicts. Synchronization updates metadata. Release preparation creates notes and runs configured validation. Tagging creates a local Git reference. Building runs project-owned commands. Publishing means sending artifacts/tags to a remote provider; semver-forge does not currently publish.
+The boundaries are deliberate:
 
-If failure occurs after synchronization, inspect `git status`, the configured version targets, changelog, and tag list. Synchronization rolls back target files on a synchronization failure. Later failures are reported but do not automatically rewrite history or delete tags. Recover manually with a reviewed Git commit or restore from backups. Existing tags are never replaced.
+- **Plan:** calculate the next version from commit history.
+- **Sync:** write the selected version to the configured version-bearing files.
+- **Changelog:** preview release notes from commits.
+- **Release:** update the changelog, optionally commit synchronized files, and create a local Git tag.
+- **Build/package:** handled outside SemVer Forge.
+- **Publish:** handled outside SemVer Forge.
+
+If synchronization fails, SemVer Forge rolls back the version targets it already wrote. If a later Git operation fails, inspect `git status`, the configured targets, changelog, and tag list. Existing tags are never replaced.

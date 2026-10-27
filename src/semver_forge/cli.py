@@ -8,13 +8,13 @@ import tempfile
 from pathlib import Path
 
 from . import __version__, git
-from .changelog import release_notes
+from .changelog import release_notes, update_changelog
 from .config import find_config, load
 from .discovery import discover
 from .errors import ConfigError, ForgeError, ReleaseFailure
 from .installation import install, uninstall
 from .operation_log import record
-from .release import latest_release, plan, release
+from .release import latest_release, plan, release, resolve_changelog_path
 from .semver import Version
 from .synchronization import sync
 from .version_sources import read_version
@@ -126,14 +126,13 @@ def parser():
 
     r = command(
         "release",
-        "Prepare and create a local release with notes, configured checks, "
-        "version metadata, and a Git tag.",
+        "Prepare a local release with notes, synchronized versions, and a Git tag.",
         "Examples:\n  semver-forge release --dry-run\n"
         "  semver-forge release patch --dry-run\n"
         "  semver-forge release --version 2.0.0 --yes\n"
         "  semver-forge release --prerelease rc --yes\n\n"
         "Dry runs and notes-only mode do not write project files, create commits/tags, "
-        "run checks, or publish. "
+        "run package builds, or publish. "
         "Actual releases require a clean working tree and never push to a remote.",
     )
     r.add_argument(
@@ -156,15 +155,17 @@ def parser():
     r.add_argument(
         "--yes", action="store_true", help="authorize execution without an interactive confirmation"
     )
-    r.add_argument(
-        "--build", action="store_true", help="run configured build commands before synchronization"
-    )
 
     ch = command(
-        "changelog", "Generate release notes from the commits in the proposed release range."
+        "changelog",
+        "Generate and insert the proposed release notes into the configured changelog.",
+        "Writes the proposed version section to the configured release.notes_file. "
+        "--dry-run prints the complete proposed changelog without writing it.",
     )
     ch.add_argument(
-        "--dry-run", action="store_true", help="preview notes without writing a changelog"
+        "--dry-run",
+        action="store_true",
+        help="show the complete updated changelog without writing the file",
     )
     ins = command(
         "install", "Install the current Semver Forge source tree into a user-local prefix."
@@ -175,12 +176,47 @@ def parser():
     return p
 
 
+def _format_output(data, indent=0):
+    """Format command results consistently, including lists and nested values."""
+    prefix = " " * indent
+    if isinstance(data, dict):
+        return "\n".join(
+            f"{prefix}{key}:"
+            + (
+                "\n" + _format_output(value, indent + 2)
+                if isinstance(value, (dict, list)) and value
+                else (
+                    f" {value}"
+                    if not isinstance(value, (dict, list))
+                    else " {}"
+                    if isinstance(value, dict)
+                    else " []"
+                )
+            )
+            for key, value in data.items()
+        )
+    if isinstance(data, list):
+        if not data:
+            return f"{prefix}[]"
+        return "\n".join(
+            f"{prefix}-"
+            + (
+                "\n" + _format_output(item, indent + 2)
+                if isinstance(item, (dict, list))
+                else f" {item}"
+            )
+            for item in data
+        )
+    return f"{prefix}{data}"
+
+
 def output(data, as_json=False):
-    print(
-        json.dumps(data, indent=2, sort_keys=True, default=str)
-        if as_json
-        else (data if isinstance(data, str) else "\n".join(f"{k}: {v}" for k, v in data.items()))
-    )
+    if as_json:
+        print(json.dumps(data, indent=2, sort_keys=True, default=str))
+    elif isinstance(data, str):
+        print(data)
+    else:
+        print(_format_output(data))
 
 
 def main(argv=None):
@@ -231,7 +267,7 @@ def main(argv=None):
             if not project.is_dir():
                 raise ConfigError(f"project directory does not exist: {project}")
             root = git.root(project) if git.available(project) else project
-            path = root / ".semver-forge.toml"
+            path = find_config(root) or (root / ".semver-forge.toml")
             # Discover and validate the project before asking permission to overwrite
             # configuration. A rejected initialization must never prompt for a write
             # that cannot safely happen.
@@ -420,9 +456,6 @@ def main(argv=None):
                     "inferred": {
                         "project": result["project"],
                         "sync_targets": result["sync_targets"],
-                        "test_commands": result["test_commands"],
-                        "build_commands": result["build_commands"],
-                        "artifact_paths": result["artifact_paths"],
                         "notes_file": result["notes_file"],
                     },
                     "committed": committed,
@@ -458,7 +491,7 @@ def main(argv=None):
             output(data, args.json)
             return 0
         if not config_path:
-            raise ConfigError("no .semver-forge.toml found; run semver-forge init")
+            raise ConfigError("no SemVer Forge configuration found; run semver-forge init")
         cfg, unknown = load(config_path)
         if unknown:
             print("warning: unknown configuration keys: " + ", ".join(unknown), file=sys.stderr)
@@ -512,7 +545,6 @@ def main(argv=None):
                 args.dry_run,
                 args.notes_only,
                 args.yes,
-                args.build,
             )
             record(
                 "INFO",
@@ -551,7 +583,27 @@ def main(argv=None):
         elif args.cmd == "changelog":
             p = plan(root, cfg)
             notes = release_notes(p["commits"], p["rules"])
-            output({"version": str(p["next"]), "notes": notes, "dry_run": args.dry_run}, args.json)
+            notes_file = cfg.get("release", {}).get("notes_file") or "CHANGELOG.md"
+            if p["impact"] is None and not cfg.get("release", {}).get(
+                "release_when_no_changes", False
+            ):
+                raise ReleaseFailure("no release-relevant commits; changelog was not modified")
+            changelog_path = resolve_changelog_path(root, notes_file)
+            content = update_changelog(
+                changelog_path,
+                str(p["next"]),
+                notes,
+                dry_run=args.dry_run,
+            )
+            output(
+                {
+                    "version": str(p["next"]),
+                    "file": str(changelog_path),
+                    "dry_run": args.dry_run,
+                    "content": content if args.dry_run else "Changelog updated.",
+                },
+                args.json,
+            )
         elif args.cmd in ("verify-tag", "verify-release"):
             prev, tag = latest_release(root, cfg)
             if not tag:

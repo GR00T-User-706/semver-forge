@@ -20,7 +20,6 @@ class DiscoveryTests(unittest.TestCase):
                 encoding="utf-8",
             )
             (root / "VERSION").write_text("2.4.1\n", encoding="utf-8")
-            (root / "tests").mkdir()
             result = discover(root)
             self.assertEqual(result["project"]["name"], "sample-app")
             self.assertEqual(result["project"]["description"], "A sample application")
@@ -30,10 +29,19 @@ class DiscoveryTests(unittest.TestCase):
                 {"type": "toml", "file": "pyproject.toml", "key": "project.version"},
             )
             self.assertEqual(result["sync_targets"], [{"type": "text", "file": "VERSION"}])
-            self.assertEqual(result["test_commands"], ["python -m pytest"])
-            self.assertEqual(result["build_commands"], ["python -m build"])
-            self.assertEqual(result["artifact_paths"], ["dist/*"])
             self.assertIn('name = "sample-app"', render_config(result))
+
+    def test_discovery_does_not_infer_build_or_test_commands(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "pyproject.toml").write_text(
+                '[project]\nname = "sample-app"\nversion = "1.2.3"\n[build-system]\nrequires=[]\n',
+                encoding="utf-8",
+            )
+            result = discover(root)
+            self.assertNotIn("build_commands", result)
+            self.assertNotIn("test_commands", result)
+            self.assertNotIn("artifact_paths", result)
 
     def test_conflicting_versions_are_reported(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -58,9 +66,6 @@ class DiscoveryTests(unittest.TestCase):
             self.assertEqual(result["version"]["initial"], "0.1.0")
             self.assertEqual(result["version"]["source"], {"type": "text", "file": "VERSION"})
             self.assertEqual(result["sync_targets"], [])
-            self.assertEqual(result["test_commands"], [])
-            self.assertEqual(result["build_commands"], [])
-            self.assertEqual(result["artifact_paths"], [])
 
     def test_toml_version_update_preserves_other_content(self):
         with tempfile.TemporaryDirectory() as directory:

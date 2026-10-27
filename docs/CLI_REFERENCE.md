@@ -13,7 +13,7 @@ Run `semver-forge --help` for the command index and
 
 | Command | Behavior |
 |---|---|
-| `init [--yes]` | Inspect existing project metadata and generate a derived configuration. Create VERSION at 0.1.0 only when no usable version source exists. Conflicting version sources stop initialization. Existing config requires approval. On Git repositories, stage and commit only generated files; unrelated staged changes are left untouched. Staging failures are reported separately and prevent a commit. |
+| `init [--yes]` | Inspect existing project metadata and generate a derived configuration. Create VERSION at 0.1.0 only when no usable version source exists. Conflicting version sources stop initialization. Existing config requires approval. On Git repositories, stage and commit only generated files; unrelated staged changes are left untouched. If a remote is configured, init runs `git push` after the commit. Staging failures are reported separately and prevent a commit. |
 | `doctor` | Inspect Python, Git, repository state, configuration, and version source. |
 | `current` | Show canonical version and source. |
 | `validate VERSION` | Validate a SemVer version. |
@@ -22,7 +22,7 @@ Run `semver-forge --help` for the command index and
 | `next [--explain]` | Calculate the next version from commits since the release boundary. |
 | `sync [--version VERSION] [--dry-run]` | Synchronize configured version sources. |
 | `status`, `history`, `check` | Inspect repository and version state. |
-| `changelog` | Print generated release notes. |
+| `changelog [--dry-run]` | Insert or refresh the proposed version's generated notes in the configured changelog. It refuses when no release is permitted. `--dry-run` prints the complete proposed file without writing. |
 | `release [part]` | Prepare and create a local release. |
 | `verify-tag`, `verify-release` | Verify the latest recognized SemVer tag. |
 | `install`, `uninstall` | Manage the user-local installation. |
@@ -48,4 +48,4 @@ future implementations.
 
 Real releases require a clean working tree by default. Existing tags are never
 moved or overwritten. Configured command hooks may execute code and should be
-reviewed before use. TOML writing and bundled YAML parsing are not implemented.
+reviewed before use. TOML targets are updated in place. YAML version adapters are not implemented.
