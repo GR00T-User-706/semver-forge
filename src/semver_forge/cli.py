@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import sys
 import tempfile
 from pathlib import Path
@@ -294,8 +295,33 @@ def main(argv=None):
             next_version = proposed["next"]
             changed = next_version.compare(current) > 0
             sync_result = []
-            if changed and not args.dry_run:
-                sync_result = sync(root, cfg, str(next_version))
+            if not args.dry_run:
+                if changed:
+                    sync_result = sync(root, cfg, str(next_version))
+                # Remember the processed Git boundary so the same commits are not
+                # counted again on the next invocation.
+                head = git.head(root)
+                config_text = config_path.read_text(encoding="utf-8")
+                baseline_line = f'baseline = "{head}"'
+                if re.search(r"(?m)^baseline\\s*=", config_text):
+                    config_text = re.sub(r"(?m)^baseline\\s*=.*$", baseline_line, config_text, count=1)
+                else:
+                    config_text = re.sub(
+                        r"(?m)^(tag_prefix\\s*=.*)$",
+                        r"\\1\\n" + baseline_line,
+                        config_text,
+                        count=1,
+                    )
+                fd, temp_path = tempfile.mkstemp(prefix=".semver-forge-", dir=root)
+                try:
+                    with os.fdopen(fd, "w", encoding="utf-8", newline="") as stream:
+                        stream.write(config_text)
+                        stream.flush()
+                        os.fsync(stream.fileno())
+                    os.replace(temp_path, config_path)
+                finally:
+                    if os.path.exists(temp_path):
+                        os.unlink(temp_path)
             data = {
                 "current": str(current),
                 "next": str(next_version),
