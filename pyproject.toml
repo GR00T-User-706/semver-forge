@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "semver-forge"
-version = "0.2.0"
-description = "Semantic versioning, version synchronization, and local release management."
+version = "0.3.0"
+description = "Automatic semantic version tracking and metadata synchronization."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { file = "LICENSE" }
@@ -26,9 +26,8 @@ dependencies = ["tomli>=2.0; python_version < '3.11'"]
 [project.optional-dependencies]
 dev = ["build>=1.2", "pytest>=8", "pytest-cov>=5", "ruff>=0.6", "mypy>=1.10"]
 
-# Uncomment and configure when the project has a real CLI entry point.
-# [project.scripts]
-# project-command = "package_name.cli:main"
+[project.scripts]
+semver-forge = "semver_forge.cli:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
