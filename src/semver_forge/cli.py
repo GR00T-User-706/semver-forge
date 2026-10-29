@@ -353,7 +353,7 @@ def main(argv=None):
                 else:
                     config_text = re.sub(
                         r"(?m)^(tag_prefix\s*=.*)$",
-                        lambda match: match.group(1) + "\\n" + baseline_line,
+                        lambda match: match.group(1) + chr(10) + baseline_line,
                         config_text,
                         count=1,
                     )
