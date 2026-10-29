@@ -303,12 +303,12 @@ def main(argv=None):
                 head = git.head(root)
                 config_text = config_path.read_text(encoding="utf-8")
                 baseline_line = f'baseline = "{head}"'
-                if re.search(r"(?m)^baseline\\s*=", config_text):
-                    config_text = re.sub(r"(?m)^baseline\\s*=.*$", baseline_line, config_text, count=1)
+                if re.search(r"(?m)^baseline\s*=", config_text):
+                    config_text = re.sub(r"(?m)^baseline\s*=.*$", baseline_line, config_text, count=1)
                 else:
                     config_text = re.sub(
-                        r"(?m)^(tag_prefix\\s*=.*)$",
-                        r"\\1\\n" + baseline_line,
+                        r"(?m)^(tag_prefix\s*=.*)$",
+                        r"\1\n" + baseline_line,
                         config_text,
                         count=1,
                     )
