@@ -372,7 +372,8 @@ def main(argv=None):
                 "next": str(next_version),
                 "impact": proposed["impact"],
                 "commit_count": len(proposed["commits"]),
-                "would_change": changed,\n                "changed": changed and not args.dry_run,
+                "would_change": changed,
+                "changed": changed and not args.dry_run,
                 "dry_run": args.dry_run,
                 "synchronization": sync_result,
             }
