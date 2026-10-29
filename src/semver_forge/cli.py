@@ -295,9 +295,9 @@ def main(argv=None):
             next_version = proposed["next"]
             changed = next_version.compare(current) > 0
             sync_result = []
+            if changed:
+                sync_result = sync(root, cfg, str(next_version), dry_run=args.dry_run)
             if not args.dry_run:
-                if changed:
-                    sync_result = sync(root, cfg, str(next_version))
                 # Remember the processed Git boundary so the same commits are not
                 # counted again on the next invocation.
                 head = git.head(root)
@@ -327,7 +327,7 @@ def main(argv=None):
                 "next": str(next_version),
                 "impact": proposed["impact"],
                 "commit_count": len(proposed["commits"]),
-                "changed": changed and not args.dry_run,
+                "would_change": changed,\n                "changed": changed and not args.dry_run,
                 "dry_run": args.dry_run,
                 "synchronization": sync_result,
             }
