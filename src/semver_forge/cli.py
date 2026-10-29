@@ -133,6 +133,17 @@ def main(argv=None):
             config_text = __import__(
                 "semver_forge.discovery", fromlist=["render_config"]
             ).render_config(result)
+            # Starting tracking establishes the history boundary. Older project
+            # commits must not trigger a version bump on the first next invocation.
+            if not path.exists() and git.available(root):
+                head_result = git.run(["rev-parse", "--verify", "HEAD"], cwd=root, check=False)
+                if head_result.returncode == 0:
+                    config_text = re.sub(
+                        r"(?m)^(tag_prefix\\s*=.*)$",
+                        r"\\1\\nbaseline = \"" + head_result.stdout.strip() + "\"",
+                        config_text,
+                        count=1,
+                    )
             # Validate the generated TOML and its schema before writing anything.
             try:
                 import tomllib
