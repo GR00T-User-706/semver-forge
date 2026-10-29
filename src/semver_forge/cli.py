@@ -139,8 +139,8 @@ def main(argv=None):
                 head_result = git.run(["rev-parse", "--verify", "HEAD"], cwd=root, check=False)
                 if head_result.returncode == 0:
                     config_text = re.sub(
-                        r"(?m)^(tag_prefix\\s*=.*)$",
-                        r"\\1\\nbaseline = \"" + head_result.stdout.strip() + "\"",
+                        r"(?m)^(tag_prefix\s*=.*)$",
+                        r"\1\nbaseline = \"" + head_result.stdout.strip() + "\"",
                         config_text,
                         count=1,
                     )
