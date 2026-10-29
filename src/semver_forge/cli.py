@@ -140,7 +140,10 @@ def main(argv=None):
                 if head_result.returncode == 0:
                     config_text = re.sub(
                         r"(?m)^(tag_prefix\s*=.*)$",
-                        r"\1\nbaseline = \"" + head_result.stdout.strip() + "\"",
+                        lambda match: (
+                            match.group(1)
+                            + f'\nbaseline = "{head_result.stdout.strip()}"'
+                        ),
                         config_text,
                         count=1,
                     )
@@ -341,11 +344,16 @@ def main(argv=None):
                 config_text = config_path.read_text(encoding="utf-8")
                 baseline_line = f'baseline = "{head}"'
                 if re.search(r"(?m)^baseline\s*=", config_text):
-                    config_text = re.sub(r"(?m)^baseline\s*=.*$", baseline_line, config_text, count=1)
+                    config_text = re.sub(
+                        r"(?m)^baseline\s*=.*$",
+                        lambda _match: baseline_line,
+                        config_text,
+                        count=1,
+                    )
                 else:
                     config_text = re.sub(
                         r"(?m)^(tag_prefix\s*=.*)$",
-                        r"\1\n" + baseline_line,
+                        lambda match: match.group(1) + "\\n" + baseline_line,
                         config_text,
                         count=1,
                     )
