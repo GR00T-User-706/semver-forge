@@ -1,51 +1,50 @@
 # CLI Reference
 
-Run `semver-forge --help` for the command index and
-`semver-forge COMMAND --help` for command-specific help.
+SemVer Forge exposes exactly three project commands.
 
 ## Global options
 
-- `--version`: print the program version.
-- `--project DIR`: select a project directory.
-- `--json`: request JSON output where supported.
+- `--project DIR`: select the project directory.
+- `--json`: emit JSON output.
+- `--version`: print the installed program version.
 
 ## Commands
 
 | Command | Behavior |
 |---|---|
-| `init [--yes]` | Inspect existing project metadata and generate a derived configuration. Create VERSION at 0.1.0 only when no usable version source exists. Conflicting version sources stop initialization. Existing config requires approval. On Git repositories, stage and commit only generated files; unrelated staged changes are left untouched. Staging failures are reported separately and prevent a commit. |
-| `doctor` | Inspect Python, Git, repository state, configuration, and version source. |
-| `current` | Show canonical version and source. |
-| `validate VERSION` | Validate a SemVer version. |
-| `compare A B` | Compare versions by SemVer precedence. |
-| `bump patch\|minor\|major` | Calculate an increment; `--write` synchronizes targets. |
-| `next [--explain]` | Calculate the next version from commits since the release boundary. |
-| `sync [--version VERSION] [--dry-run]` | Synchronize configured version sources. |
-| `status`, `history`, `check` | Inspect repository and version state. |
-| `changelog` | Print generated release notes. |
-| `release [part]` | Prepare and create a local release. |
-| `verify-tag`, `verify-release` | Verify the latest recognized SemVer tag. |
-| `install`, `uninstall` | Manage the user-local installation. |
+| `init [--yes]` | Discover the project's canonical version source and synchronization targets, then create `.semver-forge.toml`. Existing configuration is preserved unless replacement is explicitly approved. |
+| `next [--dry-run] [--explain]` | Analyze Git commits since the last processed history boundary. Select the highest qualifying SemVer impact and update the canonical version source plus configured targets. Save the processed commit boundary so the same commits are not counted twice. |
+| `sync [--version VERSION] [--dry-run]` | Synchronize configured metadata to the canonical version, or to an explicitly supplied version. |
 
-## Initialization behavior
+## Version selection
 
-Git is optional for creating project configuration. Initialization inspects Python, Node, Rust, plain version files, Debian changelog metadata, Arch PKGBUILD metadata, README descriptions, recognized GitHub Actions commands, and existing changelog names. It never executes discovered commands. Conflicting version sources stop initialization before any files are written. Missing test, build, or artifact information remains empty. TOML version fields can be synchronized while preserving surrounding file content. In a Git repository,
-generated files are staged by explicit path and committed with
-`chore(init): initialize SemVer Forge project configuration`. Unrelated staged
-changes are left untouched. A configured remote is pushed after a
-successful local commit; push failure preserves the local commit. Existing
-configuration is never overwritten without interactive approval or `--yes`.
-An existing VERSION file is preserved.
+Default Conventional Commit rules:
 
-## Logging and VCS
+| Commit | Result |
+|---|---|
+| Breaking change marker (`!` or `BREAKING CHANGE:`) | Major |
+| `feat` | Minor |
+| `fix`, `perf` | Patch |
+| `docs`, `style`, `refactor`, `test`, `build`, `ci`, `chore` | No change |
 
-SemVer Forge writes its own bounded diagnostic log under the user's local state
-directory. It does not manage project-maintainer log files or their Git tracking
-policy. Git is the only supported VCS backend currently; other backends require
-future implementations.
+The highest qualifying impact wins. Rules can be changed in `.semver-forge.toml`.
 
-## Safety
+## Command behavior
 
-Real releases require a clean working tree by default. Existing tags are never
-moved or overwritten. Configured command hooks may execute code and should be
-reviewed before use. TOML writing and bundled YAML parsing are not implemented.
+### init
+
+Initialization is project discovery and tracking setup. It does not calculate a new version. Existing version values are preserved. Conflicting recognized version sources stop initialization before files are written. Git is optional for initialization.
+
+### next
+
+This is the automatic version-selection command. It reads commits since the saved `[git].baseline`, or the latest valid SemVer tag when no baseline has been saved. It updates the canonical source and every configured synchronization target only when a qualifying commit warrants a higher version.
+
+After a successful run, the current Git commit is saved as the new baseline. This prevents the same commits from causing another increment on the next invocation. A dry run does not write files or advance the baseline.
+
+### sync
+
+Synchronization is independent of commit classification. It copies the selected version to the canonical source and configured targets. Use `--dry-run` to preview all file changes before writing.
+
+## Configuration
+
+The project configuration is `.semver-forge.toml`. See [the example](../config/semver-forge.example.toml) and [configuration guide](CONFIGURATION.md).
