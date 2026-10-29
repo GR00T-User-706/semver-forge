@@ -7,13 +7,13 @@ and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-28
+
 ### Changed
 - Reduced the public CLI to `init`, `next`, and `sync`.
 - Made `next` apply the inferred version change and persist its processed Git history boundary.
 - Added the installed `semver-forge` console entry point.
 - Removed release, verification, comparison, history, diagnostics, and other redundant commands from the public interface.
-
-## [0.3.0] - 2026-10-28
 
 ## [0.2.0] - 2026-10-24
 
