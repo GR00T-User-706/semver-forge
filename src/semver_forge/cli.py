@@ -23,7 +23,10 @@ def parser():
     """Build the deliberately small public CLI."""
     p = argparse.ArgumentParser(
         prog="semver-forge",
-        description="Initialize version tracking, calculate and apply the next version, or sync metadata.",
+        description=(
+            "Initialize version tracking, calculate and apply the next version, "
+            "or synchronize metadata."
+        ),
     )
     p.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     p.add_argument("--project", help="project path (default: current directory)")
@@ -31,18 +34,41 @@ def parser():
     sub = p.add_subparsers(dest="cmd", required=True)
 
     init_cmd = sub.add_parser("init", help="initialize SemVer Forge tracking in this project")
-    init_cmd.add_argument("--yes", action="store_true", help="authorize replacing existing configuration")
+    init_cmd.add_argument(
+        "--yes",
+        action="store_true",
+        help="authorize replacing existing configuration",
+    )
 
     next_cmd = sub.add_parser(
         "next",
         help="inspect Git history, choose the next version, and update configured version files",
     )
-    next_cmd.add_argument("--dry-run", action="store_true", help="show the proposed change without writing")
-    next_cmd.add_argument("--explain", action="store_true", help="include why the version was or was not changed")
+    next_cmd.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="show the proposed change without writing",
+    )
+    next_cmd.add_argument(
+        "--explain",
+        action="store_true",
+        help="include why the version was or was not changed",
+    )
 
-    sync_cmd = sub.add_parser("sync", help="synchronize configured metadata to the canonical version")
-    sync_cmd.add_argument("--dry-run", action="store_true", help="show changes without writing")
-    sync_cmd.add_argument("--version", metavar="VERSION", help="use this target version instead of the canonical version")
+    sync_cmd = sub.add_parser(
+        "sync",
+        help="synchronize configured metadata to the canonical version",
+    )
+    sync_cmd.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="show changes without writing",
+    )
+    sync_cmd.add_argument(
+        "--version",
+        metavar="VERSION",
+        help="use this target version instead of the canonical version",
+    )
     return p
 
 def output(data, as_json=False):
