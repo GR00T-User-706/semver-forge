@@ -44,7 +44,7 @@ def plan(root, cfg, override=None, prerelease=None):
         )
     )
     previous, tag = latest_release(root, cfg)
-    baseline = tag or cfg["git"].get("baseline")
+    baseline = cfg["git"].get("baseline") or tag
     commits = backend_for(root).commits(root, baseline)
     rules = dict(cfg.get("commits", {}))
     rules["unknown"] = cfg["git"].get("unknown_commit", rules.get("unknown", "ignore"))
