@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import io
 import json
 import re
 from pathlib import Path
@@ -22,6 +23,24 @@ def _path(root, file):
     return path
 
 
+def _yaml_parser():
+    try:
+        from ruamel.yaml import YAML
+    except ImportError as exc:
+        raise ConfigError("YAML support requires ruamel.yaml") from exc
+    return YAML(typ="rt")
+
+
+def _yaml_value(data, dotted_key, path):
+    value = data
+    for part in dotted_key.split("."):
+        try:
+            value = value[part]
+        except (KeyError, TypeError) as exc:
+            raise ConfigError(f"{path}: YAML key path does not exist: {dotted_key}") from exc
+    return value
+
+
 def read_version(root, source):
     path = _path(root, source["file"])
     kind = source["type"]
@@ -40,7 +59,7 @@ def read_version(root, source):
     if kind == "shell":
         variable = key or "VERSION"
         matches = re.findall(
-            rf"^\s*{re.escape(variable)}\s*=\s*[\"']?([^\"'\n#]+)",
+            rf"^\\s*{re.escape(variable)}\\s*=\\s*[\\\"']?([^\\\"'\\n#]+)",
             text,
             re.M,
         )
@@ -48,21 +67,27 @@ def read_version(root, source):
             raise ConfigError(f"{path}: expected exactly one {variable}= assignment")
         return matches[0].strip()
     if kind == "debian":
-        matches = re.findall(r"^Version:\s*(\S+)\s*$", text, re.M)
+        matches = re.findall(r"^Version:\\s*(\\S+)\\s*$", text, re.M)
         if len(matches) != 1:
             raise ConfigError(f"{path}: expected exactly one Version field")
         return matches[0]
     if kind == "debian-changelog":
         lines = text.splitlines()
         match = re.match(
-            r"^(\S+\s+\()([^)]+)(\)\s+\S+;\s*urgency=.*)$",
+            r"^(\\S+\\s+\\()([^)]+)(\\)\\s+\\S+;\\s*urgency=.*)$",
             lines[0] if lines else "",
         )
         if not match:
             raise ConfigError(f"{path}: expected a standard Debian changelog header")
         return match.group(2)
     if kind == "yaml":
-        raise ConfigError("YAML support requires an explicit adapter; no YAML parser is bundled")
+        parser = _yaml_parser()
+        try:
+            data = parser.load(text)
+        except Exception as exc:
+            raise ConfigError(f"{path}: invalid YAML: {exc}") from exc
+        dotted_key = key or "version"
+        return str(_yaml_value(data, dotted_key, path))
     raise ConfigError(f"unsupported version source type: {kind}")
 
 
@@ -72,7 +97,7 @@ def render_version(root, source, version):
     text = path.read_text(encoding="utf-8")
     key = source.get("key")
     if kind == "text":
-        return version + "\n"
+        return version + "\\n"
     if kind == "json":
         data = json.loads(text)
         parts = (key or "version").split(".")
@@ -80,22 +105,22 @@ def render_version(root, source, version):
         for part in parts[:-1]:
             current = current[part]
         current[parts[-1]] = version
-        return json.dumps(data, indent=2, ensure_ascii=False) + "\n"
+        return json.dumps(data, indent=2, ensure_ascii=False) + "\\n"
     if kind == "toml":
         dotted_key = key or "project.version"
         parts = dotted_key.split(".")
         section = ".".join(parts[:-1])
         field = parts[-1]
         lines = text.splitlines(keepends=True)
-        section_pattern = re.compile(r"^\s*\[" + re.escape(section) + r"\]\s*(?:#.*)?$")
+        section_pattern = re.compile(r"^\\s*\\[" + re.escape(section) + r"\\]\\s*(?:#.*)?$")
         field_pattern = re.compile(
-            r"^(\s*" + re.escape(field) + r"\s*=\s*)([^#\r\n]+?)(\s*(?:#.*)?(?:\r?\n)?)$"
+            r"^(\\s*" + re.escape(field) + r"\\s*=\\s*)([^#\\r\\n]+?)(\\s*(?:#.*)?(?:\\r?\\n)?)$"
         )
         in_section = False
         matches = []
-        table_pattern = re.compile(r"^\s*\[[^\]]+\]\s*(?:#.*)?$")
+        table_pattern = re.compile(r"^\\s*\\[[^\\]]+\\]\\s*(?:#.*)?$")
         for index, line in enumerate(lines):
-            candidate = line.rstrip("\r\n")
+            candidate = line.rstrip("\\r\\n")
             if table_pattern.match(candidate):
                 in_section = bool(section_pattern.match(candidate))
             elif in_section:
@@ -112,8 +137,8 @@ def render_version(root, source, version):
     if kind == "shell":
         variable = key or "VERSION"
         pattern = (
-            rf"^(\s*{re.escape(variable)}\s*=\s*)([\"']?)"
-            rf"[^\"'\n#]+([\"']?\s*(?:#.*)?)$"
+            rf"^(\\s*{re.escape(variable)}\\s*=\\s*)([\\\"']?)"
+            rf"[^\\\"'\\n#]+([\\\"']?\\s*(?:#.*)?)$"
         )
         updated, count = re.subn(
             pattern,
@@ -127,7 +152,7 @@ def render_version(root, source, version):
         return updated
     if kind == "debian":
         updated, count = re.subn(
-            r"^(Version:\s*)\S+(\s*)$",
+            r"^(Version:\\s*)\\S+(\\s*)$",
             lambda match: match.group(1) + version + match.group(2),
             text,
             count=1,
@@ -138,7 +163,7 @@ def render_version(root, source, version):
         return updated
     if kind == "debian-changelog":
         updated, count = re.subn(
-            r"^(\S+\s+\()[^)]+(\)\s+\S+;\s*urgency=.*)$",
+            r"^(\\S+\\s+\\()[^)]+(\\)\\s+\\S+;\\s*urgency=.*)$",
             lambda match: match.group(1) + version + match.group(2),
             text,
             count=1,
@@ -148,5 +173,23 @@ def render_version(root, source, version):
             raise ConfigError(f"{path}: expected a standard Debian changelog header")
         return updated
     if kind == "yaml":
-        raise ConfigError("YAML support requires an explicit adapter; no YAML parser is bundled")
+        parser = _yaml_parser()
+        try:
+            data = parser.load(text)
+        except Exception as exc:
+            raise ConfigError(f"{path}: invalid YAML: {exc}") from exc
+        dotted_key = key or "version"
+        parts = dotted_key.split(".")
+        current = data
+        for part in parts[:-1]:
+            try:
+                current = current[part]
+            except (KeyError, TypeError) as exc:
+                raise ConfigError(f"{path}: YAML key path does not exist: {dotted_key}") from exc
+        if parts[-1] not in current:
+            raise ConfigError(f"{path}: YAML key path does not exist: {dotted_key}")
+        current[parts[-1]] = version
+        output = io.StringIO()
+        parser.dump(data, output)
+        return output.getvalue()
     raise ConfigError(f"unsupported version source type: {kind}")
