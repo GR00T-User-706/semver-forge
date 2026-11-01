@@ -122,14 +122,19 @@ class RecursiveMetadataDiscoveryTests(unittest.TestCase):
                 [],
             )
 
-    def test_sync_discover_dry_run_reports_nested_yaml_without_writing(self):
+    def test_sync_discover_merges_configured_and_discovered_targets(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             subprocess.run(["git", "init", "-q"], cwd=root, check=True)
             (root / "VERSION").write_text("1.2.3\n", encoding="utf-8")
+            configured = root / "packaging" / "configured-version.txt"
+            configured.parent.mkdir(parents=True)
+            configured.write_text("1.2.2\n", encoding="utf-8")
             (root / ".semver-forge.toml").write_text(
                 '[version]\ninitial = "1.2.3"\n'
-                'source = { type = "text", file = "VERSION" }\n',
+                'source = { type = "text", file = "VERSION" }\n\n'
+                '[sync]\n'
+                'targets = [{ type = "text", file = "packaging/configured-version.txt" }]\n',
                 encoding="utf-8",
             )
             manifest = root / "packaging" / "termux" / "manifest.yaml"
@@ -138,20 +143,42 @@ class RecursiveMetadataDiscoveryTests(unittest.TestCase):
                 "control:\n  Package: sample\n  Version: 1.2.2\n",
                 encoding="utf-8",
             )
-            output = io.StringIO()
-            with contextlib.redirect_stdout(output):
-                status = main([
+
+            dry_output = io.StringIO()
+            with contextlib.redirect_stdout(dry_output):
+                dry_status = main([
                     "--project", str(root), "--json", "sync", "--discover", "--dry-run"
                 ])
 
-            result = json.loads(output.getvalue())
-            self.assertEqual(status, 0)
+            preview = json.loads(dry_output.getvalue())
+            self.assertEqual(dry_status, 0)
             self.assertEqual(
-                result["discovered_targets"],
+                preview["discovered_targets"],
                 [{"type": "yaml", "file": "packaging/termux/manifest.yaml", "key": "control.Version"}],
             )
-            self.assertTrue(result["synchronization"][1]["changed"])
+            sync_files = {Path(item["file"]).relative_to(root).as_posix()
+                          for item in preview["synchronization"]}
+            self.assertEqual(
+                sync_files,
+                {"VERSION", "packaging/configured-version.txt", "packaging/termux/manifest.yaml"},
+            )
+            self.assertTrue(all(item["changed"] for item in preview["synchronization"]))
+            self.assertEqual(configured.read_text(encoding="utf-8"), "1.2.2\n")
             self.assertIn("Version: 1.2.2", manifest.read_text(encoding="utf-8"))
+
+            run_output = io.StringIO()
+            with contextlib.redirect_stdout(run_output):
+                run_status = main([
+                    "--project", str(root), "--json", "sync", "--discover"
+                ])
+
+            self.assertEqual(run_status, 0)
+            self.assertEqual(configured.read_text(encoding="utf-8"), "1.2.3\n")
+            self.assertIn("Version: 1.2.3", manifest.read_text(encoding="utf-8"))
+            self.assertEqual(
+                (root / ".semver-forge.toml").read_text(encoding="utf-8").count("targets ="),
+                1,
+            )
 
     def test_discovers_nested_debian_control_metadata(self):
         with tempfile.TemporaryDirectory() as directory:
