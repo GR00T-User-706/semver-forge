@@ -2,6 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from semver_forge.config import load
 from semver_forge.discovery import discover, render_config
 from semver_forge.version_sources import read_version, render_version
 
@@ -47,6 +48,19 @@ class DiscoveryTests(unittest.TestCase):
             self.assertNotIn("test_commands", result)
             self.assertNotIn("build_commands", result)
             self.assertNotIn("artifact_paths", result)
+
+    def test_yaml_is_accepted_as_a_canonical_version_source(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config = root / ".semver-forge.toml"
+            config.write_text(
+                '[version]\ninitial = "1.2.3"\n'
+                'source = { type = "yaml", file = "manifest.yml", key = "version" }\n',
+                encoding="utf-8",
+            )
+            cfg, unknown = load(config)
+            self.assertEqual(cfg["version"]["source"]["type"], "yaml")
+            self.assertEqual(unknown, [])
 
     def test_conflicting_versions_are_reported(self):
         with tempfile.TemporaryDirectory() as directory:
