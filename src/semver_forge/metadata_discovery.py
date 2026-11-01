@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 
 from .discovery import VERSION_FILES, _candidate
+from .errors import ConfigError
 from .semver import Version
 
 # These directories contain generated environments or dependency/build trees,
@@ -35,7 +36,13 @@ def _yaml_sources(path: Path, relative: str):
     """Return the one unambiguous supported version field in a YAML document."""
     try:
         from ruamel.yaml import YAML
+    except ImportError as exc:
+        raise ConfigError(
+            "YAML metadata discovery requires ruamel.yaml; install it with "
+            "python -m pip install 'ruamel.yaml>=0.18'"
+        ) from exc
 
+    try:
         parser = YAML(typ="safe")
         data = parser.load(path.read_text(encoding="utf-8"))
     except Exception:
@@ -60,6 +67,10 @@ def _yaml_sources(path: Path, relative: str):
     return matches if len(matches) == 1 else []
 
 
+def _raise_walk_error(error):
+    raise error
+
+
 def discover_sync_targets(root, canonical_source=None):
     """Find supported version metadata recursively, without changing files.
 
@@ -74,7 +85,9 @@ def discover_sync_targets(root, canonical_source=None):
 
     found = []
     seen = set()
-    for current, directories, filenames in os.walk(root, followlinks=False):
+    for current, directories, filenames in os.walk(
+        root, followlinks=False, onerror=_raise_walk_error
+    ):
         directories[:] = sorted(name for name in directories if name not in PRUNED_DIRECTORIES)
         current_path = Path(current)
         for filename in sorted(filenames):
