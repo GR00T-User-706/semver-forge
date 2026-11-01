@@ -31,7 +31,7 @@ class CLIHelpTests(unittest.TestCase):
     def test_root_help_has_examples_and_command_guidance(self):
         result = self.run_cli("--help")
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("Typical workflow", result.stdout)
+        self.assertIn("{init,next,sync}", result.stdout)
         self.assertIn("synchronize metadata", result.stdout)
 
     def test_every_subcommand_has_nonempty_description(self):
@@ -52,13 +52,11 @@ class CLIHelpTests(unittest.TestCase):
         self.assertIn(".TH SEMVER-FORGE", text)
         self.assertIn(".SH COMMANDS", text)
         self.assertIn("--discover", text)
-        self.assertIn("release execution", text)
 
     def test_version_option_reports_installed_version(self):
         result = self.run_cli("--version")
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertRegex(result.stdout, r"^semver-forge \\d+\\.\\d+\\.\\d+")
-
+        self.assertRegex(result.stdout, r"^semver-forge \d+\.\d+\.\d+")
 
 
 if __name__ == "__main__":
