@@ -31,9 +31,7 @@ class RecursiveMetadataDiscoveryTests(unittest.TestCase):
                 '{"name":"frontend","version":"1.2.3"}\n', encoding="utf-8"
             )
 
-            targets = discover_sync_targets(
-                root, {"type": "text", "file": "VERSION"}
-            )
+            targets = discover_sync_targets(root, {"type": "text", "file": "VERSION"})
 
             self.assertEqual(
                 {(item["file"], item["type"], item.get("key")) for item in targets},
@@ -137,8 +135,7 @@ class RecursiveMetadataDiscoveryTests(unittest.TestCase):
             (root / ".semver-forge.toml").write_text(
                 '[version]\ninitial = "1.2.3"\n'
                 'source = { type = "text", file = "VERSION" }\n\n'
-                '[sync]\n'
-                'targets = [{ type = "text", file = "packaging/configured-version.txt" }]\n',
+                "[sync]\n"                'targets = [{ type = "text", file = "packaging/configured-version.txt" }]\n',
                 encoding="utf-8",
             )
             manifest = root / "packaging" / "termux" / "manifest.yaml"
@@ -150,9 +147,9 @@ class RecursiveMetadataDiscoveryTests(unittest.TestCase):
 
             dry_output = io.StringIO()
             with contextlib.redirect_stdout(dry_output):
-                dry_status = main([
-                    "--project", str(root), "--json", "sync", "--discover", "--dry-run"
-                ])
+                dry_status = main(
+                    ["--project", str(root), "--json", "sync", "--discover", "--dry-run"]
+                )
 
             preview = json.loads(dry_output.getvalue())
             self.assertEqual(dry_status, 0)
@@ -162,8 +159,10 @@ class RecursiveMetadataDiscoveryTests(unittest.TestCase):
                 "key": "control.Version",
             }
             self.assertEqual(preview["discovered_targets"], [expected_target])
-            sync_files = {Path(item["file"]).relative_to(root).as_posix()
-                          for item in preview["synchronization"]}
+            sync_files = {
+                Path(item["file"]).relative_to(root).as_posix()
+                for item in preview["synchronization"]
+            }
             self.assertEqual(
                 sync_files,
                 {"VERSION", "packaging/configured-version.txt", "packaging/termux/manifest.yaml"},
@@ -174,9 +173,7 @@ class RecursiveMetadataDiscoveryTests(unittest.TestCase):
 
             run_output = io.StringIO()
             with contextlib.redirect_stdout(run_output):
-                run_status = main([
-                    "--project", str(root), "--json", "sync", "--discover"
-                ])
+                run_status = main(["--project", str(root), "--json", "sync", "--discover"])
 
             self.assertEqual(run_status, 0)
             self.assertEqual(configured.read_text(encoding="utf-8"), "1.2.3\n")
