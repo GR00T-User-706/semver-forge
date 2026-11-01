@@ -23,7 +23,7 @@ Version source adapters: `text` (whole file), `json` (dotted `key`, defaults to 
 
 `semver-forge init` inspects existing project metadata before generating configuration. It currently recognizes Python project metadata in `pyproject.toml`, Node metadata and scripts in `package.json`, Rust package metadata in `Cargo.toml`, plain version files, Debian changelog versions, and Arch `PKGBUILD` `pkgver` values. It uses README text as a description fallback and the directory name as a project-name fallback.
 
-It recognizes standard Python, Node, and Rust test/build commands, plus a restricted allowlist of known commands found in GitHub Actions workflow files. It never copies arbitrary workflow shell commands or executes commands during discovery. Artifact paths are inferred only for recognized build systems. Missing test/build/artifact information remains an empty list.
+Initialization does not infer or configure test commands, build commands, or artifact paths. Tests and builds belong to CI and the project's packaging workflow, not SemVer Forge version policy.
 
 If multiple recognized version sources disagree, initialization stops and reports the conflicting files. If no valid source exists, it creates `VERSION` at `0.1.0`. Existing project files are not rewritten during initialization.
 
