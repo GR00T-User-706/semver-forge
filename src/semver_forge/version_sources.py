@@ -186,7 +186,13 @@ def render_version(root, source, version):
                 current = current[part]
             except (KeyError, TypeError) as exc:
                 raise ConfigError(f"{path}: YAML key path does not exist: {dotted_key}") from exc
-        if parts[-1] not in current:
+        try:
+            exists = parts[-1] in current
+        except TypeError as exc:
+            raise ConfigError(
+                f"{path}: YAML key path is not a mapping: {dotted_key}"
+            ) from exc
+        if not exists:
             raise ConfigError(f"{path}: YAML key path does not exist: {dotted_key}")
         current[parts[-1]] = version
         output = io.StringIO()
