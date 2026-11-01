@@ -14,6 +14,22 @@ from .synchronization import sync
 from .vcs import backend_for
 
 
+def resolve_changelog_path(root, notes_file):
+    """Return a changelog path confined to the project root."""
+    project_root = Path(root).resolve()
+    configured = Path(notes_file)
+    if configured.is_absolute():
+        raise ReleaseFailure("release.notes_file must be a relative path inside the project")
+    destination = (project_root / configured).resolve()
+    try:
+        destination.relative_to(project_root)
+    except ValueError as exc:
+        raise ReleaseFailure(
+            "release.notes_file must resolve to a path inside the project root"
+        ) from exc
+    return destination
+
+
 def latest_release(root, cfg):
     backend = backend_for(root)
     prefix = cfg["git"].get("tag_prefix", "v")
