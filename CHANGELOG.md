@@ -7,6 +7,11 @@ and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+- Corrected initialization reporting so it only reads fields actually returned by project discovery.
+- Made generated configurations omit inactive release, test-command, build-command, and artifact policy.
+- Kept CLI result formatting compatible with nested dictionaries and lists.
+
 ## [1.0.0] - 2026-10-26
 
 ### Removed
