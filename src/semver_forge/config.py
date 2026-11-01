@@ -67,9 +67,10 @@ def load(path):
         "shell",
         "debian",
         "debian-changelog",
+        "yaml",
     ):
         raise ConfigError(
-            "version.source.type must be text, json, toml, shell, debian, or debian-changelog"
+            "version.source.type must be text, json, toml, yaml, shell, debian, or debian-changelog"
         )
     if not source.get("file"):
         raise ConfigError("version.source.file is required")
