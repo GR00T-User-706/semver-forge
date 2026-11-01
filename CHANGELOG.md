@@ -14,6 +14,11 @@ and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [1.0.0] - 2026-10-26
 
+### Added
+- Added recursive discovery and synchronization of supported version metadata, including unambiguous YAML version fields.
+- Added YAML canonical version-source support with round-trip updates that preserve comments and unrelated fields.
+
+
 ### Removed
 - Removed the incompatible `release --build` option and release-time test/build/artifact configuration. Package builds and tests remain the responsibility of CI and the project's packaging workflow.
 
