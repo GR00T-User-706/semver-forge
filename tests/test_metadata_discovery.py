@@ -88,16 +88,16 @@ class RecursiveMetadataDiscoveryTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             subprocess.run(["git", "init", "-q"], cwd=root, check=True)
-            (root / "VERSION").write_text("1.2.3\\n", encoding="utf-8")
+            (root / "VERSION").write_text("1.2.3\n", encoding="utf-8")
             (root / ".semver-forge.toml").write_text(
-                '[version]\\ninitial = "1.2.3"\\n'
-                'source = { type = "text", file = "VERSION" }\\n',
+                '[version]\ninitial = "1.2.3"\n'
+                'source = { type = "text", file = "VERSION" }\n',
                 encoding="utf-8",
             )
             manifest = root / "packaging" / "termux" / "manifest.yaml"
             manifest.parent.mkdir(parents=True)
             manifest.write_text(
-                "control:\\n  Package: sample\\n  Version: 1.2.2\\n",
+                "control:\n  Package: sample\n  Version: 1.2.2\n",
                 encoding="utf-8",
             )
             output = io.StringIO()
