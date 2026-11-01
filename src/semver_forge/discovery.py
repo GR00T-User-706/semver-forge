@@ -195,7 +195,6 @@ def discover(root):
     }
 
 
-
 def render_config(result):
     """Render deterministic TOML using discovered values and safe policy defaults."""
 
