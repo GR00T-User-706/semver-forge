@@ -58,13 +58,54 @@ python -m pip install \
 PYTHONPATH="$VENDOR_DIR${PYTHONPATH:+:$PYTHONPATH}" python -c \
     'from ruamel.yaml import YAML; YAML(typ="rt"); print("ruamel.yaml runtime staging: OK")'
 
+# termux-create-package 0.12.0 uses importlib.util without importing that
+# submodule explicitly. On Python 3.14 this can make YAML support appear absent.
+# Patch only a temporary copy, never the installed package-manager executable.
+PATCHED_BUILDER="$BUILD_DIR/termux-create-package"
+python - "$BUILDER" "$PATCHED_BUILDER" <<'PY'
+import os
+import pathlib
+import shutil
+import sys
+
+source = pathlib.Path(sys.argv[1])
+destination = pathlib.Path(sys.argv[2])
+try:
+    text = source.read_text(encoding="utf-8")
+except (OSError, UnicodeError):
+    raise SystemExit(0)
+
+if "importlib.util.find_spec" not in text:
+    raise SystemExit(0)
+
+if "import importlib.util" in text:
+    raise SystemExit(0)
+
+needle = "import importlib\\n"
+if needle not in text:
+    raise SystemExit(
+        "error: termux-create-package has the importlib.util defect, "
+        "but its source layout is not the expected version; refusing to patch it"
+    )
+
+patched = text.replace(needle, needle + "import importlib.util\\n", 1)
+destination.write_text(patched, encoding="utf-8")
+shutil.copystat(source, destination)
+os.chmod(destination, os.stat(source).st_mode | 0o100)
+print("Using a temporary Python 3.14 compatibility patch for termux-create-package")
+PY
+
 mkdir -p dist/termux
-"$BUILDER" --pkg-version "$VERSION_VALUE" packaging/termux/semver-forge.yaml
+if [[ -x "$PATCHED_BUILDER" ]]; then
+    "$PATCHED_BUILDER" --pkg-version "$VERSION_VALUE" packaging/termux/semver-forge.yaml
+else
+    "$BUILDER" --pkg-version "$VERSION_VALUE" packaging/termux/semver-forge.yaml
+fi
 
 PACKAGE="dist/termux/semver-forge_${VERSION_VALUE}_all.deb"
 [[ -s "$PACKAGE" ]] || {
-    printf "error: package builder did not create expected artifact: %s\n" "$PACKAGE" >&2
+    printf "error: package builder did not create expected artifact: %s\\n" "$PACKAGE" >&2
     exit 1
 }
 
-printf "\nBuilt package: %s\n" "$PACKAGE"
+printf "\\nBuilt package: %s\\n" "$PACKAGE"
