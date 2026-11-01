@@ -94,7 +94,7 @@ class RecursiveMetadataDiscoveryTests(unittest.TestCase):
     def test_yaml_read_errors_abort_discovery(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            (root / "manifest.yaml").write_text("version: 1.2.3\\n", encoding="utf-8")
+            (root / "manifest.yaml").write_text("version: 1.2.3\n", encoding="utf-8")
 
             with patch.object(
                 Path,
