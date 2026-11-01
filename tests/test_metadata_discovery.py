@@ -215,7 +215,6 @@ class RecursiveMetadataDiscoveryTests(unittest.TestCase):
                 [{"type": "debian", "file": "packaging/debian/control"}],
             )
 
-
     def test_unreadable_directory_aborts_discovery(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
