@@ -3,7 +3,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from semver_forge.release import plan
+from semver_forge.errors import ReleaseFailure
+from semver_forge.release import plan, release
 
 
 class ReleaseTests(unittest.TestCase):
@@ -35,3 +36,7 @@ class ReleaseTests(unittest.TestCase):
             }
             p = plan(Path(d), cfg)
             self.assertEqual(str(p["next"]), "1.1.0")
+
+    def test_release_execution_is_disabled(self):
+        with self.assertRaisesRegex(ReleaseFailure, "release execution is disabled"):
+            release(Path("."), {})
