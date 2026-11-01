@@ -4,7 +4,7 @@
 
 control:
   Package: semver-forge
-  Version: "0.2.0"
+  Version: "0.3.0"
   Architecture: all
   Maintainer: GR00T-User-706
   Depends:
