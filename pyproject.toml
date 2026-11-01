@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "semver-forge"
-version = "0.3.0"
+version = "1.0.0"
 description = "Automatic semantic version tracking and metadata synchronization."
 readme = "README.md"
 requires-python = ">=3.10"
