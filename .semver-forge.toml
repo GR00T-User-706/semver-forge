@@ -29,12 +29,3 @@ revert = "patch"
 [sync]
 targets = [{ type = "text", file = "VERSION" }]
 
-[release]
-commit_version = true
-annotated_tag = true
-notes_file = "CHANGELOG.md"
-require_confirmation = true
-release_when_no_changes = false
-test_commands = ["python -m pytest", "pytest"]
-build_commands = ["python -m build"]
-artifact_paths = ["dist/*"]
