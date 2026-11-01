@@ -1,6 +1,12 @@
 # Configuration reference
 
-Configuration file: `.semver-forge.toml` or `semver-forge.toml` at repository root. Unknown keys are warned about; malformed TOML and invalid initial versions are errors.
+SemVer Forge reads one project configuration file from the repository root:
+- `.semver-forge.toml` (preferred), or
+- `semver-forge.toml` (supported legacy name).
+
+Do not keep both. If both exist, SemVer Forge reports the duplicate and stops rather than silently choosing one. Files such as `pyproject.toml`, `package.json`, `Cargo.toml`, and `PKGBUILD` are project metadata/version sources, not alternate SemVer Forge configuration files.
+
+Unknown keys are warned about; malformed TOML and invalid initial versions are errors.
 
 - `[project] name`, `description`: descriptive metadata.
 - `[version] initial`: discovered starting version, or `0.1.0` only when no usable version source exists. `source`: inline table with `type`, `file`, optional `key`.
