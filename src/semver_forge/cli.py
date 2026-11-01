@@ -13,6 +13,7 @@ from .config import find_config, load
 from .discovery import discover
 from .errors import ConfigError, ForgeError
 from .operation_log import record
+from .metadata_discovery import discover_sync_targets
 from .release import plan
 from .semver import Version
 from .synchronization import sync
@@ -63,6 +64,11 @@ def parser():
         "--dry-run",
         action="store_true",
         help="show changes without writing",
+    )
+    sync_cmd.add_argument(
+        "--discover",
+        action="store_true",
+        help="recursively discover supported version metadata before synchronizing",
     )
     sync_cmd.add_argument(
         "--version",
@@ -387,9 +393,35 @@ def main(argv=None):
             output(data, args.json)
         elif args.cmd == "sync":
             version = args.version or str(current)
-            result = sync(root, cfg, version, args.dry_run)
+            sync_cfg = cfg
+            discovered = []
+            if args.discover:
+                discovered = discover_sync_targets(root, cfg["version"]["source"])
+                configured = cfg.get("sync", {}).get("targets", [])
+                merged = []
+                seen = set()
+                for target in [*configured, *discovered]:
+                    identity = (target["file"], target["type"], target.get("key"))
+                    if identity not in seen:
+                        seen.add(identity)
+                        merged.append(target)
+                sync_cfg = dict(cfg)
+                sync_cfg["sync"] = dict(cfg.get("sync", {}))
+                sync_cfg["sync"]["targets"] = merged
+            result = sync(root, sync_cfg, version, args.dry_run)
             record("INFO", "sync", "dry-run" if args.dry_run else "completed")
-            output(result, args.json)
+            if args.discover:
+                output(
+                    {
+                        "canonical_version": version,
+                        "discovered_targets": discovered,
+                        "synchronization": result,
+                        "dry_run": args.dry_run,
+                    },
+                    args.json,
+                )
+            else:
+                output(result, args.json)
         else:
             raise ConfigError(f"command not implemented: {args.cmd}")
         return 0
