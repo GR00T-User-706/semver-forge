@@ -5,6 +5,7 @@ from __future__ import annotations
 import io
 import json
 import re
+from collections.abc import Mapping
 from pathlib import Path
 
 try:
@@ -34,9 +35,11 @@ def _yaml_parser():
 def _yaml_value(data, dotted_key, path):
     value = data
     for part in dotted_key.split("."):
+        if not isinstance(value, Mapping):
+            raise ConfigError(f"{path}: YAML key path is not a mapping: {dotted_key}")
         try:
             value = value[part]
-        except (KeyError, TypeError) as exc:
+        except KeyError as exc:
             raise ConfigError(f"{path}: YAML key path does not exist: {dotted_key}") from exc
     return value
 
@@ -187,15 +190,10 @@ def render_version(root, source, version):
             except KeyError as exc:
                 raise ConfigError(f"{path}: YAML key path does not exist: {dotted_key}") from exc
             except TypeError as exc:
-                raise ConfigError(
-                    f"{path}: YAML key path is not a mapping: {dotted_key}"
-                ) from exc
-        try:
-            exists = parts[-1] in current
-        except TypeError as exc:
-            raise ConfigError(
-                f"{path}: YAML key path is not a mapping: {dotted_key}"
-            ) from exc
+                raise ConfigError(f"{path}: YAML key path is not a mapping: {dotted_key}") from exc
+        if not isinstance(current, Mapping):
+            raise ConfigError(f"{path}: YAML key path is not a mapping: {dotted_key}")
+        exists = parts[-1] in current
         if not exists:
             raise ConfigError(f"{path}: YAML key path does not exist: {dotted_key}")
         current[parts[-1]] = version
