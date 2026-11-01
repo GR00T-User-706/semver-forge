@@ -348,9 +348,6 @@ def main(argv=None):
                     "inferred": {
                         "project": result["project"],
                         "sync_targets": result["sync_targets"],
-                        "test_commands": result["test_commands"],
-                        "build_commands": result["build_commands"],
-                        "artifact_paths": result["artifact_paths"],
                         "notes_file": result["notes_file"],
                     },
                     "committed": committed,
