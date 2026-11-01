@@ -9,9 +9,9 @@ Configuration file: `.semver-forge.toml` or `semver-forge.toml` at repository ro
 - `[sync] targets`: array of inline tables each with `type`, `file`, optional `key`.
 - `[release] commit_version`, `annotated_tag`, `notes_file`, `require_confirmation`, `release_when_no_changes`, `test_commands`, `build_commands`, `artifact_paths`.
 
-Commands may be configured as strings (shell execution) or tables with `args = ["program", "arg"]`, `cwd`, `timeout`, and `env`. Prefer `args` to avoid shell interpretation. Current release flow runs configured tests automatically; build commands run only with `release --build`. `require_confirmation` is retained as policy metadata; this CLI currently does not prompt interactively and expects an explicit command invocation. Use `--dry-run` first.
+Release-related configuration fields are retained for compatibility, but release execution is deliberately disabled. The public CLI exposes only `init`, `next`, and `sync`; direct calls to the release execution API fail closed. Do not treat the retained release configuration as an active workflow.
 
-Version source adapters: `text` (whole file), `json` (dotted `key`, defaults to `version`), `toml` (dotted `key`, defaults to `project.version`), `shell` (one assignment; defaults to `VERSION`), and `debian` (one `Version:` field) and `debian-changelog` (the first standard Debian changelog package/version header). TOML updates replace only the selected key's value and preserve surrounding text and comments. `yaml` fails with actionable guidance until an adapter is supplied. The canonical source and targets are validated before synchronization.
+Version source adapters: `text` (whole file), `json` (dotted `key`, defaults to `version`), `toml` (dotted `key`, defaults to `project.version`), `yaml` (dotted `key`, defaults to `version`), `shell` (one assignment; defaults to `VERSION`), `debian` (one `Version:` field), and `debian-changelog` (the first standard Debian changelog package/version header). TOML and YAML updates replace only the selected key's value and preserve unrelated content; YAML uses a round-trip parser to retain comments. The canonical source and targets are validated before synchronization.
 
 ## Discovery during initialization
 
@@ -20,3 +20,7 @@ Version source adapters: `text` (whole file), `json` (dotted `key`, defaults to 
 It recognizes standard Python, Node, and Rust test/build commands, plus a restricted allowlist of known commands found in GitHub Actions workflow files. It never copies arbitrary workflow shell commands or executes commands during discovery. Artifact paths are inferred only for recognized build systems. Missing test/build/artifact information remains an empty list.
 
 If multiple recognized version sources disagree, initialization stops and reports the conflicting files. If no valid source exists, it creates `VERSION` at `0.1.0`. Existing project files are not rewritten during initialization.
+
+## Recursive synchronization discovery
+
+`semver-forge sync --discover` recursively scans the project for supported metadata files and adds them to the synchronization targets for that invocation. It recognizes the supported version filenames already used by initialization, including nested Python, Node, Rust, plain-text, Debian changelog, and Arch PKGBUILD metadata, plus YAML files with exactly one recognized version field (`control.Version`, `version`, or `package.version`). Ambiguous or invalid files are skipped rather than guessed. Discovered targets are not persisted to `.semver-forge.toml`; configure persistent targets explicitly in `[sync].targets`.
