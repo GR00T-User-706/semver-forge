@@ -119,6 +119,7 @@ def _project_metadata(root: Path):
     }
 
 
+
 def render_config(result):
     """Render deterministic TOML using discovered values and safe policy defaults."""
 
