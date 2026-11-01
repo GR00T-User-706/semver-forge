@@ -8,11 +8,15 @@ and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Added
-- Vendor the pure-Python ruamel.yaml runtime dependency in Termux packages so YAML metadata support is available without a separate pip install.
+- Vendor the pure-Python `ruamel.yaml` runtime dependency in Termux packages so YAML metadata support is available without a separate pip install.
 
 ### Fixed
+- Corrected initialization reporting so it only reads fields actually returned by project discovery.
+- Made generated configurations omit inactive release, test-command, build-command, and artifact policy.
+- Kept CLI result formatting compatible with nested dictionaries and lists.
 - Load the Termux package-owned vendor directory before the application modules.
-- Verify build prerequisites and the generated .deb artifact in the Termux build script.
+- Verify build prerequisites and the generated `.deb` artifact in the Termux build script.
+- Fixed the malformed closing docstring in `discovery.py` that prevented linting and test collection.
 
 ### Changed
 - Document the distinction between build-time manifest-parser requirements and package-owned runtime dependencies.
