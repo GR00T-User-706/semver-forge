@@ -136,7 +136,8 @@ class RecursiveMetadataDiscoveryTests(unittest.TestCase):
                 '[version]\ninitial = "1.2.3"\n'
                 'source = { type = "text", file = "VERSION" }\n\n'
                 "[sync]\n"
-                'targets = [{ type = "text", file = "packaging/configured-version.txt" }]\n',
+                'targets = [{ type = "text", file = '
+                '"packaging/configured-version.txt" }]\n',
                 encoding="utf-8",
             )
             manifest = root / "packaging" / "termux" / "manifest.yaml"
