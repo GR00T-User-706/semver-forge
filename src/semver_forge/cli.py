@@ -82,6 +82,8 @@ def _format_output(data, indent=0):
     """Format nested result data as readable, indentation-based text."""
     prefix = " " * indent
     if isinstance(data, dict):
+        if not data:
+            return "{}"
         lines = []
         for key, value in data.items():
             if isinstance(value, (dict, list)) and value:
@@ -91,6 +93,8 @@ def _format_output(data, indent=0):
                 lines.append(f"{prefix}{key}: {_format_output(value)}")
         return "\n".join(lines)
     if isinstance(data, list):
+        if not data:
+            return "[]"
         lines = []
         for item in data:
             if isinstance(item, (dict, list)) and item:
@@ -112,6 +116,7 @@ def output(data, as_json=False):
     else:
         rendered = _format_output(data)
     print(rendered)
+
 
 def main(argv=None):
     argv = list(sys.argv[1:] if argv is None else argv)
@@ -139,7 +144,7 @@ def main(argv=None):
             if not project.is_dir():
                 raise ConfigError(f"project directory does not exist: {project}")
             root = git.root(project) if git.available(project) else project
-            path = root / ".semver-forge.toml"
+            path = find_config(root) or root / ".semver-forge.toml"
             # Discover and validate the project before asking permission to overwrite
             # configuration. A rejected initialization must never prompt for a write
             # that cannot safely happen.
@@ -172,6 +177,7 @@ def main(argv=None):
             if not path.exists() and git.available(root):
                 head_result = git.run(["rev-parse", "--verify", "HEAD"], cwd=root, check=False)
                 if head_result.returncode == 0:
+
                     def add_baseline(match):
                         return match.group(1) + f'\nbaseline = "{head_result.stdout.strip()}"'
 
