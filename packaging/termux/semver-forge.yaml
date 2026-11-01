@@ -26,6 +26,10 @@ data_files:
     source: packaging/termux/semver-forge
     perm: "755"
 
+  lib/semver-forge/vendor:
+    source: packaging/termux/.build/vendor
+    source_recurse: true
+
   lib/semver-forge/semver_forge/__init__.py:
     source: src/semver_forge/__init__.py
   lib/semver-forge/semver_forge/__main__.py:
