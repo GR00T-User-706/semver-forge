@@ -81,6 +81,8 @@ def discover_sync_targets(root, canonical_source=None):
         current_path = Path(current)
         for filename in sorted(filenames):
             path = current_path / filename
+            if path.is_symlink():
+                continue
             relative = path.relative_to(root).as_posix()
             if canonical_path and path.resolve() == canonical_path:
                 continue
@@ -89,6 +91,13 @@ def discover_sync_targets(root, canonical_source=None):
             for known_name, kind, key in VERSION_FILES:
                 if known_name == "debian/changelog":
                     matches_name = filename == "changelog" and current_path.name == "debian"
+                elif known_name == "debian/control":
+                    matches_name = filename == "control" and current_path.name == "debian"
+                    if matches_name:
+                        candidate = _candidate(root, relative, "debian", None)
+                        if candidate:
+                            candidates.append(candidate["source"])
+                    continue
                 else:
                     matches_name = filename == Path(known_name).name
                 if matches_name:
