@@ -37,7 +37,7 @@ class ReleaseTests(unittest.TestCase):
             run("git", "init", "-q")
             run("git", "config", "user.name", "Test")
             run("git", "config", "user.email", "test@example.invalid")
-            (Path(d) / "VERSION").write_text("1.0.0\\n")
+            (Path(d) / "VERSION").write_text("1.0.0\n")
             run("git", "add", "VERSION")
             run("git", "commit", "-m", "chore: initial")
             run("git", "tag", "v1.0.0")
