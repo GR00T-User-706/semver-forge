@@ -158,7 +158,7 @@ class RecursiveMetadataDiscoveryTests(unittest.TestCase):
             self.assertEqual(dry_status, 0)
             self.assertEqual(
                 preview["discovered_targets"],
-                [{"type": "yaml", "file": "packaging/termux/manifest.yaml", "key": "control.Version"}],
+                [{"type": "yaml", "file": "packaging/termux/manifest.yaml",\n                  "key": "control.Version"}],
             )
             sync_files = {Path(item["file"]).relative_to(root).as_posix()
                           for item in preview["synchronization"]}
