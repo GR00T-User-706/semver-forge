@@ -169,4 +169,4 @@ revert = "patch"
 [sync]
 targets = [{", ".join(targets)}]
 
-"""\n
+""""
