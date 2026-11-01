@@ -22,6 +22,16 @@ class InitTests(unittest.TestCase):
             timeout=20,
         )
 
+    def test_init_reuses_legacy_configuration_filename(self):
+        with tempfile.TemporaryDirectory() as directory:
+            project = Path(directory)
+            legacy = project / "semver-forge.toml"
+            legacy.write_text('[version]\ninitial = "1.0.0"\n')
+            result = self.run_cli(project, "init", "--yes")
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertTrue(legacy.is_file())
+            self.assertFalse((project / ".semver-forge.toml").exists())
+
     def test_init_works_without_git(self):
         with tempfile.TemporaryDirectory() as directory:
             project = Path(directory) / "plain"
