@@ -147,7 +147,11 @@ def main(argv=None):
                 if head_result.returncode == 0:
                     config_text = re.sub(
                         r"(?m)^(tag_prefix\s*=.*)$",
-                        lambda match: match.group(1) + f'\nbaseline = "{head_result.stdout.strip()}"',
+                        lambda match: (
+                            match.group(1)
+                            + "\nbaseline = "
+                            + f'"{head_result.stdout.strip()}"'
+                        ),
                         config_text,
                         count=1,
                     )
