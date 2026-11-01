@@ -22,6 +22,7 @@ VERSION_FILES = (
     ("version.txt", "text", None),
     ("version", "text", None),
     ("debian/changelog", "debian-changelog", None),
+    ("debian/control", "debian", None),
     ("PKGBUILD", "shell", "pkgver"),
 )
 
