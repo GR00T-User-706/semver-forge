@@ -9,6 +9,14 @@ instead of colliding with a hand-managed user-local installation.
 Install termux-create-package from its current upstream GitHub release.
 The PyPI release is stale; use the upstream installation instructions.
 
+YAML metadata synchronization uses `ruamel.yaml`. Ensure it is installed in the Termux runtime as well as the package-build environment:
+
+```sh
+python -m pip install 'ruamel.yaml>=0.18'
+```
+
+The upstream `termux-create-package` installation instructions also list `ruamel.yaml` as a manifest-parser dependency. See <https://github.com/termux/termux-create-package/blob/master/INSTALLATION.md>.
+
 From the repository root:
 
 ```sh
