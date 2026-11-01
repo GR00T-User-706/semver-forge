@@ -31,7 +31,7 @@ class DiscoveryTests(unittest.TestCase):
             self.assertEqual(result["sync_targets"], [{"type": "text", "file": "VERSION"}])
             self.assertIn('name = "sample-app"', render_config(result))
 
-    def test_discovery_does_not_infer_build_or_test_commands(self):
+    def test_generated_config_does_not_enable_release_policy(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             (root / "pyproject.toml").write_text(
@@ -39,9 +39,14 @@ class DiscoveryTests(unittest.TestCase):
                 encoding="utf-8",
             )
             result = discover(root)
-            self.assertEqual(result["build_commands"], ["python -m build"])
-            self.assertEqual(result["test_commands"], [])
-            self.assertEqual(result["artifact_paths"], ["dist/*"])
+            config = render_config(result)
+            self.assertNotIn("[release]", config)
+            self.assertNotIn("test_commands", config)
+            self.assertNotIn("build_commands", config)
+            self.assertNotIn("artifact_paths", config)
+            self.assertNotIn("test_commands", result)
+            self.assertNotIn("build_commands", result)
+            self.assertNotIn("artifact_paths", result)
 
     def test_conflicting_versions_are_reported(self):
         with tempfile.TemporaryDirectory() as directory:
