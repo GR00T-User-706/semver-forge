@@ -78,13 +78,40 @@ def parser():
     return p
 
 
-def output(data, as_json=False):
-    print(
-        json.dumps(data, indent=2, sort_keys=True, default=str)
-        if as_json
-        else (data if isinstance(data, str) else "\n".join(f"{k}: {v}" for k, v in data.items()))
-    )
+def _format_output(data, indent=0):
+    """Format nested result data as readable, indentation-based text."""
+    prefix = " " * indent
+    if isinstance(data, dict):
+        lines = []
+        for key, value in data.items():
+            if isinstance(value, (dict, list)) and value:
+                lines.append(f"{prefix}{key}:")
+                lines.append(_format_output(value, indent + 2))
+            else:
+                lines.append(f"{prefix}{key}: {_format_output(value)}")
+        return "\n".join(lines)
+    if isinstance(data, list):
+        lines = []
+        for item in data:
+            if isinstance(item, (dict, list)) and item:
+                lines.append(f"{prefix}-")
+                lines.append(_format_output(item, indent + 2))
+            else:
+                lines.append(f"{prefix}- {_format_output(item)}")
+        return "\n".join(lines)
+    if data is None:
+        return "null"
+    return str(data)
 
+
+def output(data, as_json=False):
+    if as_json:
+        rendered = json.dumps(data, indent=2, sort_keys=True, default=str)
+    elif isinstance(data, str):
+        rendered = data
+    else:
+        rendered = _format_output(data)
+    print(rendered)
 
 def main(argv=None):
     argv = list(sys.argv[1:] if argv is None else argv)
@@ -145,9 +172,12 @@ def main(argv=None):
             if not path.exists() and git.available(root):
                 head_result = git.run(["rev-parse", "--verify", "HEAD"], cwd=root, check=False)
                 if head_result.returncode == 0:
+                    def add_baseline(match):
+                        return match.group(1) + f'\nbaseline = "{head_result.stdout.strip()}"'
+
                     config_text = re.sub(
                         r"(?m)^(tag_prefix\s*=.*)$",
-                        lambda match: match.group(1) + "\nbaseline = " + f'"{head_result.stdout.strip()}"',
+                        add_baseline,
                         config_text,
                         count=1,
                     )
