@@ -91,6 +91,15 @@ class RecursiveMetadataDiscoveryTests(unittest.TestCase):
             with self.assertRaisesRegex(ConfigError, "key path is not a mapping"):
                 render_version(root, source, "1.2.4")
 
+    def test_yaml_read_errors_abort_discovery(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "manifest.yaml").write_text("version: 1.2.3\\n", encoding="utf-8")
+
+            with patch.object(Path, "read_text", side_effect=PermissionError("permission denied")):
+                with self.assertRaisesRegex(PermissionError, "permission denied"):
+                    discover_sync_targets(root)
+
     def test_yaml_sync_is_idempotent(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
