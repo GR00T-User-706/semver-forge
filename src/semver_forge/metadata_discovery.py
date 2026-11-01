@@ -42,10 +42,13 @@ def _yaml_sources(path: Path, relative: str):
             "python -m pip install 'ruamel.yaml>=0.18'"
         ) from exc
 
+    from ruamel.yaml.error import YAMLError
+
+    parser = YAML(typ="safe")
+    text = path.read_text(encoding="utf-8")
     try:
-        parser = YAML(typ="safe")
-        data = parser.load(path.read_text(encoding="utf-8"))
-    except Exception:
+        data = parser.load(text)
+    except YAMLError:
         return []
 
     matches = []
@@ -128,7 +131,7 @@ def discover_sync_targets(root, canonical_source=None):
                     from .version_sources import read_version
 
                     Version.parse(read_version(root, source))
-                except Exception:
+                except (ConfigError, ValueError, TypeError, KeyError):
                     continue
                 identity = (source["file"], source["type"], source.get("key"))
                 if identity not in seen:
