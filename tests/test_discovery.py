@@ -39,9 +39,9 @@ class DiscoveryTests(unittest.TestCase):
                 encoding="utf-8",
             )
             result = discover(root)
-            self.assertNotIn("build_commands", result)
-            self.assertNotIn("test_commands", result)
-            self.assertNotIn("artifact_paths", result)
+            self.assertEqual(result["build_commands"], ["python -m build"])
+            self.assertEqual(result["test_commands"], [])
+            self.assertEqual(result["artifact_paths"], ["dist/*"])
 
     def test_conflicting_versions_are_reported(self):
         with tempfile.TemporaryDirectory() as directory:
