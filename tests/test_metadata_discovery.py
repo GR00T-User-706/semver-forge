@@ -5,6 +5,7 @@ import subprocess
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from semver_forge.cli import main
 from semver_forge.errors import ConfigError
@@ -200,6 +201,19 @@ class RecursiveMetadataDiscoveryTests(unittest.TestCase):
                 targets,
                 [{"type": "debian", "file": "packaging/debian/control"}],
             )
+
+
+    def test_unreadable_directory_aborts_discovery(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+
+            def fail_walk(_root, *, followlinks, onerror):
+                onerror(PermissionError("permission denied"))
+                return iter(())
+
+            with patch("semver_forge.metadata_discovery.os.walk", side_effect=fail_walk):
+                with self.assertRaisesRegex(PermissionError, "permission denied"):
+                    discover_sync_targets(root)
 
     def test_dependency_and_build_directories_are_pruned(self):
         with tempfile.TemporaryDirectory() as directory:
