@@ -51,6 +51,8 @@ data_files:
     source: src/semver_forge/installation.py
   lib/semver-forge/semver_forge/locking.py:
     source: src/semver_forge/locking.py
+  lib/semver-forge/semver_forge/metadata_discovery.py:
+    source: src/semver_forge/metadata_discovery.py
   lib/semver-forge/semver_forge/operation_log.py:
     source: src/semver_forge/operation_log.py
   lib/semver-forge/semver_forge/release.py:
