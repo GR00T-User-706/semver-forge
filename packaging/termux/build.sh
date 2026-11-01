@@ -81,14 +81,14 @@ if "importlib.util.find_spec" not in text:
 if "import importlib.util" in text:
     raise SystemExit(0)
 
-needle = "import importlib\\n"
+needle = "import importlib" + chr(10)
 if needle not in text:
     raise SystemExit(
         "error: termux-create-package has the importlib.util defect, "
         "but its source layout is not the expected version; refusing to patch it"
     )
 
-patched = text.replace(needle, needle + "import importlib.util\\n", 1)
+patched = text.replace(needle, needle + "import importlib.util" + chr(10), 1)
 destination.write_text(patched, encoding="utf-8")
 shutil.copystat(source, destination)
 os.chmod(destination, os.stat(source).st_mode | 0o100)
