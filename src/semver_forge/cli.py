@@ -3,220 +3,80 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import sys
 import tempfile
 from pathlib import Path
 
 from . import __version__, git
-from .changelog import release_notes, update_changelog
 from .config import find_config, load
 from .discovery import discover
-from .errors import ConfigError, ForgeError, ReleaseFailure
-from .installation import install, uninstall
+from .errors import ConfigError, ForgeError
 from .operation_log import record
-from .release import latest_release, plan, release, resolve_changelog_path
+from .release import plan
 from .semver import Version
 from .synchronization import sync
 from .version_sources import read_version
 
 
 def parser():
-    """Build the public CLI parser with useful command-specific help."""
+    """Build the deliberately small public CLI."""
     p = argparse.ArgumentParser(
         prog="semver-forge",
         description=(
-            "Calculate Semantic Versioning releases from Git history, synchronize configured "
-            "version metadata, and create auditable local Git releases."
+            "Initialize version tracking, calculate and apply the next version, "
+            "or synchronize metadata."
         ),
-        epilog=(
-            "Typical workflow:\n"
-            "  semver-forge init                         Create project configuration\n"
-            "  semver-forge doctor                       Validate the environment\n"
-            "  semver-forge next --explain               Explain the proposed version\n"
-            "  semver-forge release --dry-run            Preview a release without changes\n"
-            "  semver-forge release --yes                Execute an authorized local release\n\n"
-            "Use 'semver-forge COMMAND --help' for command-specific help. "
-            "See semver-forge(1), README.md, and docs/ for the full reference."
-        ),
-        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     p.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
-    p.add_argument("--project", help="project path (default: discover from the current directory)")
-    p.add_argument("--json", action="store_true", help="emit machine-readable JSON where supported")
-    sub = p.add_subparsers(dest="cmd", required=True, metavar="COMMAND")
+    p.add_argument("--project", help="project path (default: current directory)")
+    p.add_argument("--json", action="store_true", help="emit machine-readable JSON")
+    sub = p.add_subparsers(dest="cmd", required=True)
 
-    def command(name, description, epilog=None):
-        return sub.add_parser(
-            name,
-            description=description,
-            help=description,
-            epilog=epilog,
-            formatter_class=argparse.RawDescriptionHelpFormatter,
-        )
-
-    init_cmd = command(
-        "init",
-        "Create project version configuration and initialize version control "
-        "metadata when available.",
-        "Generated files are staged and committed by explicit path when Git is available. "
-        "Unrelated staged changes are left untouched.\nExample: semver-forge init",
-    )
+    init_cmd = sub.add_parser("init", help="initialize SemVer Forge tracking in this project")
     init_cmd.add_argument(
         "--yes",
         action="store_true",
-        help="authorize overwriting an existing SemVer Forge configuration",
-    )
-    command(
-        "doctor",
-        "Inspect Git, Python, project configuration, and version-source health.",
-        "Example: semver-forge doctor --json",
-    )
-    command("current", "Print the configured canonical project version and its source.")
-    command("status", "Summarize repository state, latest release tag, and proposed next version.")
-    command("history", "List commits since the latest recognized release boundary.")
-    command(
-        "check", "Verify that the canonical version and configured synchronization targets agree."
-    )
-    command("verify-tag", "Verify the latest recognized release tag and its target commit.")
-    command(
-        "verify-release",
-        "Verify the latest recognized local release and whether its tag points at HEAD.",
+        help="authorize replacing existing configuration",
     )
 
-    v = command("validate", "Validate one strict Semantic Versioning 2.0.0 version string.")
-    v.add_argument(
-        "version", metavar="VERSION", help="version to validate, e.g. 1.2.3-rc.1+build.7"
-    )
-    c = command(
-        "compare", "Compare two versions using SemVer precedence, not lexical string sorting."
-    )
-    c.add_argument("version_a", metavar="VERSION_A", help="first version")
-    c.add_argument("version_b", metavar="VERSION_B", help="second version")
-
-    b = command(
-        "bump",
-        "Calculate a major, minor, or patch increment; write only with --write.",
-        "Examples:\n  semver-forge bump patch\n  semver-forge bump minor --write --dry-run",
-    )
-    b.add_argument(
-        "part", choices=["patch", "minor", "major"], help="SemVer component to increment"
-    )
-    b.add_argument("--write", action="store_true", help="synchronize configured version files")
-    b.add_argument(
-        "--dry-run", action="store_true", help="show proposed synchronization without writing"
-    )
-
-    n = command(
+    next_cmd = sub.add_parser(
         "next",
-        "Calculate the next version from commits since the previous release boundary.",
-        "Examples:\n  semver-forge next\n  semver-forge next --explain --json",
+        help="inspect Git history, choose the next version, and update configured version files",
     )
-    n.add_argument("--explain", action="store_true", help="include the release-impact explanation")
+    next_cmd.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="show the proposed change without writing",
+    )
+    next_cmd.add_argument(
+        "--explain",
+        action="store_true",
+        help="include why the version was or was not changed",
+    )
 
-    sy = command(
+    sync_cmd = sub.add_parser(
         "sync",
-        "Synchronize configured version targets to the selected version.",
-        "This changes project files unless --dry-run is supplied. "
-        "All targets are validated before writes.",
+        help="synchronize configured metadata to the canonical version",
     )
-    sy.add_argument("--dry-run", action="store_true", help="show proposed changes without writing")
-    sy.add_argument(
-        "--version", metavar="VERSION", help="target version (default: current canonical version)"
-    )
-
-    r = command(
-        "release",
-        "Prepare a local release with notes, synchronized versions, and a Git tag.",
-        "Examples:\n  semver-forge release --dry-run\n"
-        "  semver-forge release patch --dry-run\n"
-        "  semver-forge release --version 2.0.0 --yes\n"
-        "  semver-forge release --prerelease rc --yes\n\n"
-        "Dry runs and notes-only mode do not write project files, create commits/tags, "
-        "run package builds, or publish. "
-        "Actual releases require a clean working tree and never push to a remote.",
-    )
-    r.add_argument(
-        "part", nargs="?", choices=["patch", "minor", "major"], help="explicit release increment"
-    )
-    r.add_argument(
-        "--version", dest="explicit", metavar="VERSION", help="explicit target SemVer version"
-    )
-    r.add_argument(
+    sync_cmd.add_argument(
         "--dry-run",
         action="store_true",
-        help="print the release plan without changing repository state",
+        help="show changes without writing",
     )
-    r.add_argument(
-        "--notes-only", action="store_true", help="generate and display notes without releasing"
+    sync_cmd.add_argument(
+        "--version",
+        metavar="VERSION",
+        help="use this target version instead of the canonical version",
     )
-    r.add_argument(
-        "--prerelease", choices=["alpha", "beta", "rc"], help="calculate or create a prerelease"
-    )
-    r.add_argument(
-        "--yes", action="store_true", help="authorize execution without an interactive confirmation"
-    )
-
-    ch = command(
-        "changelog",
-        "Generate and insert the proposed release notes into the configured changelog.",
-        "Writes the proposed version section to the configured release.notes_file. "
-        "--dry-run prints the complete proposed changelog without writing it.",
-    )
-    ch.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="show the complete updated changelog without writing the file",
-    )
-    ins = command(
-        "install", "Install the current Semver Forge source tree into a user-local prefix."
-    )
-    ins.add_argument("--prefix", metavar="DIR", help="installation prefix (default: ~/.local)")
-    un = command("uninstall", "Remove Semver Forge files owned by an installation under a prefix.")
-    un.add_argument("--prefix", metavar="DIR", help="installation prefix (default: ~/.local)")
     return p
 
-
-def _format_output(data, indent=0):
-    """Format command results consistently, including lists and nested values."""
-    prefix = " " * indent
-    if isinstance(data, dict):
-        return "\n".join(
-            f"{prefix}{key}:"
-            + (
-                "\n" + _format_output(value, indent + 2)
-                if isinstance(value, (dict, list)) and value
-                else (
-                    f" {value}"
-                    if not isinstance(value, (dict, list))
-                    else " {}"
-                    if isinstance(value, dict)
-                    else " []"
-                )
-            )
-            for key, value in data.items()
-        )
-    if isinstance(data, list):
-        if not data:
-            return f"{prefix}[]"
-        return "\n".join(
-            f"{prefix}-"
-            + (
-                "\n" + _format_output(item, indent + 2)
-                if isinstance(item, (dict, list))
-                else f" {item}"
-            )
-            for item in data
-        )
-    return f"{prefix}{data}"
-
-
 def output(data, as_json=False):
-    if as_json:
-        print(json.dumps(data, indent=2, sort_keys=True, default=str))
-    elif isinstance(data, str):
-        print(data)
-    else:
-        print(_format_output(data))
+    print(
+        json.dumps(data, indent=2, sort_keys=True, default=str)
+        if as_json
+        else (data if isinstance(data, str) else "\n".join(f"{k}: {v}" for k, v in data.items()))
+    )
 
 
 def main(argv=None):
@@ -240,34 +100,12 @@ def main(argv=None):
             i += 1
     args = parser().parse_args(moved + rest)
     try:
-        if args.cmd == "install":
-            output(install(args.prefix), args.json)
-            return 0
-        if args.cmd == "uninstall":
-            output(uninstall(args.prefix), args.json)
-            return 0
-        if args.cmd == "validate":
-            Version.parse(args.version)
-            output({"valid": True, "version": args.version}, args.json)
-            return 0
-        if args.cmd == "compare":
-            a = Version.parse(args.version_a)
-            b = Version.parse(args.version_b)
-            result = a.compare(b)
-            output(
-                {
-                    "comparison": result,
-                    "relation": "less" if result < 0 else "greater" if result > 0 else "equal",
-                },
-                args.json,
-            )
-            return 0
         if args.cmd == "init":
             project = Path(args.project or ".").expanduser().resolve()
             if not project.is_dir():
                 raise ConfigError(f"project directory does not exist: {project}")
             root = git.root(project) if git.available(project) else project
-            path = find_config(root) or (root / ".semver-forge.toml")
+            path = root / ".semver-forge.toml"
             # Discover and validate the project before asking permission to overwrite
             # configuration. A rejected initialization must never prompt for a write
             # that cannot safely happen.
@@ -295,6 +133,20 @@ def main(argv=None):
             config_text = __import__(
                 "semver_forge.discovery", fromlist=["render_config"]
             ).render_config(result)
+            # Starting tracking establishes the history boundary. Older project
+            # commits must not trigger a version bump on the first next invocation.
+            if not path.exists() and git.available(root):
+                head_result = git.run(["rev-parse", "--verify", "HEAD"], cwd=root, check=False)
+                if head_result.returncode == 0:
+                    config_text = re.sub(
+                        r"(?m)^(tag_prefix\s*=.*)$",
+                        lambda match: (
+                            match.group(1)
+                            + f'\nbaseline = "{head_result.stdout.strip()}"'
+                        ),
+                        config_text,
+                        count=1,
+                    )
             # Validate the generated TOML and its schema before writing anything.
             try:
                 import tomllib
@@ -456,6 +308,9 @@ def main(argv=None):
                     "inferred": {
                         "project": result["project"],
                         "sync_targets": result["sync_targets"],
+                        "test_commands": result["test_commands"],
+                        "build_commands": result["build_commands"],
+                        "artifact_paths": result["artifact_paths"],
                         "notes_file": result["notes_file"],
                     },
                     "committed": committed,
@@ -468,156 +323,73 @@ def main(argv=None):
             return 2 if stage_failed else 0
         root = git.root(args.project)
         config_path = find_config(root)
-        if args.cmd == "doctor":
-            data = {
-                "root": str(root),
-                "git_version": git.run(["--version"], cwd=root).stdout.strip(),
-                "config": str(config_path) if config_path else None,
-                "python": sys.version.split()[0],
-                "git_dirty": git.is_dirty(root),
-                "branch": git.branch(root),
-                "config_valid": False,
-            }
-            if config_path:
-                cfg, unknown = load(config_path)
-                data.update(
-                    {
-                        "config_valid": True,
-                        "unknown_keys": unknown,
-                        "version": read_version(root, cfg["version"]["source"]),
-                        "defaults_and_config": "defaults merged with project configuration",
-                    }
-                )
-            output(data, args.json)
-            return 0
         if not config_path:
-            raise ConfigError("no SemVer Forge configuration found; run semver-forge init")
+            raise ConfigError("no .semver-forge.toml found; run semver-forge init")
         cfg, unknown = load(config_path)
         if unknown:
             print("warning: unknown configuration keys: " + ", ".join(unknown), file=sys.stderr)
         current = Version.parse(read_version(root, cfg["version"]["source"]))
-        if args.cmd == "current":
-            output(
-                {
-                    "version": str(current),
-                    "source": cfg["version"]["source"]["file"],
-                    "root": str(root),
-                },
-                args.json,
-            )
-        elif args.cmd == "bump":
-            nxt = current.bump(args.part)
-            data = {"current": str(current), "next": str(nxt), "written": False}
-            if args.write:
-                if not args.dry_run:
-                    sync(root, cfg, str(nxt))
-                    data["written"] = True
+
+        if args.cmd == "next":
+            proposed = plan(root, cfg)
+            next_version = proposed["next"]
+            changed = next_version.compare(current) > 0
+            sync_result = []
+            if changed:
+                sync_result = sync(root, cfg, str(next_version), dry_run=args.dry_run)
+            if not args.dry_run:
+                # Remember the processed Git boundary so the same commits are not
+                # counted again on the next invocation.
+                head = git.head(root)
+                config_text = config_path.read_text(encoding="utf-8")
+                baseline_line = f'baseline = "{head}"'
+                if re.search(r"(?m)^baseline\s*=", config_text):
+                    config_text = re.sub(
+                        r"(?m)^baseline\s*=.*$",
+                        lambda _match: baseline_line,
+                        config_text,
+                        count=1,
+                    )
                 else:
-                    data["dry_run"] = True
-            output(data, args.json)
-        elif args.cmd == "next":
-            p = plan(root, cfg)
+                    config_text = re.sub(
+                        r"(?m)^(tag_prefix\s*=.*)$",
+                        lambda match: match.group(1) + chr(10) + baseline_line,
+                        config_text,
+                        count=1,
+                    )
+                fd, temp_path = tempfile.mkstemp(prefix=".semver-forge-", dir=root)
+                try:
+                    with os.fdopen(fd, "w", encoding="utf-8", newline="") as stream:
+                        stream.write(config_text)
+                        stream.flush()
+                        os.fsync(stream.fileno())
+                    os.replace(temp_path, config_path)
+                finally:
+                    if os.path.exists(temp_path):
+                        os.unlink(temp_path)
             data = {
-                "current": str(p["current"]),
-                "next": str(p["next"]),
-                "impact": p["impact"],
-                "previous_tag": p["tag"],
-                "commit_count": len(p["commits"]),
+                "current": str(current),
+                "next": str(next_version),
+                "impact": proposed["impact"],
+                "commit_count": len(proposed["commits"]),
+                "would_change": changed,
+                "changed": changed and not args.dry_run,
+                "dry_run": args.dry_run,
+                "synchronization": sync_result,
             }
             if args.explain:
                 data["reason"] = (
-                    "highest classified impact since previous release boundary; "
-                    "no impact means current version is retained"
+                    "highest classified commit impact since the previous version boundary"
+                    if proposed["impact"]
+                    else "no release-relevant commits; version remains unchanged"
                 )
+            record("INFO", "next", "dry-run" if args.dry_run else "completed")
             output(data, args.json)
         elif args.cmd == "sync":
             version = args.version or str(current)
             result = sync(root, cfg, version, args.dry_run)
             record("INFO", "sync", "dry-run" if args.dry_run else "completed")
             output(result, args.json)
-        elif args.cmd == "release":
-            override = args.explicit or args.part
-            result = release(
-                root,
-                cfg,
-                override,
-                args.prerelease,
-                args.dry_run,
-                args.notes_only,
-                args.yes,
-            )
-            record(
-                "INFO",
-                "release",
-                "dry-run" if args.dry_run else "notes-only" if args.notes_only else "completed",
-            )
-            output(result, args.json)
-        elif args.cmd == "check":
-            values = [cfg["version"]["source"], *cfg.get("sync", {}).get("targets", [])]
-            checks = []
-            for src in values:
-                checks.append({"file": src["file"], "version": read_version(root, src)})
-            versions = {x["version"] for x in checks}
-            if len(versions) > 1:
-                raise ConfigError("version targets conflict: " + repr(checks))
-            output({"consistent": True, "targets": checks}, args.json)
-        elif args.cmd == "status":
-            prev, tag = latest_release(root, cfg)
-            p = plan(root, cfg)
-            output(
-                {
-                    "root": str(root),
-                    "branch": git.branch(root),
-                    "dirty": git.is_dirty(root),
-                    "current": str(current),
-                    "latest_release_tag": tag,
-                    "next": str(p["next"]),
-                    "impact": p["impact"],
-                    "commit_count": len(p["commits"]),
-                },
-                args.json,
-            )
-        elif args.cmd == "history":
-            prev, tag = latest_release(root, cfg)
-            output({"latest_tag": tag, "commits": git.commits(root, tag)}, args.json)
-        elif args.cmd == "changelog":
-            p = plan(root, cfg)
-            notes = release_notes(p["commits"], p["rules"])
-            notes_file = cfg.get("release", {}).get("notes_file") or "CHANGELOG.md"
-            if p["impact"] is None and not cfg.get("release", {}).get(
-                "release_when_no_changes", False
-            ):
-                raise ReleaseFailure("no release-relevant commits; changelog was not modified")
-            changelog_path = resolve_changelog_path(root, notes_file)
-            content = update_changelog(
-                changelog_path,
-                str(p["next"]),
-                notes,
-                dry_run=args.dry_run,
-            )
-            output(
-                {
-                    "version": str(p["next"]),
-                    "file": str(changelog_path),
-                    "dry_run": args.dry_run,
-                    "content": content if args.dry_run else "Changelog updated.",
-                },
-                args.json,
-            )
-        elif args.cmd in ("verify-tag", "verify-release"):
-            prev, tag = latest_release(root, cfg)
-            if not tag:
-                raise ReleaseFailure("no valid SemVer release tag found")
-            target = git.tag_commit(root, tag)
-            data = {
-                "tag": tag,
-                "version": str(prev),
-                "tag_commit": target,
-                "head": git.head(root),
-                "tag_exists": True,
-                "points_to_head": target == git.head(root),
-            }
-            output(data, args.json)
         else:
             raise ConfigError(f"command not implemented: {args.cmd}")
         return 0

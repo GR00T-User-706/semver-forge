@@ -1,104 +1,59 @@
-.TH SEMVER-FORGE 1 "2026-10-25" "semver-forge 1.0.0" "User Commands"
+.TH SEMVER-FORGE 1 "2026-10-28" "semver-forge 0.3.0" "User Commands"
 .SH NAME
-semver-forge \- semantic version calculation and local Git release management
+semver-forge \- automatic semantic version tracking and synchronization
 .SH SYNOPSIS
 .B semver-forge
-.RI [ global-options ]
+.RI [ --project DIR ]
 .I command
-.RI [ command-options ]
+.RI [ options ]
 .SH DESCRIPTION
 .B semver-forge
-calculates Semantic Versioning 2.0.0 versions from Conventional Commit history, synchronizes configured version metadata, generates release notes, and creates local Git release tags.
-.PP
-Package building, testing, artifact collection, and publishing are separate project or CI responsibilities. SemVer Forge does not perform them.
-.SH GLOBAL OPTIONS
-.TP
-.BR --help ,\ -h
-Show command help.
-.TP
-.B --version
-Print the installed program version.
-.TP
-.BI --project \ DIR
-Use the specified project directory.
-.TP
-.B --json
-Emit JSON output where supported.
+has three project commands: init, next, and sync. It initializes version tracking, determines the next Semantic Versioning increment from Git history, applies that version to configured files, and synchronizes metadata.
 .SH COMMANDS
 .TP
 .B init
-Discover project metadata and version files, report conflicting version values, and create one SemVer Forge configuration. Existing configuration files are reused; duplicate SemVer Forge TOML files are an error. If a Git remote is configured, init pushes its generated-files commit after committing locally.
+Inspect the project and create .semver-forge.toml. Existing version values are preserved. Conflicting recognized version sources must be resolved before initialization. Use --yes to authorize replacing an existing configuration.
 .TP
-.B doctor
-Inspect Git, Python, repository state, configuration, and version-source health.
+.B next
+Inspect commits since the last processed Git boundary. Select the highest configured impact (breaking change, feature, or fix/performance), update the canonical version source and configured targets when a change is warranted, and persist the processed commit boundary. Re-running next does not count the same commits twice.
 .TP
-.B current
-Display the canonical version and its source.
+.B sync
+Synchronize configured version metadata to the canonical version. Use --dry-run to preview. Use --version VERSION to supply a different target version.
+.SH OPTIONS
 .TP
-.B validate VERSION
-Validate a SemVer version string.
+.B --project DIR
+Operate on the specified project directory. Defaults to the current directory.
 .TP
-.B compare VERSION_A VERSION_B
-Compare versions by SemVer precedence.
+.B --json
+Emit structured JSON output.
 .TP
-.B bump patch|minor|major
-Calculate an increment; synchronize files only with --write.
+.B --dry-run
+For next or sync, preview changes without writing.
 .TP
-.B next [--explain]
-Calculate the next version from commits since the latest recognized release boundary.
+.B --explain
+For next, include the reason for the selected version or no-change decision.
 .TP
-.B sync [--version VERSION] [--dry-run]
-Synchronize the canonical version and configured targets.
+.B --yes
+For init, authorize replacing existing project configuration.
 .TP
-.B changelog [--dry-run]
-Generate release notes from commits in the proposed release range and insert a version section into the configured changelog file. With --dry-run, print the complete proposed changelog without writing it. An existing section for the proposed version is refreshed with the current release notes.
-.TP
-.B release [patch|minor|major] [options]
-Update configured version files and changelog, optionally commit those changes, and create a local Git tag. Options include --version VERSION, --prerelease alpha|beta|rc, --dry-run, --notes-only, and --yes. There is no --build option.
-.TP
-.B check
-Check agreement between the canonical version and synchronization targets.
-.TP
-.B status
-Summarize working-tree state, current version, latest release tag, and proposed next version.
-.TP
-.B history
-Show commits since the release boundary.
-.TP
-.B verify-tag
-Verify the latest recognized release tag.
-.TP
-.B verify-release
-Verify the latest release tag and whether it points to HEAD.
-.TP
-.B install [--prefix DIR]
-Install the source-tree package into a prefix.
-.TP
-.B uninstall [--prefix DIR]
-Remove recognized installation files under a prefix.
+.B --version
+Print the installed SemVer Forge version.
+.SH VERSION SELECTION
+Conventional Commit types are classified by the project's .semver-forge.toml configuration. By default, breaking changes select a major increment, feat selects minor, and fix or perf selects patch. Documentation, tests, formatting, refactoring, build, CI, and chore commits are ignored by default. The highest qualifying impact wins.
 .SH FILES
 .TP
 .I .semver-forge.toml
-Preferred project configuration file.
-.TP
-.I semver-forge.toml
-Supported legacy configuration filename. Do not keep both names.
-.TP
-.I VERSION
-Common canonical version source.
-.TP
-.I CHANGELOG.md
-Optional generated changelog.
+Project configuration, including the canonical version source, synchronization targets, commit rules, and processed Git history boundary.
 .SH EXAMPLES
 .nf
 semver-forge init
-semver-forge doctor --json
-semver-forge next --explain
-semver-forge release --dry-run
-semver-forge release patch --yes
-semver-forge verify-release
+semver-forge next
+semver-forge next --dry-run --explain
+semver-forge sync --dry-run
+semver-forge sync
 .fi
-.SH SAFETY
-Release execution requires a clean working tree by default. Existing tags are never moved or overwritten. SemVer Forge does not build, test, or publish release artifacts. The init command pushes its generated-files commit when a Git remote is configured.
-.SH LIMITATIONS
-Git is the implemented VCS backend. Version synchronization is limited to the adapters documented in docs/CONFIGURATION.md.
+.SH REQUIREMENTS
+Git is required for next. Python 3.10 or later is required.
+.SH SEE ALSO
+.BR git (1),
+.BR python3 (1)
