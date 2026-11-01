@@ -88,6 +88,10 @@ class RecursiveMetadataDiscoveryTests(unittest.TestCase):
             with self.assertRaisesRegex(ConfigError, "key path does not exist"):
                 render_version(root, source, "1.2.4")
 
+            path.write_text("control: scalar\n", encoding="utf-8")
+            with self.assertRaisesRegex(ConfigError, "key path is not a mapping"):
+                render_version(root, source, "1.2.4")
+
     def test_yaml_sync_is_idempotent(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
