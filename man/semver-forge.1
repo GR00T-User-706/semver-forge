@@ -18,7 +18,7 @@ Inspect the project and create .semver-forge.toml. Existing version values are p
 Inspect commits since the last processed Git boundary. Select the highest configured impact (breaking change, feature, or fix/performance), update the canonical version source and configured targets when a change is warranted, and persist the processed commit boundary. Re-running next does not count the same commits twice.
 .TP
 .B sync
-Synchronize configured version metadata to the canonical version. Use --dry-run to preview. Use --version VERSION to supply a different target version.
+Synchronize configured version metadata to the canonical version. Use --dry-run to preview. Use --version VERSION to supply a different target version. Use --discover to recursively find supported metadata files in nested project directories and synchronize them for this invocation.
 .SH OPTIONS
 .TP
 .B --project DIR
@@ -32,6 +32,9 @@ For next or sync, preview changes without writing.
 .TP
 .B --explain
 For next, include the reason for the selected version or no-change decision.
+.TP
+.B --discover
+For sync, recursively discover supported version metadata before synchronizing. Discovered targets are not written back to .semver-forge.toml.
 .TP
 .B --yes
 For init, authorize replacing existing project configuration.
@@ -50,6 +53,7 @@ semver-forge init
 semver-forge next
 semver-forge next --dry-run --explain
 semver-forge sync --dry-run
+semver-forge sync --discover --dry-run
 semver-forge sync
 .fi
 .SH REQUIREMENTS
