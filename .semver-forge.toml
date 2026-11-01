@@ -5,12 +5,11 @@ name = "semver-forge"
 description = "Automatic semantic version tracking and metadata synchronization."
 
 [version]
-initial = "0.5.0"
+initial = "0.3.1"
 source = { type = "toml", file = "pyproject.toml", key = "project.version" }
 
 [git]
 tag_prefix = "v"
-baseline = "c9ae2c9394d989d5ecd83833946be379e58bc28f"
 require_clean = true
 unknown_commit = "ignore"
 merge_commits = "ignore"
@@ -35,6 +34,3 @@ annotated_tag = true
 notes_file = "CHANGELOG.md"
 require_confirmation = true
 release_when_no_changes = false
-test_commands = ["python -m pytest", "pytest"]
-build_commands = ["python -m build"]
-artifact_paths = ["dist/*"]
