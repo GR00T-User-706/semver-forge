@@ -75,9 +75,7 @@ def discover_sync_targets(root, canonical_source=None):
     found = []
     seen = set()
     for current, directories, filenames in os.walk(root, followlinks=False):
-        directories[:] = sorted(
-            name for name in directories if name not in PRUNED_DIRECTORIES
-        )
+        directories[:] = sorted(name for name in directories if name not in PRUNED_DIRECTORIES)
         current_path = Path(current)
         for filename in sorted(filenames):
             path = current_path / filename
@@ -110,10 +108,7 @@ def discover_sync_targets(root, canonical_source=None):
 
             # One file can match multiple known filename rules. Keep only one
             # source descriptor; ambiguous YAML documents were already rejected.
-            unique = {
-                (item["type"], item["file"], item.get("key")): item
-                for item in candidates
-            }
+            unique = {(item["type"], item["file"], item.get("key")): item for item in candidates}
             for key in sorted(unique):
                 source = unique[key]
                 try:
