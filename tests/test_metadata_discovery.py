@@ -153,6 +153,22 @@ class RecursiveMetadataDiscoveryTests(unittest.TestCase):
             self.assertTrue(result["synchronization"][1]["changed"])
             self.assertIn("Version: 1.2.2", manifest.read_text(encoding="utf-8"))
 
+    def test_discovers_nested_debian_control_metadata(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "packaging" / "debian").mkdir(parents=True)
+            (root / "packaging" / "debian" / "control").write_text(
+                "Source: sample\nVersion: 1.2.3\nSection: utils\n",
+                encoding="utf-8",
+            )
+
+            targets = discover_sync_targets(root)
+
+            self.assertEqual(
+                targets,
+                [{"type": "debian", "file": "packaging/debian/control"}],
+            )
+
     def test_dependency_and_build_directories_are_pruned(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
