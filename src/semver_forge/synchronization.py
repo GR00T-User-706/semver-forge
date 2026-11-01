@@ -14,7 +14,23 @@ def sync(root, cfg, version, dry_run=False):
     except SemVerError as exc:
         raise ConfigError(f"invalid target version {version!r}: {exc}") from exc
 
-    sources = [cfg["version"]["source"], *cfg.get("sync", {}).get("targets", [])]
+    sources = []
+    seen_sources = {}
+    for source in [cfg["version"]["source"], *cfg.get("sync", {}).get("targets", [])]:
+        path = _path(root, source["file"])
+        file_name = str(path)
+        identity = (source["type"], file_name, source.get("key"))
+        previous = seen_sources.get(path)
+        if previous is not None:
+            if previous != identity:
+                raise ConfigError(
+                    f"conflicting synchronization definitions for {file_name}: "
+                    f"{previous} and {identity}"
+                )
+            continue
+        seen_sources[path] = identity
+        sources.append(source)
+
     changes = []
     for source in sources:
         path = _path(root, source["file"])

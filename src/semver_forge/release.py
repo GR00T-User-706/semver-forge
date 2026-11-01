@@ -3,9 +3,10 @@
 from pathlib import Path
 
 from . import git
+from .build import run_commands
 from .changelog import release_notes, update_changelog
 from .conventional_commits import classify
-from .errors import ReleaseFailure
+from .errors import BuildFailure, ReleaseFailure
 from .locking import lock
 from .safety import check_release_state
 from .semver import Version
@@ -100,7 +101,13 @@ def release(
     dry_run=False,
     notes_only=False,
     yes=False,
+    run_build=False,
 ):
+    # Release execution is deliberately disabled while the versioning and
+    # synchronization workflow is being stabilized. Keep the implementation
+    # available for later reactivation, but make direct API calls fail closed.
+    raise ReleaseFailure("release execution is disabled; use 'next' and 'sync'")
+
     check_release_state(root, cfg, allow_dirty=False)
     lock_path = Path(root) / ".git" / "semver-forge.lock"
     with lock(lock_path):
@@ -147,11 +154,21 @@ def release(
                 raise ReleaseFailure(
                     "release cancelled; rerun with --yes to authorize without an interactive prompt"
                 )
-        notes_file = cfg["release"].get("notes_file")
-        changelog_path = resolve_changelog_path(root, notes_file) if notes_file else None
+        tests = run_commands(cfg["release"].get("test_commands", []), root, "test")
+        if run_build and not cfg["release"].get("build_commands", []):
+            raise BuildFailure("build requested but no build_commands are configured")
+        builds = (
+            run_commands(cfg["release"].get("build_commands", []), root, "build")
+            if run_build
+            else {
+                "status": "not_requested",
+                "configured": bool(cfg["release"].get("build_commands")),
+            }
+        )
         sync_result = sync(root, cfg, version)
-        if changelog_path:
-            update_changelog(changelog_path, version, notes)
+        notes_file = cfg["release"].get("notes_file")
+        if notes_file:
+            update_changelog(Path(root) / notes_file, version, notes)
         if cfg["release"].get("commit_version", True):
             files = [x["file"] for x in sync_result if x["changed"]]
             if notes_file:
@@ -177,10 +194,16 @@ def release(
         git.run(tag_args, cwd=root)
         if backend.tag_commit(root, tag) != backend.head(root):
             raise ReleaseFailure(f"tag verification failed: {tag} does not point to HEAD")
+        artifacts = []
+        for pattern in cfg["release"].get("artifact_paths", []):
+            artifacts.extend(str(x) for x in Path(root).glob(pattern))
         result.update(
             {
                 "status": "created_locally",
+                "tests": tests,
+                "build": builds,
                 "synchronization": sync_result,
+                "artifacts": artifacts,
                 "published": False,
                 "head": backend.head(root),
             }

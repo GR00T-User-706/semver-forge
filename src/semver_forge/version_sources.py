@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import io
 import json
 import re
+from collections.abc import Mapping
 from pathlib import Path
 
 try:
@@ -20,6 +22,26 @@ def _path(root, file):
     if not path.is_relative_to(base):
         raise ConfigError(f"path escapes project root: {file}")
     return path
+
+
+def _yaml_parser():
+    try:
+        from ruamel.yaml import YAML
+    except ImportError as exc:
+        raise ConfigError("YAML support requires ruamel.yaml") from exc
+    return YAML(typ="rt")
+
+
+def _yaml_value(data, dotted_key, path):
+    value = data
+    for part in dotted_key.split("."):
+        if not isinstance(value, Mapping):
+            raise ConfigError(f"{path}: YAML key path is not a mapping: {dotted_key}")
+        try:
+            value = value[part]
+        except KeyError as exc:
+            raise ConfigError(f"{path}: YAML key path does not exist: {dotted_key}") from exc
+    return value
 
 
 def read_version(root, source):
@@ -62,7 +84,13 @@ def read_version(root, source):
             raise ConfigError(f"{path}: expected a standard Debian changelog header")
         return match.group(2)
     if kind == "yaml":
-        raise ConfigError("YAML support requires an explicit adapter; no YAML parser is bundled")
+        parser = _yaml_parser()
+        try:
+            data = parser.load(text)
+        except Exception as exc:
+            raise ConfigError(f"{path}: invalid YAML: {exc}") from exc
+        dotted_key = key or "version"
+        return str(_yaml_value(data, dotted_key, path))
     raise ConfigError(f"unsupported version source type: {kind}")
 
 
@@ -148,5 +176,28 @@ def render_version(root, source, version):
             raise ConfigError(f"{path}: expected a standard Debian changelog header")
         return updated
     if kind == "yaml":
-        raise ConfigError("YAML support requires an explicit adapter; no YAML parser is bundled")
+        parser = _yaml_parser()
+        try:
+            data = parser.load(text)
+        except Exception as exc:
+            raise ConfigError(f"{path}: invalid YAML: {exc}") from exc
+        dotted_key = key or "version"
+        parts = dotted_key.split(".")
+        current = data
+        for part in parts[:-1]:
+            try:
+                current = current[part]
+            except KeyError as exc:
+                raise ConfigError(f"{path}: YAML key path does not exist: {dotted_key}") from exc
+            except TypeError as exc:
+                raise ConfigError(f"{path}: YAML key path is not a mapping: {dotted_key}") from exc
+        if not isinstance(current, Mapping):
+            raise ConfigError(f"{path}: YAML key path is not a mapping: {dotted_key}")
+        exists = parts[-1] in current
+        if not exists:
+            raise ConfigError(f"{path}: YAML key path does not exist: {dotted_key}")
+        current[parts[-1]] = version
+        output = io.StringIO()
+        parser.dump(data, output)
+        return output.getvalue()
     raise ConfigError(f"unsupported version source type: {kind}")

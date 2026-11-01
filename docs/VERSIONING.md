@@ -1,8 +1,8 @@
 # Versioning Policy
 
-This document defines the project's version scheme, source of truth, synchronization requirements, and release rules.
+This document describes how SemVer Forge selects, stores, and synchronizes versions. It is project policy, not a universal rule imposed on every repository that uses the tool.
 
-## 1. Scheme
+## 1. Version scheme
 
 Use Semantic Versioning: `MAJOR.MINOR.PATCH`.
 
@@ -10,47 +10,50 @@ Use Semantic Versioning: `MAJOR.MINOR.PATCH`.
 - **MINOR:** backward-compatible functionality.
 - **PATCH:** backward-compatible fixes and maintenance.
 
-Pre-release identifiers may be used for alpha, beta, and release-candidate builds. Build metadata must not be used to communicate precedence.
+Pre-release identifiers may be used for alpha, beta, and release-candidate builds. Build metadata does not affect version precedence.
 
-## 2. Canonical Version Source
+## 2. Canonical version source
 
-For projects using PEP 621 metadata, the default canonical version source is `project.version` in `pyproject.toml`.
+The canonical version source is the source configured by `[version].source` in `.semver-forge.toml`. SemVer Forge supports different source types because projects do not all use the same build system or metadata layout.
 
-If dynamic versioning is intentionally adopted, document the actual source and mechanism here. Do not maintain competing version authorities.
+Do not assume that `pyproject.toml`, `VERSION`, a package manifest, or a source-code constant is universally authoritative. The configured source is authoritative for the project being managed. Other version-bearing files belong in `[sync].targets` when they must mirror it.
 
-The package should expose a matching `__version__` where practical. Build metadata, CLI output, and release tags must derive from or match the canonical source.
+For SemVer Forge itself, the canonical source is `project.version` in `pyproject.toml`. The root `VERSION` file, the package's `__version__`, and the Termux manifest fallback are synchronized representations of that version. The Termux build script also derives its package version from the root `VERSION` file.
 
-## 3. Synchronization
+## 3. Synchronization rules
 
-Before changing a version, inspect `pyproject.toml`, `src/<package_name>/__init__.py`, `VERSION` if present, CLI version output, package metadata, release workflow/tag conventions, and intentional current-version references. Do not blindly replace every version-like string. Historical changelog entries and examples are not current version sources.
+Before changing SemVer Forge's own version, inspect the configured canonical source and every current-version representation:
+
+- `pyproject.toml` → `project.version` (canonical for this repository)
+- `VERSION` (synchronization target)
+- `src/semver_forge/__init__.py` → `__version__`
+- `packaging/termux/semver-forge.yaml` → fallback package version
+- CLI `--version` output and built package metadata
+
+Keep those values aligned. Do not replace historical versions in changelog entries, tests, examples, or documentation simply because they resemble current version values. A version-like string is not automatically a version source.
+
+For other projects, follow their configured `[version].source` and `[sync].targets`; do not copy SemVer Forge's own source layout as a universal convention.
 
 ## 4. Change classification
 
 | Change | Typical bump |
 |---|---|
 | Internal bug fix with compatible behavior | PATCH |
-| Documentation-only correction | PATCH if project policy versions docs |
+| Documentation-only correction | PATCH only when the project chooses to version documentation changes |
 | New backward-compatible public feature | MINOR |
 | New optional public API | MINOR |
-| Removed/renamed public API | MAJOR |
-| Incompatible behavior/configuration change | MAJOR |
+| Removed or renamed public API | MAJOR |
+| Incompatible behavior or configuration change | MAJOR |
 | Security fix | PATCH unless compatibility requires otherwise |
+
+The highest qualifying impact from the configured commit rules determines the proposed increment. The project may override the default classification through its configuration.
 
 ## 5. Changelog
 
-Every release version must have a corresponding `CHANGELOG.md` entry. Keep an `[Unreleased]` section if used. Do not rewrite release history.
+Every published release version must have a corresponding `CHANGELOG.md` entry. Preserve historical entries. An `[Unreleased]` section may be used for changes that have not shipped.
 
-## 6. Git tags and releases
+## 6. Release status
 
-Use tags in the project's established format, normally `vMAJOR.MINOR.PATCH`. A release tag must point to the exact commit whose artifacts are published.
+The public SemVer Forge CLI exposes only `init`, `next`, and `sync`. Release execution and publishing are disabled. Newly generated project configurations do not include a `[release]` section, and initialization does not infer test commands, build commands, or artifact paths as release policy.
 
-## 7. Release checklist
-
-- [ ] Canonical version updated.
-- [ ] Package-exposed version synchronized.
-- [ ] Changelog entry present.
-- [ ] Tests and lint checks completed.
-- [ ] Source distribution and wheel built.
-- [ ] Artifacts inspected and installed in a clean environment.
-- [ ] Tag matches the release version.
-- [ ] Release notes accurately describe shipped changes.
+Legacy `[release]` settings may remain in existing project configurations, but they do not enable a release workflow. CI and packaging workflows are responsible for tests, builds, artifact inspection, and package installation checks. Release execution must not be treated as available unless it is explicitly re-enabled and its safety requirements are implemented and tested.

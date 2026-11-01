@@ -12,6 +12,7 @@ from . import __version__, git
 from .config import find_config, load
 from .discovery import discover
 from .errors import ConfigError, ForgeError
+from .metadata_discovery import discover_sync_targets
 from .operation_log import record
 from .release import plan
 from .semver import Version
@@ -65,18 +66,56 @@ def parser():
         help="show changes without writing",
     )
     sync_cmd.add_argument(
+        "--discover",
+        action="store_true",
+        help="recursively discover supported version metadata before synchronizing",
+    )
+    sync_cmd.add_argument(
         "--version",
         metavar="VERSION",
         help="use this target version instead of the canonical version",
     )
     return p
 
+
+def _format_output(data, indent=0):
+    """Format nested result data as readable, indentation-based text."""
+    prefix = " " * indent
+    if isinstance(data, dict):
+        if not data:
+            return "{}"
+        lines = []
+        for key, value in data.items():
+            if isinstance(value, (dict, list)) and value:
+                lines.append(f"{prefix}{key}:")
+                lines.append(_format_output(value, indent + 2))
+            else:
+                lines.append(f"{prefix}{key}: {_format_output(value)}")
+        return "\n".join(lines)
+    if isinstance(data, list):
+        if not data:
+            return "[]"
+        lines = []
+        for item in data:
+            if isinstance(item, (dict, list)) and item:
+                lines.append(f"{prefix}-")
+                lines.append(_format_output(item, indent + 2))
+            else:
+                lines.append(f"{prefix}- {_format_output(item)}")
+        return "\n".join(lines)
+    if data is None:
+        return "null"
+    return str(data)
+
+
 def output(data, as_json=False):
-    print(
-        json.dumps(data, indent=2, sort_keys=True, default=str)
-        if as_json
-        else (data if isinstance(data, str) else "\n".join(f"{k}: {v}" for k, v in data.items()))
-    )
+    if as_json:
+        rendered = json.dumps(data, indent=2, sort_keys=True, default=str)
+    elif isinstance(data, str):
+        rendered = data
+    else:
+        rendered = _format_output(data)
+    print(rendered)
 
 
 def main(argv=None):
@@ -105,7 +144,7 @@ def main(argv=None):
             if not project.is_dir():
                 raise ConfigError(f"project directory does not exist: {project}")
             root = git.root(project) if git.available(project) else project
-            path = root / ".semver-forge.toml"
+            path = find_config(root) or root / ".semver-forge.toml"
             # Discover and validate the project before asking permission to overwrite
             # configuration. A rejected initialization must never prompt for a write
             # that cannot safely happen.
@@ -138,12 +177,13 @@ def main(argv=None):
             if not path.exists() and git.available(root):
                 head_result = git.run(["rev-parse", "--verify", "HEAD"], cwd=root, check=False)
                 if head_result.returncode == 0:
+
+                    def add_baseline(match):
+                        return match.group(1) + f'\nbaseline = "{head_result.stdout.strip()}"'
+
                     config_text = re.sub(
                         r"(?m)^(tag_prefix\s*=.*)$",
-                        lambda match: (
-                            match.group(1)
-                            + f'\nbaseline = "{head_result.stdout.strip()}"'
-                        ),
+                        add_baseline,
                         config_text,
                         count=1,
                     )
@@ -308,9 +348,6 @@ def main(argv=None):
                     "inferred": {
                         "project": result["project"],
                         "sync_targets": result["sync_targets"],
-                        "test_commands": result["test_commands"],
-                        "build_commands": result["build_commands"],
-                        "artifact_paths": result["artifact_paths"],
                         "notes_file": result["notes_file"],
                     },
                     "committed": committed,
@@ -387,9 +424,35 @@ def main(argv=None):
             output(data, args.json)
         elif args.cmd == "sync":
             version = args.version or str(current)
-            result = sync(root, cfg, version, args.dry_run)
+            sync_cfg = cfg
+            discovered = []
+            if args.discover:
+                discovered = discover_sync_targets(root, cfg["version"]["source"])
+                configured = cfg.get("sync", {}).get("targets", [])
+                merged = []
+                seen = set()
+                for target in [*configured, *discovered]:
+                    identity = (target["file"], target["type"], target.get("key"))
+                    if identity not in seen:
+                        seen.add(identity)
+                        merged.append(target)
+                sync_cfg = dict(cfg)
+                sync_cfg["sync"] = dict(cfg.get("sync", {}))
+                sync_cfg["sync"]["targets"] = merged
+            result = sync(root, sync_cfg, version, args.dry_run)
             record("INFO", "sync", "dry-run" if args.dry_run else "completed")
-            output(result, args.json)
+            if args.discover:
+                output(
+                    {
+                        "canonical_version": version,
+                        "discovered_targets": discovered,
+                        "synchronization": result,
+                        "dry_run": args.dry_run,
+                    },
+                    args.json,
+                )
+            else:
+                output(result, args.json)
         else:
             raise ConfigError(f"command not implemented: {args.cmd}")
         return 0
