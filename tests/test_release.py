@@ -4,10 +4,30 @@ import unittest
 from pathlib import Path
 
 from semver_forge.errors import ReleaseFailure
-from semver_forge.release import plan, release
+from semver_forge.release import plan, release, resolve_changelog_path
 
 
 class ReleaseTests(unittest.TestCase):
+    def test_changelog_paths_cannot_escape_project(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.assertEqual(resolve_changelog_path(root, "CHANGELOG.md"), root / "CHANGELOG.md")
+            for unsafe in ("../outside.md", "/tmp/outside.md"):
+                with self.subTest(path=unsafe), self.assertRaises(ReleaseFailure):
+                    resolve_changelog_path(root, unsafe)
+
+    def test_changelog_symlink_cannot_escape_project(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            outside = root.parent / "semver-forge-outside-test.md"
+            outside.write_text("protected", encoding="utf-8")
+            try:
+                (root / "CHANGELOG.md").symlink_to(outside)
+                with self.assertRaises(ReleaseFailure):
+                    resolve_changelog_path(root, "CHANGELOG.md")
+            finally:
+                outside.unlink(missing_ok=True)
+
     def test_plan_from_history(self):
         with tempfile.TemporaryDirectory() as d:
 
@@ -17,7 +37,7 @@ class ReleaseTests(unittest.TestCase):
             run("git", "init", "-q")
             run("git", "config", "user.name", "Test")
             run("git", "config", "user.email", "test@example.invalid")
-            (Path(d) / "VERSION").write_text("1.0.0\n")
+            (Path(d) / "VERSION").write_text("1.0.0\\n")
             run("git", "add", "VERSION")
             run("git", "commit", "-m", "chore: initial")
             run("git", "tag", "v1.0.0")
