@@ -13,9 +13,7 @@ Unknown keys are warned about; malformed TOML and invalid initial versions are e
 - `[git] tag_prefix`: commonly `v` or empty. `require_clean`: require clean tree. `baseline`: optional commit/tag boundary used only when no valid release tag exists. `unknown_commit`: `ignore` by default. `merge_commits`: reserved policy field; current implementation relies on Git's default log traversal.
 - `[commits] breaking_changes`, `ignored_types`, `unknown`, `[commits.types]`: impact mapping; accepted impacts are `major`, `minor`, `patch`.
 - `[sync] targets`: array of inline tables each with `type`, `file`, optional `key`.
-- `[release] commit_version`, `annotated_tag`, `notes_file`, `require_confirmation`, `release_when_no_changes`, `test_commands`, `build_commands`, `artifact_paths`.
-
-Release-related configuration fields are retained for compatibility, but release execution is deliberately disabled. The public CLI exposes only `init`, `next`, and `sync`; direct calls to the release execution API fail closed. Do not treat the retained release configuration as an active workflow.
+Legacy `[release]` settings may remain in older configuration files, but release execution is disabled and the CLI does not use those settings. Newly generated configurations omit the section entirely.
 
 Version source adapters: `text` (whole file), `json` (dotted `key`, defaults to `version`), `toml` (dotted `key`, defaults to `project.version`), `yaml` (dotted `key`, defaults to `version`), `shell` (one assignment; defaults to `VERSION`), `debian` (one `Version:` field), and `debian-changelog` (the first standard Debian changelog package/version header). TOML and YAML updates replace only the selected key's value and preserve unrelated content; YAML uses a round-trip parser to retain comments. The canonical source and targets are validated before synchronization.
 
