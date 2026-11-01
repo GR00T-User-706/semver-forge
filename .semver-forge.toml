@@ -2,10 +2,10 @@
 # Review the discovery report before changing release policy.
 [project]
 name = "semver-forge"
-description = "Semantic versioning, version synchronization, and local release management."
+description = "Automatic semantic version tracking and metadata synchronization."
 
 [version]
-initial = "0.2.0"
+initial = "0.5.0"
 source = { type = "toml", file = "pyproject.toml", key = "project.version" }
 
 [git]
