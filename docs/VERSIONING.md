@@ -54,6 +54,6 @@ Every published release version must have a corresponding `CHANGELOG.md` entry. 
 
 ## 6. Release status
 
-The public SemVer Forge CLI currently exposes only `init`, `next`, and `sync`. Release execution and publishing are disabled. Retained release-planning code and `[release]` configuration fields do not authorize a release operation and must not be documented as an active workflow.
+The public SemVer Forge CLI exposes only `init`, `next`, and `sync`. Release execution and publishing are disabled. Newly generated project configurations do not include a `[release]` section, and initialization does not infer test commands, build commands, or artifact paths as release policy.
 
-CI and packaging workflows are responsible for tests, builds, artifact inspection, and package installation checks. A release process must not be treated as available until release execution is explicitly re-enabled and its safety requirements are implemented and tested.
+Legacy `[release]` settings may remain in existing project configurations, but they do not enable a release workflow. CI and packaging workflows are responsible for tests, builds, artifact inspection, and package installation checks. Release execution must not be treated as available unless it is explicitly re-enabled and its safety requirements are implemented and tested.
