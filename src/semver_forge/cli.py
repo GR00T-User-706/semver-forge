@@ -12,8 +12,8 @@ from . import __version__, git
 from .config import find_config, load
 from .discovery import discover
 from .errors import ConfigError, ForgeError
-from .operation_log import record
 from .metadata_discovery import discover_sync_targets
+from .operation_log import record
 from .release import plan
 from .semver import Version
 from .synchronization import sync
