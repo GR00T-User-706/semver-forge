@@ -15,8 +15,7 @@ control:
   Homepage: https://github.com/GR00T-User-706/semver-forge
   Description: Semantic version tracking and metadata synchronization
     Local-first Semantic Versioning 2.0.0 tooling with version discovery,
-    synchronization, Conventional Commit analysis, changelog generation,
-    and local Git release management.
+    recursive metadata synchronization, and Conventional Commit analysis.
 
 installation_prefix: /data/data/com.termux/files/usr
 deb_dir: dist/termux
