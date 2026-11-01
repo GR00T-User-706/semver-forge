@@ -39,7 +39,7 @@ def _read_source(root: Path, source: dict) -> str:
                 data = data[part]
         value = str(data)
     elif kind == "debian":
-        matches = re.findall(r"^Version:\\s*(\\S+)\\s*$", text, re.M)
+        matches = re.findall(r"^Version:\s*(\S+)\s*$", text, re.M)
         if len(matches) != 1:
             raise ValueError("expected exactly one Version field")
         value = matches[0]
