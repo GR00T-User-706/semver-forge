@@ -7,6 +7,7 @@ import unittest
 from pathlib import Path
 
 from semver_forge.cli import main
+from semver_forge.errors import ConfigError
 from semver_forge.metadata_discovery import discover_sync_targets
 from semver_forge.version_sources import read_version, render_version
 
@@ -69,6 +70,43 @@ class RecursiveMetadataDiscoveryTests(unittest.TestCase):
             self.assertIn("# version comment", updated)
             self.assertIn("Architecture: all", updated)
             self.assertIn("Package: sample", updated)
+
+    def test_yaml_invalid_document_and_missing_key_are_errors(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            path = root / "manifest.yaml"
+            source = {
+                "type": "yaml",
+                "file": "manifest.yaml",
+                "key": "control.Version",
+            }
+            path.write_text("control: [", encoding="utf-8")
+            with self.assertRaisesRegex(ConfigError, "invalid YAML"):
+                read_version(root, source)
+
+            path.write_text("control:\n  Package: sample\n", encoding="utf-8")
+            with self.assertRaisesRegex(ConfigError, "key path does not exist"):
+                render_version(root, source, "1.2.4")
+
+    def test_yaml_sync_is_idempotent(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            path = root / "manifest.yaml"
+            path.write_text(
+                "control:\n  Version: 1.2.3 # retain comment\n",
+                encoding="utf-8",
+            )
+            source = {
+                "type": "yaml",
+                "file": "manifest.yaml",
+                "key": "control.Version",
+            }
+
+            first = render_version(root, source, "1.2.4")
+            path.write_text(first, encoding="utf-8")
+            second = render_version(root, source, "1.2.4")
+
+            self.assertEqual(first, second)
 
     def test_ambiguous_yaml_version_fields_are_not_guessed(self):
         with tempfile.TemporaryDirectory() as directory:
