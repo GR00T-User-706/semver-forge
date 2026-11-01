@@ -38,6 +38,11 @@ def _read_source(root: Path, source: dict) -> str:
             if part:
                 data = data[part]
         value = str(data)
+    elif kind == "debian":
+        matches = re.findall(r"^Version:\\s*(\\S+)\\s*$", text, re.M)
+        if len(matches) != 1:
+            raise ValueError("expected exactly one Version field")
+        value = matches[0]
     elif kind == "debian-changelog":
         first_line = text.splitlines()[0] if text.splitlines() else ""
         match = re.match(r"^\S+\s+\(([^)]+)\)\s+\S+;\s*urgency=", first_line)
