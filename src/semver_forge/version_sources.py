@@ -59,7 +59,7 @@ def read_version(root, source):
     if kind == "shell":
         variable = key or "VERSION"
         matches = re.findall(
-            rf"^\\s*{re.escape(variable)}\\s*=\\s*[\\\"']?([^\\\"'\\n#]+)",
+            rf"^\s*{re.escape(variable)}\s*=\s*[\"']?([^\"'\n#]+)",
             text,
             re.M,
         )
@@ -67,14 +67,14 @@ def read_version(root, source):
             raise ConfigError(f"{path}: expected exactly one {variable}= assignment")
         return matches[0].strip()
     if kind == "debian":
-        matches = re.findall(r"^Version:\\s*(\\S+)\\s*$", text, re.M)
+        matches = re.findall(r"^Version:\s*(\S+)\s*$", text, re.M)
         if len(matches) != 1:
             raise ConfigError(f"{path}: expected exactly one Version field")
         return matches[0]
     if kind == "debian-changelog":
         lines = text.splitlines()
         match = re.match(
-            r"^(\\S+\\s+\\()([^)]+)(\\)\\s+\\S+;\\s*urgency=.*)$",
+            r"^(\S+\s+\()([^)]+)(\)\s+\S+;\s*urgency=.*)$",
             lines[0] if lines else "",
         )
         if not match:
@@ -97,7 +97,7 @@ def render_version(root, source, version):
     text = path.read_text(encoding="utf-8")
     key = source.get("key")
     if kind == "text":
-        return version + "\\n"
+        return version + "\n"
     if kind == "json":
         data = json.loads(text)
         parts = (key or "version").split(".")
@@ -105,22 +105,22 @@ def render_version(root, source, version):
         for part in parts[:-1]:
             current = current[part]
         current[parts[-1]] = version
-        return json.dumps(data, indent=2, ensure_ascii=False) + "\\n"
+        return json.dumps(data, indent=2, ensure_ascii=False) + "\n"
     if kind == "toml":
         dotted_key = key or "project.version"
         parts = dotted_key.split(".")
         section = ".".join(parts[:-1])
         field = parts[-1]
         lines = text.splitlines(keepends=True)
-        section_pattern = re.compile(r"^\\s*\\[" + re.escape(section) + r"\\]\\s*(?:#.*)?$")
+        section_pattern = re.compile(r"^\s*\[" + re.escape(section) + r"\]\s*(?:#.*)?$")
         field_pattern = re.compile(
-            r"^(\\s*" + re.escape(field) + r"\\s*=\\s*)([^#\\r\\n]+?)(\\s*(?:#.*)?(?:\\r?\\n)?)$"
+            r"^(\s*" + re.escape(field) + r"\s*=\s*)([^#\r\n]+?)(\s*(?:#.*)?(?:\r?\n)?)$"
         )
         in_section = False
         matches = []
-        table_pattern = re.compile(r"^\\s*\\[[^\\]]+\\]\\s*(?:#.*)?$")
+        table_pattern = re.compile(r"^\s*\[[^\]]+\]\s*(?:#.*)?$")
         for index, line in enumerate(lines):
-            candidate = line.rstrip("\\r\\n")
+            candidate = line.rstrip("\r\n")
             if table_pattern.match(candidate):
                 in_section = bool(section_pattern.match(candidate))
             elif in_section:
@@ -137,8 +137,8 @@ def render_version(root, source, version):
     if kind == "shell":
         variable = key or "VERSION"
         pattern = (
-            rf"^(\\s*{re.escape(variable)}\\s*=\\s*)([\\\"']?)"
-            rf"[^\\\"'\\n#]+([\\\"']?\\s*(?:#.*)?)$"
+            rf"^(\s*{re.escape(variable)}\s*=\s*)([\"']?)"
+            rf"[^\"'\n#]+([\"']?\s*(?:#.*)?)$"
         )
         updated, count = re.subn(
             pattern,
@@ -152,7 +152,7 @@ def render_version(root, source, version):
         return updated
     if kind == "debian":
         updated, count = re.subn(
-            r"^(Version:\\s*)\\S+(\\s*)$",
+            r"^(Version:\s*)\S+(\s*)$",
             lambda match: match.group(1) + version + match.group(2),
             text,
             count=1,
@@ -163,7 +163,7 @@ def render_version(root, source, version):
         return updated
     if kind == "debian-changelog":
         updated, count = re.subn(
-            r"^(\\S+\\s+\\()[^)]+(\\)\\s+\\S+;\\s*urgency=.*)$",
+            r"^(\S+\s+\()[^)]+(\)\s+\S+;\s*urgency=.*)$",
             lambda match: match.group(1) + version + match.group(2),
             text,
             count=1,
