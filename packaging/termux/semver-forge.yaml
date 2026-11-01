@@ -13,7 +13,7 @@ control:
   Section: devel
   Priority: optional
   Homepage: https://github.com/GR00T-User-706/semver-forge
-  Description: Semantic versioning and Git release management toolkit
+  Description: Semantic version tracking and metadata synchronization
     Local-first Semantic Versioning 2.0.0 tooling with version discovery,
     synchronization, Conventional Commit analysis, changelog generation,
     and local Git release management.
