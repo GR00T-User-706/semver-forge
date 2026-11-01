@@ -96,7 +96,11 @@ class RecursiveMetadataDiscoveryTests(unittest.TestCase):
             root = Path(directory)
             (root / "manifest.yaml").write_text("version: 1.2.3\\n", encoding="utf-8")
 
-            with patch.object(Path, "read_text", side_effect=PermissionError("permission denied")):
+            with patch.object(
+                Path,
+                "read_text",
+                side_effect=PermissionError("permission denied"),
+            ):
                 with self.assertRaisesRegex(PermissionError, "permission denied"):
                     discover_sync_targets(root)
 
