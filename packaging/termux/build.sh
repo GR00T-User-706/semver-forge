@@ -104,8 +104,8 @@ fi
 
 PACKAGE="dist/termux/semver-forge_${VERSION_VALUE}_all.deb"
 [[ -s "$PACKAGE" ]] || {
-    printf "error: package builder did not create expected artifact: %s\\n" "$PACKAGE" >&2
+    printf "error: package builder did not create expected artifact: %s\n" "$PACKAGE" >&2
     exit 1
 }
 
-printf "\\nBuilt package: %s\\n" "$PACKAGE"
+printf "\nBuilt package: %s\n" "$PACKAGE"
