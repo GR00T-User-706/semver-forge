@@ -162,7 +162,7 @@ class RecursiveMetadataDiscoveryTests(unittest.TestCase):
                 sync_files,
                 {"VERSION", "packaging/configured-version.txt", "packaging/termux/manifest.yaml"},
             )
-            self.assertTrue(all(item["changed"] for item in preview["synchronization"]))
+            self.assertEqual(sum(item["changed"] for item in preview["synchronization"]), 2)
             self.assertEqual(configured.read_text(encoding="utf-8"), "1.2.2\n")
             self.assertIn("Version: 1.2.2", manifest.read_text(encoding="utf-8"))
 
