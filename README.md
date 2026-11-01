@@ -64,7 +64,14 @@ This copies the canonical version to configured targets. Preview first with:
 semver-forge sync --dry-run
 ```
 
-An explicit target version can be supplied with `--version VERSION`.
+To recursively discover supported version metadata in the project and synchronize it too:
+
+```sh
+semver-forge sync --discover --dry-run
+semver-forge sync --discover
+```
+
+Discovery scans nested project directories for supported metadata files, including YAML manifests with an unambiguous version field. It skips Git internals, virtual environments, dependency trees, and generated build directories. Discovered targets are used for that sync invocation and are not written back to `.semver-forge.toml`. An explicit target version can be supplied with `--version VERSION`.
 
 ## Configuration
 
