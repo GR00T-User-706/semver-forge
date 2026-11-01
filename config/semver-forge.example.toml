@@ -33,6 +33,3 @@ annotated_tag = true
 notes_file = "CHANGELOG.md"
 require_confirmation = true
 release_when_no_changes = false
-test_commands = []
-build_commands = []
-artifact_paths = []

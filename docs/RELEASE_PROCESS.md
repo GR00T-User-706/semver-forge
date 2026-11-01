@@ -7,8 +7,8 @@
 5. Update the canonical version and all intentional mirrors.
 6. Add the release entry to `CHANGELOG.md`.
 7. Update user and developer documentation.
-8. Build wheel and source distribution with `python -m build`.
-9. Inspect artifacts and run `twine check`.
+8. Build packages using the project's packaging workflow or PKGforge.
+9. Inspect artifacts using the validation tools for each package format.
 10. Test installation in a clean environment.
 11. Review the final diff and confirm no unrelated files are included.
 12. Create the version tag on the exact release commit.

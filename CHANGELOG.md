@@ -15,6 +15,19 @@ and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Added the installed `semver-forge` console entry point.
 - Removed release, verification, comparison, history, diagnostics, and other redundant commands from the public interface.
 
+## [1.0.0] - 2026-10-26
+
+### Removed
+- Removed the incompatible `release --build` option and release-time test/build/artifact configuration. Package builds and tests remain the responsibility of CI and the project's packaging workflow.
+
+### Fixed
+- Confined changelog writes to paths inside the project root, including symlink resolution.
+- Refresh existing proposed-version changelog sections and reject changelog generation when no release is permitted.
+- Corrected CLI formatting for nested and list command output.
+
+### Planned
+- No unreleased changes are recorded yet.
+
 ## [0.2.0] - 2026-10-24
 
 ### Added

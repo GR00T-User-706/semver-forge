@@ -51,14 +51,21 @@ def update_changelog(path, version, notes, dry_run=False):
         else "# Changelog\n\nAll notable changes to this project are documented in this file.\n"
     )
     block = f"## [{version}]\n\n{notes.strip()}\n\n"
-    if f"## [{version}]" in existing:
-        raise ValueError(f"changelog already contains version {version}")
-    result = existing.replace("\n", "\n", 1)
-    lines = result.splitlines(keepends=True)
-    insert = 1
-    if lines and lines[0].startswith("#"):
-        insert = 1
-    new = "".join(lines[:insert]) + "\n" + block + "".join(lines[insert:])
+    lines = existing.splitlines(keepends=True)
+    heading = f"## [{version}]"
+    matches = [i for i, line in enumerate(lines) if line.rstrip("\r\n") == heading]
+    if len(matches) > 1:
+        raise ValueError(f"changelog contains duplicate headings for version {version}")
+    if matches:
+        start = matches[0]
+        end = next(
+            (i for i in range(start + 1, len(lines)) if lines[i].startswith("## ")),
+            len(lines),
+        )
+        new = "".join(lines[:start]) + block + "".join(lines[end:])
+    else:
+        insert = 1 if lines and lines[0].startswith("#") else 0
+        new = "".join(lines[:insert]) + "\n" + block + "".join(lines[insert:])
     if not dry_run:
         p.write_text(new, encoding="utf-8")
     return new
