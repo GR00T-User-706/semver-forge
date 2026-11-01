@@ -7,10 +7,15 @@ and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+- Vendor the pure-Python ruamel.yaml runtime dependency in Termux packages so YAML metadata support is available without a separate pip install.
+
 ### Fixed
-- Corrected initialization reporting so it only reads fields actually returned by project discovery.
-- Made generated configurations omit inactive release, test-command, build-command, and artifact policy.
-- Kept CLI result formatting compatible with nested dictionaries and lists.
+- Load the Termux package-owned vendor directory before the application modules.
+- Verify build prerequisites and the generated .deb artifact in the Termux build script.
+
+### Changed
+- Document the distinction between build-time manifest-parser requirements and package-owned runtime dependencies.
 
 ## [1.0.0] - 2026-10-26
 
@@ -18,9 +23,8 @@ and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Added recursive discovery and synchronization of supported version metadata, including unambiguous YAML version fields.
 - Added YAML canonical version-source support with round-trip updates that preserve comments and unrelated fields.
 
-
 ### Removed
-- Removed the incompatible `release --build` option and release-time test/build/artifact configuration. Package builds and tests remain the responsibility of CI and the project's packaging workflow.
+- Removed the incompatible release --build option and release-time test/build/artifact configuration. Package builds and tests remain the responsibility of CI and the project's packaging workflow.
 
 ### Fixed
 - Confined changelog writes to paths inside the project root, including symlink resolution.
@@ -30,9 +34,9 @@ and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [0.3.0] - 2026-10-28
 
 ### Changed
-- Reduced the public CLI to `init`, `next`, and `sync`.
-- Made `next` apply the inferred version change and persist its processed Git history boundary.
-- Added the installed `semver-forge` console entry point.
+- Reduced the public CLI to init, next, and sync.
+- Made next apply the inferred version change and persist its processed Git history boundary.
+- Added the installed semver-forge console entry point.
 - Removed release, verification, comparison, history, diagnostics, and other redundant commands from the public interface.
 
 ## [0.2.0] - 2026-10-24
@@ -56,7 +60,7 @@ and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Release operations require explicit authorization for writes and do not push releases to a remote.
 
 ### Fixed
-- Initialization supports Python 3.10 through the `tomli` fallback when the standard-library TOML parser is unavailable.
+- Initialization supports Python 3.10 through the tomli fallback when the standard-library TOML parser is unavailable.
 - Discovery falls back when individual manifests lack usable project metadata.
 - TOML table headers with trailing comments are handled during synchronization.
 - Debian changelog version headers are recognized for supported SemVer-compatible versions.
