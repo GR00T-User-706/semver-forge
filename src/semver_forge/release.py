@@ -87,6 +87,11 @@ def release(
     yes=False,
     run_build=False,
 ):
+    # Release execution is deliberately disabled while the versioning and
+    # synchronization workflow is being stabilized. Keep the implementation
+    # available for later reactivation, but make direct API calls fail closed.
+    raise ReleaseFailure("release execution is disabled; use 'next' and 'sync'")
+
     check_release_state(root, cfg, allow_dirty=False)
     lock_path = Path(root) / ".git" / "semver-forge.lock"
     with lock(lock_path):
