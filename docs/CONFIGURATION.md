@@ -1,12 +1,13 @@
 # Configuration reference
 
-SemVer Forge reads one project configuration file from the repository root:
-- `.semver-forge.toml` (preferred), or
-- `semver-forge.toml` (supported legacy name).
+SemVer Forge merges configuration from three scopes, in increasing precedence:
+- System: `/etc/svfconfig`, or `$PREFIX/etc/svfconfig` when `PREFIX` is set (Termux).
+- User: `~/.svfconfig`.
+- Project: `.semver-forge.toml` (preferred), or `semver-forge.toml` (supported legacy name).
 
-Do not keep both. If both exist, SemVer Forge reports the duplicate and stops rather than silently choosing one. Files such as `pyproject.toml`, `package.json`, `Cargo.toml`, and `PKGBUILD` are project metadata/version sources, not alternate SemVer Forge configuration files.
+Project configuration filenames are mutually exclusive. If both project names exist, SemVer Forge reports the duplicate and stops rather than silently choosing one. Higher-precedence scopes override lower-precedence values. Nested tables merge recursively; arrays, including `sync.targets`, are replaced by the higher-precedence scope. Files such as `pyproject.toml`, `package.json`, `Cargo.toml`, and `PKGBUILD` are project metadata/version sources, not alternate SemVer Forge configuration files.
 
-Unknown keys are warned about; malformed TOML and invalid initial versions are errors.
+Unknown keys are reported by `config` and `check`; malformed TOML and invalid effective version settings are errors.
 
 - `[project] name`, `description`: descriptive metadata.
 - `[version] initial`: discovered starting version, or `0.1.0` only when no usable version source exists. `source`: inline table with `type`, `file`, optional `key`.
@@ -28,4 +29,15 @@ If multiple recognized version sources disagree, initialization stops and report
 
 ## Recursive synchronization discovery
 
-`semver-forge sync --discover` recursively scans the project for supported metadata files and adds them to the synchronization targets for that invocation. It recognizes the supported version filenames already used by initialization, including nested Python, Node, Rust, plain-text, Debian changelog, and Arch PKGBUILD metadata, plus YAML files with exactly one recognized version field (`control.Version`, `version`, or `package.version`). Ambiguous or invalid files are skipped rather than guessed. Discovered targets are not persisted to `.semver-forge.toml`; configure persistent targets explicitly in `[sync].targets`.
+`semver-forge sync --discover` recursively scans the project for supported metadata files and adds them to the synchronization targets for that invocation. It recognizes the supported version filenames already used by initialization, including nested Python, Node, Rust, plain-text, Debian changelog, and Arch PKGBUILD metadata, plus YAML files with exactly one recognized version field (`control.Version`, `version`, or `package.version`). Ambiguous or invalid files are skipped rather than guessed. Discovered targets are merged with configured targets and persisted to the project configuration before synchronization. The merge is deduplicated by `(file, type, key)` and is idempotent. Discovery failures or configuration write failures stop before synchronization. With `--dry-run`, the proposed configuration and metadata changes are shown without writing either.
+
+
+## Configuration commands
+
+`semver-forge config` lists all scopes, the effective merged configuration, and the source scope for each effective value. Use `config get KEY`, `config set KEY TOML_VALUE`, or `config unset KEY`. The default write scope is project. Select `--global` or `--system` to write another scope. `config --edit` opens the selected file with `VISUAL`, then `EDITOR`, then `vi`.
+
+Read operations never create files. Write operations create missing parent directories, validate TOML and effective required settings, and use an atomic replacement. Existing comments and unrelated values are retained when setting or unsetting a key. Arrays replace lower-scope arrays rather than being concatenated.
+
+## Read-only check
+
+`semver-forge check` reports the canonical version and source, configured synchronization targets and their actual values, target drift/missing/invalid/conflicting states, discovered supported metadata and whether it is configured, and the configuration scope files and effective settings. It does not synchronize or write any files. Use `--json` for machine-readable output.

@@ -8,6 +8,9 @@ and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Added
+- Added layered system, user, and project configuration management with get/set/unset/edit operations.
+- Added read-only project diagnostics for version synchronization and configuration scopes.
+- Persist discovered synchronization targets before sync, with deduplicated merging and dry-run previews.
 - Vendor the pure-Python `ruamel.yaml` runtime dependency in Termux packages so YAML metadata support is available without a separate pip install.
 
 ### Fixed

@@ -1,10 +1,12 @@
 # SemVer Forge
 
-Automatic project version tracking. SemVer Forge has exactly three project commands:
+Automatic project version tracking. SemVer Forge provides five project commands:
 
 - `init`: initialize version tracking.
 - `next`: inspect Git history, choose the correct SemVer increment, and update configured version files.
 - `sync`: synchronize configured metadata to the current canonical version.
+- `config`: inspect and manage system, user, and project configuration.
+- `check`: inspect project version synchronization and configuration without writing.
 
 There is no release or publishing workflow in this command interface.
 
@@ -71,11 +73,32 @@ semver-forge sync --discover --dry-run
 semver-forge sync --discover
 ```
 
-Discovery scans nested project directories for supported metadata files, including YAML manifests with an unambiguous version field. It skips Git internals, virtual environments, dependency trees, and generated build directories. Discovered targets are used for that sync invocation and are not written back to `.semver-forge.toml`. An explicit target version can be supplied with `--version VERSION`.
+Discovery scans nested project directories for supported metadata files, including YAML manifests with an unambiguous version field. It skips Git internals, virtual environments, dependency trees, and generated build directories. Discovered targets are added to `[sync].targets` in project configuration before synchronization. The merge is deduplicated and idempotent. `--dry-run` previews both the configuration change and file synchronization without writing either. An explicit target version can be supplied with `--version VERSION`.
 
 ## Configuration
 
-The project configuration is `.semver-forge.toml`. The canonical source and synchronization targets are defined there. See [the example configuration](config/semver-forge.example.toml) and [configuration reference](docs/CONFIGURATION.md).
+Configuration is layered in this order: system (`/etc/svfconfig`, or `$PREFIX/etc/svfconfig` in Termux), user (`~/.svfconfig`), then project (`.semver-forge.toml`, with `semver-forge.toml` supported as a legacy filename). Project values take precedence. Use `semver-forge config` to inspect effective values and their source scopes. See [the example configuration](config/semver-forge.example.toml) and [configuration reference](docs/CONFIGURATION.md).
+
+Examples:
+
+```sh
+semver-forge config
+semver-forge config --get commits.types.feat
+semver-forge config --set commits.types.feat '"minor"'
+semver-forge config --global --set git.tag_prefix '"v"'
+semver-forge config --system --edit
+```
+
+Reads do not create configuration files. Writes create parent directories as needed, validate TOML and effective required settings, preserve unrelated configuration text, and use atomic replacement. System-scope writes may require elevated permissions.
+
+## Read-only diagnostics
+
+```sh
+semver-forge check
+semver-forge check --json
+```
+
+The check command reports the canonical version, configured target status, discovered metadata, configuration scopes, effective settings, source scopes, and unknown keys. It never changes project files or configuration.
 
 ## Versioning rules
 

@@ -9,7 +9,9 @@ import tempfile
 from pathlib import Path
 
 from . import __version__, git
-from .config import find_config, load
+from .check import inspect_project
+from .config import find_config
+from .config_scopes import config_edit, config_get, config_report, config_write, effective_config
 from .discovery import discover
 from .errors import ConfigError, ForgeError
 from .metadata_discovery import discover_sync_targets
@@ -74,6 +76,53 @@ def parser():
         "--version",
         metavar="VERSION",
         help="use this target version instead of the canonical version",
+    )
+    config_cmd = sub.add_parser(
+        "config",
+        help="view and manage system, user, and project configuration",
+    )
+    config_cmd.add_argument(
+        "--global", dest="scope_global", action="store_true", help="select ~/.svfconfig"
+    )
+    config_cmd.add_argument(
+        "--system", dest="scope_system", action="store_true", help="select the system svfconfig"
+    )
+    config_cmd.add_argument(
+        "--edit", action="store_true", help="open the selected scope in VISUAL or EDITOR"
+    )
+    config_cmd.add_argument(
+        "--list", action="store_true", help="list effective configuration and its sources"
+    )
+    config_cmd.add_argument(
+        "--get", dest="get_key", metavar="KEY", help="read one effective setting"
+    )
+    config_cmd.add_argument(
+        "--set",
+        dest="set_pair",
+        nargs=2,
+        metavar=("KEY", "TOML_VALUE"),
+        help="set a setting",
+    )
+    config_cmd.add_argument(
+        "--unset",
+        dest="unset_key",
+        metavar="KEY",
+        help="remove a setting from the selected scope",
+    )
+    config_cmd.add_argument("action", nargs="?", choices=("get", "set", "unset"))
+    config_cmd.add_argument("key", nargs="?")
+    config_cmd.add_argument("value", nargs="?")
+
+    sub.add_parser(
+        "check",
+        help="read-only project, version, and configuration diagnostics",
+        description=(
+            "Inspect canonical version sources, synchronization targets, discovered metadata, "
+            "and configuration scopes. This command never writes project files."
+        ),
+        epilog=(
+            "Read-only: no files are written, no versions are changed, and no sync is performed."
+        ),
     )
     return p
 
@@ -358,11 +407,69 @@ def main(argv=None):
                 args.json,
             )
             return 2 if stage_failed else 0
-        root = git.root(args.project)
+        project = Path(args.project or ".").expanduser().resolve()
+        if args.cmd in {"config", "check"}:
+            root = git.root(project) if git.available(project) else project
+        else:
+            root = git.root(project)
+        if args.cmd == "config":
+            if args.scope_global and args.scope_system:
+                raise ConfigError("choose only one configuration scope")
+            scope = "system" if args.scope_system else "global" if args.scope_global else "project"
+            read_scope = scope if args.scope_global or args.scope_system else None
+            selected = sum(bool(item) for item in (args.get_key, args.set_pair, args.unset_key))
+            if selected > 1:
+                raise ConfigError("choose only one of --get, --set, or --unset")
+            if args.edit:
+                if args.action or args.key or args.value or args.list or selected:
+                    raise ConfigError("--edit cannot be combined with get, set, unset, or --list")
+                output(config_edit(root, scope), args.json)
+                return 0
+            if args.get_key:
+                output(config_get(root, args.get_key, read_scope), args.json)
+                return 0
+            if args.set_pair:
+                output(config_write(root, scope, args.set_pair[0], args.set_pair[1]), args.json)
+                return 0
+            if args.unset_key:
+                output(config_write(root, scope, args.unset_key, None, unset=True), args.json)
+                return 0
+            if args.action == "get":
+                if not args.key or args.value is not None:
+                    raise ConfigError("usage: semver-forge config [--global|--system] get KEY")
+                output(
+                    config_get(root, args.key, read_scope),
+                    args.json,
+                )
+                return 0
+            if args.action == "set":
+                if not args.key or args.value is None:
+                    raise ConfigError(
+                        "usage: semver-forge config [--global|--system] set KEY TOML_VALUE"
+                    )
+                output(
+                    config_write(root, scope, args.key, args.value),
+                    args.json,
+                )
+                return 0
+            if args.action == "unset":
+                if not args.key or args.value is not None:
+                    raise ConfigError("usage: semver-forge config [--global|--system] unset KEY")
+                output(config_write(root, scope, args.key, None, unset=True), args.json)
+                return 0
+            if args.action or args.key or args.value:
+                raise ConfigError(
+                    "use config --get KEY, --set KEY TOML_VALUE, --unset KEY, or config --list"
+                )
+            output(config_report(root, read_scope), args.json)
+            return 0
+        if args.cmd == "check":
+            output(inspect_project(root), args.json)
+            return 0
         config_path = find_config(root)
         if not config_path:
             raise ConfigError("no .semver-forge.toml found; run semver-forge init")
-        cfg, unknown = load(config_path)
+        cfg, _paths, unknown = effective_config(root)
         if unknown:
             print("warning: unknown configuration keys: " + ", ".join(unknown), file=sys.stderr)
         current = Version.parse(read_version(root, cfg["version"]["source"]))
@@ -426,6 +533,7 @@ def main(argv=None):
             version = args.version or str(current)
             sync_cfg = cfg
             discovered = []
+            config_changes = None
             if args.discover:
                 discovered = discover_sync_targets(root, cfg["version"]["source"])
                 configured = cfg.get("sync", {}).get("targets", [])
@@ -439,6 +547,22 @@ def main(argv=None):
                 sync_cfg = dict(cfg)
                 sync_cfg["sync"] = dict(cfg.get("sync", {}))
                 sync_cfg["sync"]["targets"] = merged
+                if merged != configured:
+                    config_changes = {
+                        "file": str(config_path),
+                        "previous_targets": configured,
+                        "proposed_targets": merged,
+                        "changed": True,
+                    }
+                    if not args.dry_run:
+                        config_write(root, "project", "sync.targets", merged)
+                else:
+                    config_changes = {
+                        "file": str(config_path),
+                        "previous_targets": configured,
+                        "proposed_targets": merged,
+                        "changed": False,
+                    }
             result = sync(root, sync_cfg, version, args.dry_run)
             record("INFO", "sync", "dry-run" if args.dry_run else "completed")
             if args.discover:
@@ -446,6 +570,7 @@ def main(argv=None):
                     {
                         "canonical_version": version,
                         "discovered_targets": discovered,
+                        "configuration": config_changes,
                         "synchronization": result,
                         "dry_run": args.dry_run,
                     },

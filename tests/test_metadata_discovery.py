@@ -175,6 +175,8 @@ class RecursiveMetadataDiscoveryTests(unittest.TestCase):
                 "key": "control.Version",
             }
             self.assertEqual(preview["discovered_targets"], [expected_target])
+            self.assertTrue(preview["configuration"]["changed"])
+            self.assertIn(expected_target, preview["configuration"]["proposed_targets"])
             sync_files = {
                 Path(item["file"]).relative_to(root).as_posix()
                 for item in preview["synchronization"]
@@ -186,6 +188,10 @@ class RecursiveMetadataDiscoveryTests(unittest.TestCase):
             self.assertEqual(sum(item["changed"] for item in preview["synchronization"]), 2)
             self.assertEqual(configured.read_text(encoding="utf-8"), "1.2.2\n")
             self.assertIn("Version: 1.2.2", manifest.read_text(encoding="utf-8"))
+            self.assertNotIn(
+                "packaging/termux/manifest.yaml",
+                (root / ".semver-forge.toml").read_text(encoding="utf-8"),
+            )
 
             run_output = io.StringIO()
             with contextlib.redirect_stdout(run_output):
@@ -197,6 +203,10 @@ class RecursiveMetadataDiscoveryTests(unittest.TestCase):
             self.assertEqual(
                 (root / ".semver-forge.toml").read_text(encoding="utf-8").count("targets ="),
                 1,
+            )
+            self.assertIn(
+                "packaging/termux/manifest.yaml",
+                (root / ".semver-forge.toml").read_text(encoding="utf-8"),
             )
 
     def test_discovers_nested_debian_control_metadata(self):

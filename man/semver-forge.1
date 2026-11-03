@@ -1,4 +1,4 @@
-.TH SEMVER-FORGE 1 "2026-10-28" "semver-forge 1.0.0" "User Commands"
+.TH SEMVER-FORGE 1 "2026-11-03" "semver-forge 1.0.0" "User Commands"
 .SH NAME
 semver-forge \- automatic semantic version tracking and synchronization
 .SH SYNOPSIS
@@ -8,7 +8,7 @@ semver-forge \- automatic semantic version tracking and synchronization
 .RI [ options ]
 .SH DESCRIPTION
 .B semver-forge
-has three project commands: init, next, and sync. It initializes version tracking, determines the next Semantic Versioning increment from Git history, applies that version to configured files, and synchronizes metadata.
+provides five project commands: init, next, sync, config, and check. It initializes version tracking, determines the next Semantic Versioning increment from Git history, applies that version to configured files, and synchronizes metadata.
 .SH COMMANDS
 .TP
 .B init
@@ -18,7 +18,13 @@ Inspect the project and create .semver-forge.toml. Existing version values are p
 Inspect commits since the last processed Git boundary. Select the highest configured impact (breaking change, feature, or fix/performance), update the canonical version source and configured targets when a change is warranted, and persist the processed commit boundary. Re-running next does not count the same commits twice.
 .TP
 .B sync
-Synchronize configured version metadata to the canonical version. Use --dry-run to preview. Use --version VERSION to supply a different target version. Use --discover to recursively find supported metadata files in nested project directories and synchronize them for this invocation.
+Synchronize configured version metadata to the canonical version. Use --dry-run to preview. Use --version VERSION to supply a different target version. Use --discover to recursively find supported metadata files, persist new targets to project configuration, and synchronize them.
+.TP
+.B config
+View or manage system, user, and project configuration. Use --get KEY, --set KEY TOML_VALUE, or --unset KEY. The default write scope is project; --global selects ~/.svfconfig and --system selects /etc/svfconfig or $PREFIX/etc/svfconfig in Termux. --edit opens the selected file.
+.TP
+.B check
+Report canonical version, synchronization status, discovered metadata, and configuration scopes without writing or synchronizing.
 .SH OPTIONS
 .TP
 .B --project DIR
@@ -34,7 +40,16 @@ For next or sync, preview changes without writing.
 For next, include the reason for the selected version or no-change decision.
 .TP
 .B --discover
-For sync, recursively discover supported version metadata before synchronizing. Discovered targets are not written back to .semver-forge.toml.
+For sync, recursively discover supported version metadata, persist newly discovered targets in project configuration, then synchronize. With --dry-run neither configuration nor metadata is written.
+.TP
+.B --global
+For config, select the user configuration file ~/.svfconfig.
+.TP
+.B --system
+For config, select /etc/svfconfig or $PREFIX/etc/svfconfig in Termux.
+.TP
+.B --edit
+For config, open the selected scope file with VISUAL, EDITOR, or vi.
 .TP
 .B --yes
 For init, authorize replacing existing project configuration.
@@ -47,6 +62,12 @@ Conventional Commit types are classified by the project's .semver-forge.toml con
 .TP
 .I .semver-forge.toml
 Project configuration, including the canonical version source, synchronization targets, commit rules, and processed Git history boundary.
+.TP
+.I ~/.svfconfig
+User-level configuration.
+.TP
+.I /etc/svfconfig
+System-level configuration; in Termux use $PREFIX/etc/svfconfig.
 .SH EXAMPLES
 .nf
 semver-forge init
@@ -54,6 +75,8 @@ semver-forge next
 semver-forge next --dry-run --explain
 semver-forge sync --dry-run
 semver-forge sync --discover --dry-run
+semver-forge config --get commits.types.feat
+semver-forge check
 semver-forge sync
 .fi
 .SH REQUIREMENTS

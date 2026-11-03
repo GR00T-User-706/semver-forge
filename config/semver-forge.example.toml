@@ -1,4 +1,7 @@
-# semver-forge project configuration. Unknown keys are warned about by the CLI.
+# SemVer Forge configuration example. The same TOML tables can be used in ~/.svfconfig
+# or the system svfconfig file. Precedence is system, user, then project.
+# Project settings override matching values from lower scopes. Arrays replace.
+# Unknown keys are reported by config and check.
 [project]
 name = "example-project"
 description = ""
