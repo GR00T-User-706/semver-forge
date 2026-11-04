@@ -7,6 +7,10 @@ and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Documentation
+- Added project-specific standards for version-source discovery, synchronization targets, CLI side effects, changelog handling, and Git safety.
+
+
 ### Added
 - Vendor the pure-Python `ruamel.yaml` runtime dependency in Termux packages so YAML metadata support is available without a separate pip install.
 
