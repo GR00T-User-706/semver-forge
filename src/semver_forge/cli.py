@@ -204,7 +204,10 @@ def output(data, as_json=False):
         rendered = data
     else:
         rendered = _format_output(data)
-    print(rendered)
+    if isinstance(data, str) and not as_json:
+        sys.stdout.write(rendered if rendered.endswith("\\n") else rendered + "\\n")
+    else:
+        print(rendered)
 
 
 def _recognized_config_keys(value=None, prefix=""):
