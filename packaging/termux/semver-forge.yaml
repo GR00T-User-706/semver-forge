@@ -4,17 +4,17 @@
 
 control:
   Package: semver-forge
-  Version: "1.0.0"
+  Version: 1.0.1
   Architecture: all
   Maintainer: GR00T-User-706
   Depends:
-    - python
-    - git
+  - python
+  - git
   Section: devel
   Priority: optional
   Homepage: https://github.com/GR00T-User-706/semver-forge
-  Description: Semantic version tracking and metadata synchronization
-    Local-first Semantic Versioning 2.0.0 tooling with version discovery,
+  Description: Semantic version tracking and metadata synchronization 
+    Local-first Semantic Versioning 2.0.0 tooling with version discovery, 
     recursive metadata synchronization, and Conventional Commit analysis.
 
 installation_prefix: /data/data/com.termux/files/usr
@@ -24,7 +24,7 @@ tar_compression: xz
 data_files:
   bin/semver-forge:
     source: packaging/termux/semver-forge
-    perm: "755"
+    perm: '755'
 
   lib/semver-forge/vendor:
     source: packaging/termux/.build/vendor
