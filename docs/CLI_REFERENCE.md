@@ -51,7 +51,7 @@ YAML synchronization uses a round-trip parser and updates only the configured do
 
 ## Configuration
 
-The project configuration is `.semver-forge.toml`. See [the example](../config/semver-forge.example.toml) and [configuration guide](CONFIGURATION.md).
+The project configuration is `.semver-forge.toml`. The command is `svf`; the Python distribution remains `semver-forge`. See [the example](../config/semver-forge.example.toml), [configuration guide](CONFIGURATION.md), and the installed `svf-config(5)` manual for TOML syntax and schema.
 
 
 ### config
@@ -59,11 +59,11 @@ The project configuration is `.semver-forge.toml`. See [the example](../config/s
 The precedence order is system, global/user, project. System configuration is `/etc/svfconfig`, or `$PREFIX/etc/svfconfig` in Termux; global configuration is `~/.svfconfig`; project configuration is `.semver-forge.toml` (or the supported legacy filename). Nested tables merge; arrays are replaced by higher-precedence scopes.
 
 ```sh
-semver-forge config
-semver-forge config get commits.types.feat
-semver-forge config set commits.types.feat '"minor"'
-semver-forge config --global set git.tag_prefix '"v"'
-semver-forge config --system --edit
+svf config
+svf config get commits.types.feat
+svf config set commits.types.feat '"minor"'
+svf config --global set git.tag_prefix '"v"'
+svf config --system --edit
 ```
 
 Reads do not create files. Writes preserve unrelated TOML content, validate the resulting TOML and effective required settings, create missing parent directories, and atomically replace the selected file.
