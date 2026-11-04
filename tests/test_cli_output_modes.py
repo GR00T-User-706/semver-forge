@@ -63,11 +63,17 @@ class CLIOutputModeTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(result.stdout, self.config)
 
-    def test_config_list_prints_recognized_keys(self):
+    def test_config_list_groups_settings_by_toml_table(self):
         result = self.run_cli("config", "--list", "--project", str(self.project))
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("version.source", result.stdout)
-        self.assertIn("sync.targets", result.stdout)
+        self.assertIn("[project]", result.stdout)
+        self.assertIn("[version]", result.stdout)
+        self.assertIn("[commits.types]", result.stdout)
+        self.assertIn("source.type", result.stdout)
+        self.assertIn("targets", result.stdout)
+        self.assertIn("Optional project name", result.stdout)
+        self.assertIn("default:", result.stdout)
+        self.assertNotIn("project.name", result.stdout)
         self.assertNotIn("sample", result.stdout)
 
     def test_verbose_and_debug_are_global_options_for_check(self):
