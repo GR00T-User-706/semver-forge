@@ -46,12 +46,12 @@ class CLIHelpTests(unittest.TestCase):
                 )
 
     def test_manpage_exists_and_mentions_safety(self):
-        manpage = ROOT / "man" / "semver-forge.1"
+        manpage = ROOT / "man" / "svf.1"
         self.assertTrue(manpage.is_file())
         text = manpage.read_text(encoding="utf-8")
-        self.assertIn(".TH SEMVER-FORGE", text)
+        self.assertIn(".TH SVF", text)
         self.assertIn(".SH COMMANDS", text)
-        self.assertIn("--discover", text)
+        self.assertIn("--discover", text)\n        self.assertIn("svf-config (5)", text)\n        config_manpage = ROOT / "man" / "svf-config.5"\n        self.assertTrue(config_manpage.is_file())\n        config_text = config_manpage.read_text(encoding="utf-8")\n        self.assertIn(".SH TOML SYNTAX", config_text)\n        self.assertIn(".SH CONFIGURATION SCHEMA", config_text)
 
     def test_version_option_reports_installed_version(self):
         result = self.run_cli("--version")
