@@ -46,4 +46,4 @@ Read operations never create files. Write operations create missing parent direc
 
 ## Read-only check
 
-`semver-forge check` reports the canonical version and source, configured synchronization targets and their actual values, target drift/missing/invalid/conflicting states, discovered supported metadata and whether it is configured, and the configuration scope files and effective settings. It does not synchronize or write any files. Use `--json` for machine-readable output.
+`semver-forge check` prints only the project name, canonical version, and synchronized file paths by default. Use `--verbose` for the full inspection report, `--debug` for diagnostics, or `--json` for machine-readable output. It does not synchronize or write any files.
