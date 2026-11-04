@@ -699,9 +699,7 @@ def main(argv=None):
                 return 0
             if args.action == "set":
                 if not args.key or args.value is None:
-                    raise ConfigError(
-                        "usage: svf config [--global|--system] set KEY TOML_VALUE"
-                    )
+                    raise ConfigError("usage: svf config [--global|--system] set KEY TOML_VALUE")
                 output(
                     config_write(root, scope, args.key, args.value),
                     args.json,
