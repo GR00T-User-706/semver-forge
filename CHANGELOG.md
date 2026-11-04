@@ -5,7 +5,7 @@ All notable changes to SemVer Forge are documented here.
 This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [Unreleased]\n\n### Added\n- Added global `--verbose` and `--debug` output modes, concise default check output, direct TOML display for `config`, and recognized-key listing with `config --list`.\n- Expanded command help and the manpage with command behavior, configuration key meanings, valid values, syntax, and examples.\n\n### Changed\n- Separated normal CLI output from expanded operational and diagnostic reports.\n\n## [1.2.0] - 2026-11-04
 
 ### Added
 - Added layered system, user, and project configuration management with get/set/unset/edit operations.
