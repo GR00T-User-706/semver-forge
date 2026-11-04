@@ -26,6 +26,7 @@ class CLIHelpTests(unittest.TestCase):
         result = self.run_cli()
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("{init,next,sync,config,check}", result.stdout)
+        self.assertIn("usage: svf", result.stdout)
         self.assertNotIn("the following arguments are required", result.stderr)
 
     def test_root_help_has_examples_and_command_guidance(self):
@@ -41,22 +42,27 @@ class CLIHelpTests(unittest.TestCase):
                 result = self.run_cli(command, "--help")
                 self.assertEqual(result.returncode, 0, result.stderr)
                 self.assertGreater(len(result.stdout.strip().splitlines()), 4)
-                self.assertNotIn(
-                    "usage: semver-forge " + command + " [-h]\n\noptions:", result.stdout
-                )
+                self.assertIn("usage: svf " + command, result.stdout)
 
-    def test_manpage_exists_and_mentions_safety(self):
-        manpage = ROOT / "man" / "svf.1"
-        self.assertTrue(manpage.is_file())
-        text = manpage.read_text(encoding="utf-8")
-        self.assertIn(".TH SVF", text)
-        self.assertIn(".SH COMMANDS", text)
-        self.assertIn("--discover", text)\n        self.assertIn("svf-config (5)", text)\n        config_manpage = ROOT / "man" / "svf-config.5"\n        self.assertTrue(config_manpage.is_file())\n        config_text = config_manpage.read_text(encoding="utf-8")\n        self.assertIn(".SH TOML SYNTAX", config_text)\n        self.assertIn(".SH CONFIGURATION SCHEMA", config_text)
+    def test_both_manual_pages_exist_and_cross_reference(self):
+        cli_page = ROOT / "man" / "svf.1"
+        config_page = ROOT / "man" / "svf-config.5"
+        self.assertTrue(cli_page.is_file())
+        self.assertTrue(config_page.is_file())
+        cli_text = cli_page.read_text(encoding="utf-8")
+        config_text = config_page.read_text(encoding="utf-8")
+        self.assertIn(".TH SVF", cli_text)
+        self.assertIn(".SH COMMANDS", cli_text)
+        self.assertIn("--discover", cli_text)
+        self.assertIn("svf-config (5)", cli_text)
+        self.assertIn(".SH TOML SYNTAX", config_text)
+        self.assertIn(".SH CONFIGURATION SCHEMA", config_text)
+        self.assertIn("TOML v1.0.0", config_text)
 
     def test_version_option_reports_installed_version(self):
         result = self.run_cli("--version")
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertRegex(result.stdout, r"^semver-forge \d+\.\d+\.\d+")
+        self.assertRegex(result.stdout, r"^svf \d+\.\d+\.\d+")
 
 
 if __name__ == "__main__":
