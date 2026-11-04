@@ -77,7 +77,7 @@ Discovery scans nested project directories for supported metadata files, includi
 
 ## Configuration
 
-Configuration is layered in this order: system (`/etc/svfconfig`, or `$PREFIX/etc/svfconfig` in Termux), user (`~/.svfconfig`), then project (`.semver-forge.toml`, with `semver-forge.toml` supported as a legacy filename). Project values take precedence. Use `semver-forge config` to inspect effective values and their source scopes. See [the example configuration](config/semver-forge.example.toml) and [configuration reference](docs/CONFIGURATION.md).
+Configuration is layered in this order: system (`/etc/svfconfig`, or `$PREFIX/etc/svfconfig` in Termux), user (`~/.svfconfig`), then project (`.semver-forge.toml`, with `semver-forge.toml` supported as a legacy filename). Project values take precedence. Use `semver-forge config` to print the project TOML, and `semver-forge config --list` to list recognized keys. Use `--verbose` for scope and effective-value details. See [the example configuration](config/semver-forge.example.toml) and [configuration reference](docs/CONFIGURATION.md).
 
 Examples:
 
@@ -95,10 +95,10 @@ Reads do not create configuration files. Writes create parent directories as nee
 
 ```sh
 semver-forge check
-semver-forge check --json
+semver-forge check --json\nsemver-forge check --verbose\nsemver-forge check --debug
 ```
 
-The check command reports the canonical version, configured target status, discovered metadata, configuration scopes, effective settings, source scopes, and unknown keys. It never changes project files or configuration.
+The default check output contains only the project name, version, and synchronized files. Use `--verbose` for the full report or `--debug` for diagnostic tracebacks. It never changes project files or configuration.
 
 ## Versioning rules
 
