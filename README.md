@@ -95,7 +95,9 @@ Reads do not create configuration files. Writes create parent directories as nee
 
 ```sh
 svf check
-svf check --json\nsemver-forge check --verbose\nsemver-forge check --debug
+svf check --json
+svf check --verbose
+svf check --debug
 ```
 
 The default check output contains only the project name, version, and synchronized files. Use `--verbose` for the full report or `--debug` for diagnostic tracebacks. It never changes project files or configuration.
