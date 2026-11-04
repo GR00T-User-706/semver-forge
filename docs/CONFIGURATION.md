@@ -114,9 +114,10 @@ are for readability. Keep comments outside inline tables.
 
 ### Paths
 
-Prefer paths relative to the project root so the configuration is portable.
-TOML itself does not expand environment variables or home-directory shortcuts.
-The configured adapter resolves the path when it reads or updates the file.
+Paths must resolve within the project root. Prefer relative paths so the
+configuration is portable. TOML itself does not expand environment variables
+or home-directory shortcuts. The configured adapter resolves the path when it
+reads or updates the file.
 
 ## Configuration schema
 
@@ -274,7 +275,10 @@ example, a string needs TOML quotes inside the shell argument:
 
 Reads do not create files. Writes preserve unrelated TOML text, validate the
 resulting TOML and effective required settings, and use atomic replacement.
-The CLI reports malformed TOML and invalid required configuration.
+The plain `svf config` command prints the selected file as stored and does not
+validate it. Use `svf check` to parse the effective configuration and report
+malformed TOML or invalid required settings without writing. The expanded
+`svf config --verbose` report also loads the merged scopes.
 
 For command syntax and options, see [the CLI reference](CLI_REFERENCE.md) or
 `man svf`. For the configuration syntax and schema in the installed system,
