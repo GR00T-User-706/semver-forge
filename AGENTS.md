@@ -394,3 +394,6 @@ When a requested change cannot be applied consistently across supported formats,
 
 Agents MUST NOT invent supported package formats, installation behavior, configuration semantics, commands, manual content, or validation results.
 
+## Project-specific documentation standards
+
+Before changing project behavior, packaging, interfaces, configuration, or release documentation, read [docs/PROJECT_STANDARDS.md](docs/PROJECT_STANDARDS.md) and keep it aligned with the actual implementation. These standards supplement this file and do not authorize unrelated changes.
