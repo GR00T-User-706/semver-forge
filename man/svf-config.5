@@ -323,9 +323,12 @@ targets = [
 .PP
 Before saving, check that table headers are spelled correctly, every string is quoted, booleans are lowercase, arrays use square brackets, and inline tables use braces. Keep each setting in the correct table. A key written under the wrong table is a different TOML setting.
 .SH VALIDATING CONFIGURATION
-The CLI parses TOML when it reads configuration and reports malformed syntax or invalid required settings. To validate the file without changing it, run:
+The plain
+.B svf config
+command prints the selected file as stored; it does not validate the file. Run
+.B svf check
+to parse the effective configuration and report malformed TOML or invalid required settings without writing:
 .nf
-svf config
 svf check
 .fi
 .PP
