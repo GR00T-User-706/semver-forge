@@ -207,7 +207,7 @@ def _minimal_output(data):
         return f"Initialized: {data.get('initialized', 'project')}\nVersion: {data.get('version', 'unknown')}"
     if OUTPUT_COMMAND == "next" and isinstance(data, dict):
         return (
-            f"Current version: {data.get('current', 'unknown')}\\n"
+            f"Current version: {data.get('current', 'unknown')}\n"
             f"Next version: {data.get('next', 'unknown')}"
         )
     if OUTPUT_COMMAND == "sync":
@@ -217,7 +217,7 @@ def _minimal_output(data):
             str(item.get("file", "")) for item in items
             if isinstance(item, dict) and item.get("file")
         )
-        return "\\n".join(lines)
+        return "\n".join(lines)
     return _format_output(data)
 
 
@@ -256,7 +256,7 @@ def _check_summary(report):
             files.append(filename)
     lines = [f"Project: {project}", f"Version: {version}", "", "Synchronized files"]
     lines.extend(files)
-    return "\\n".join(lines)
+    return "\n".join(lines)
 
 
 def _config_text(root, scope):
