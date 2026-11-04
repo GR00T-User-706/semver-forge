@@ -91,9 +91,7 @@ class CLIOutputModeTests(unittest.TestCase):
             cwd=self.project,
             check=True,
         )
-        subprocess.run(
-            ["git", "config", "user.name", "Test"], cwd=self.project, check=True
-        )
+        subprocess.run(["git", "config", "user.name", "Test"], cwd=self.project, check=True)
         subprocess.run(["git", "add", "."], cwd=self.project, check=True)
         subprocess.run(["git", "commit", "-qm", "chore: baseline"], cwd=self.project, check=True)
 
