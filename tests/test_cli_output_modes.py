@@ -70,7 +70,7 @@ class CLIOutputModeTests(unittest.TestCase):
         self.assertIn("sync.targets", result.stdout)
         self.assertNotIn("sample", result.stdout)
 
-    def test_verbose_and_debug_are_global_options(self):
+    def test_verbose_and_debug_are_global_options_for_check(self):
         before = self.run_cli("--verbose", "check", "--project", str(self.project))
         after = self.run_cli("check", "--verbose", "--project", str(self.project))
         debug = self.run_cli("check", "--debug", "--project", str(self.project))
@@ -78,6 +78,30 @@ class CLIOutputModeTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertIn("canonical:", result.stdout)
 
+    def test_sync_output_is_unchanged_by_verbose_and_debug(self):
+        normal = self.run_cli("sync", "--project", str(self.project))
+        verbose = self.run_cli("sync", "--verbose", "--project", str(self.project))
+        debug = self.run_cli("sync", "--debug", "--project", str(self.project))
+        for result in (normal, verbose, debug):
+            self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(normal.stdout, verbose.stdout)
+        self.assertEqual(normal.stdout, debug.stdout)
+        self.assertIn("synchronization:", normal.stdout)
+
+    def test_next_output_is_unchanged_by_verbose_and_debug(self):
+        subprocess.run(["git", "init", "-q"], cwd=self.project, check=True)
+        subprocess.run(["git", "config", "user.email", "test@example.com"], cwd=self.project, check=True)
+        subprocess.run(["git", "config", "user.name", "Test"], cwd=self.project, check=True)
+        subprocess.run(["git", "add", "."], cwd=self.project, check=True)
+        subprocess.run(["git", "commit", "-qm", "chore: baseline"], cwd=self.project, check=True)
+        normal = self.run_cli("next", "--project", str(self.project))
+        verbose = self.run_cli("next", "--verbose", "--project", str(self.project))
+        debug = self.run_cli("next", "--debug", "--project", str(self.project))
+        for result in (normal, verbose, debug):
+            self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(normal.stdout, verbose.stdout)
+        self.assertEqual(normal.stdout, debug.stdout)
+        self.assertIn("current:", normal.stdout)
 
 if __name__ == "__main__":
     unittest.main()
