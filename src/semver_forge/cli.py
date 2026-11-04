@@ -36,7 +36,15 @@ def parser():
     p.add_argument("--json", action="store_true", help="emit machine-readable JSON")\n    p.add_argument("--verbose", action="store_true", help="show expanded operation details")\n    p.add_argument("--debug", action="store_true", help="show diagnostic details and tracebacks")
     sub = p.add_subparsers(dest="cmd", required=True)
 
-    init_cmd = sub.add_parser("init", help="initialize SemVer Forge tracking in this project")
+    init_cmd = sub.add_parser(
+        "init",
+        help="initialize SemVer Forge tracking in this project",
+        description=(
+            "Inspect existing version metadata and create the project configuration. "
+            "Conflicting version sources must be resolved before initialization."
+        ),
+        epilog="Example: semver-forge init --yes",
+    )
     init_cmd.add_argument(
         "--yes",
         action="store_true",
@@ -46,6 +54,11 @@ def parser():
     next_cmd = sub.add_parser(
         "next",
         help="inspect Git history, choose the next version, and update configured version files",
+        description=(
+            "Classify commits since the saved Git boundary and apply the highest configured "
+            "Semantic Versioning impact. Use --dry-run to preview and --explain for the decision."
+        ),
+        epilog="Examples: semver-forge next --dry-run; semver-forge next --dry-run --explain",
     )
     next_cmd.add_argument(
         "--dry-run",
@@ -61,6 +74,11 @@ def parser():
     sync_cmd = sub.add_parser(
         "sync",
         help="synchronize configured metadata to the canonical version",
+        description=(
+            "Copy the canonical version into configured metadata fields. "
+            "--discover registers additional supported version fields before synchronization."
+        ),
+        epilog="Examples: semver-forge sync --dry-run; semver-forge sync --discover",
     )
     sync_cmd.add_argument(
         "--dry-run",
@@ -80,6 +98,11 @@ def parser():
     config_cmd = sub.add_parser(
         "config",
         help="view and manage system, user, and project configuration",
+        description=(
+            "Print the selected TOML configuration by default. Use --list for recognized keys, "
+            "get/set/unset to manage individual values, and --verbose for merged scope details."
+        ),
+        epilog='Example: semver-forge config set commits.types.feat \'"minor"\'',
     )
     config_cmd.add_argument(
         "--global", dest="scope_global", action="store_true", help="select ~/.svfconfig"
