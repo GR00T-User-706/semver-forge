@@ -10,8 +10,8 @@ from pathlib import Path
 
 from . import __version__, git
 from .check import inspect_project
-from .config import find_config
-from .config_scopes import config_edit, config_get, config_report, config_write, effective_config
+from .config import DEFAULTS, find_config
+from .config_scopes import (\n    config_edit,\n    config_get,\n    config_report,\n    config_write,\n    effective_config,\n    scope_paths,\n)
 from .discovery import discover
 from .errors import ConfigError, ForgeError
 from .metadata_discovery import discover_sync_targets
@@ -33,7 +33,7 @@ def parser():
     )
     p.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     p.add_argument("--project", help="project path (default: current directory)")
-    p.add_argument("--json", action="store_true", help="emit machine-readable JSON")
+    p.add_argument("--json", action="store_true", help="emit machine-readable JSON")\n    p.add_argument("--verbose", action="store_true", help="show expanded operation details")\n    p.add_argument("--debug", action="store_true", help="show diagnostic details and tracebacks")
     sub = p.add_subparsers(dest="cmd", required=True)
 
     init_cmd = sub.add_parser("init", help="initialize SemVer Forge tracking in this project")
@@ -91,7 +91,7 @@ def parser():
         "--edit", action="store_true", help="open the selected scope in VISUAL or EDITOR"
     )
     config_cmd.add_argument(
-        "--list", action="store_true", help="list effective configuration and its sources"
+        "--list", action="store_true", help="list recognized configuration keys"
     )
     config_cmd.add_argument(
         "--get", dest="get_key", metavar="KEY", help="read one effective setting"
@@ -117,12 +117,10 @@ def parser():
         "check",
         help="read-only project, version, and configuration diagnostics",
         description=(
-            "Inspect canonical version sources, synchronization targets, discovered metadata, "
-            "and configuration scopes. This command never writes project files."
+            "Show the project name, canonical version, and synchronized files. "
+            "Use --verbose for the full inspection report or --debug for diagnostics."
         ),
-        epilog=(
-            "Read-only: no files are written, no versions are changed, and no sync is performed."
-        ),
+        epilog="This command is read-only and never changes project files.",
     )
     return p
 
@@ -167,6 +165,39 @@ def output(data, as_json=False):
     print(rendered)
 
 
+def _recognized_config_keys(value=None, prefix=""):
+    """Return recognized configuration keys in stable dotted-key order."""
+    value = DEFAULTS if value is None else value
+    keys = []
+    for key, child in value.items():
+        dotted = f"{prefix}.{key}" if prefix else key
+        if isinstance(child, dict):
+            keys.extend(_recognized_config_keys(child, dotted))
+        else:
+            keys.append(dotted)
+    return keys
+
+
+def _check_summary(report):
+    project = report.get("project", {}).get("name") or "unknown"
+    version = report.get("canonical", {}).get("version") or "unavailable"
+    files = []
+    for item in report.get("synchronization", []):
+        filename = item.get("file")
+        if filename and filename not in files:
+            files.append(filename)
+    lines = [f"Project: {project}", f"Version: {version}", "", "Synchronized files"]
+    lines.extend(files)
+    return "\\n".join(lines)
+
+
+def _config_text(root, scope):
+    path = scope_paths(root)[scope]
+    if not path.is_file():
+        raise ConfigError(f"configuration file not found: {path}")
+    return path.read_text(encoding="utf-8")
+
+
 def main(argv=None):
     argv = list(sys.argv[1:] if argv is None else argv)
     if not argv:
@@ -177,7 +208,7 @@ def main(argv=None):
     rest = []
     i = 0
     while i < len(argv):
-        if argv[i] == "--json":
+        if argv[i] in {"--json", "--verbose", "--debug"}:
             moved.append(argv[i])
             i += 1
         elif argv[i] == "--project" and i + 1 < len(argv):
@@ -418,8 +449,10 @@ def main(argv=None):
             scope = "system" if args.scope_system else "global" if args.scope_global else "project"
             read_scope = scope if args.scope_global or args.scope_system else None
             selected = sum(bool(item) for item in (args.get_key, args.set_pair, args.unset_key))
-            if selected > 1:
-                raise ConfigError("choose only one of --get, --set, or --unset")
+            if selected > 1 or (args.list and (selected or args.action or args.key or args.value)):
+                raise ConfigError("choose only one config operation")
+            if args.verbose and (args.list or selected or args.action):
+                raise ConfigError("--verbose applies to configuration display only")
             if args.edit:
                 if args.action or args.key or args.value or args.list or selected:
                     raise ConfigError("--edit cannot be combined with get, set, unset, or --list")
@@ -461,10 +494,19 @@ def main(argv=None):
                 raise ConfigError(
                     "use config --get KEY, --set KEY TOML_VALUE, --unset KEY, or config --list"
                 )
-            output(config_report(root, read_scope), args.json)
+            if args.list:
+                output(_recognized_config_keys(), args.json)
+            elif args.verbose or args.debug or args.json:
+                output(config_report(root, read_scope), args.json)
+            else:
+                output(_config_text(root, scope))
             return 0
         if args.cmd == "check":
-            output(inspect_project(root), args.json)
+            report = inspect_project(root)
+            if args.verbose or args.debug or args.json:
+                output(report, args.json)
+            else:
+                output(_check_summary(report))
             return 0
         config_path = find_config(root)
         if not config_path:
@@ -584,8 +626,16 @@ def main(argv=None):
     except ForgeError as e:
         record("ERROR", getattr(args, "cmd", "cli"), "failed", error=e)
         print(f"error: {e}", file=sys.stderr)
+        if "args" in locals() and args.debug:
+            import traceback
+
+            traceback.print_exc()
         return e.exit_code
     except (ValueError, OSError, KeyError, TypeError) as e:
         record("ERROR", getattr(args, "cmd", "cli"), "failed", error=e)
         print(f"error: {e}", file=sys.stderr)
+        if "args" in locals() and args.debug:
+            import traceback
+
+            traceback.print_exc()
         return 2
