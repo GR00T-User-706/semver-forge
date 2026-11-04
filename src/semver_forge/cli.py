@@ -32,7 +32,7 @@ from .version_sources import read_version
 def parser():
     """Build the deliberately small public CLI."""
     p = argparse.ArgumentParser(
-        prog="semver-forge",
+        prog="svf",
         description=(
             "Initialize version tracking, calculate and apply the next version, "
             "or synchronize metadata."
@@ -52,7 +52,7 @@ def parser():
             "Inspect existing version metadata and create the project configuration. "
             "Conflicting version sources must be resolved before initialization."
         ),
-        epilog="Example: semver-forge init --yes",
+        epilog="Example: svf init --yes",
     )
     init_cmd.add_argument(
         "--yes",
@@ -67,7 +67,7 @@ def parser():
             "Classify commits since the saved Git boundary and apply the highest configured "
             "Semantic Versioning impact. Use --dry-run to preview and --explain for the decision."
         ),
-        epilog="Examples: semver-forge next --dry-run; semver-forge next --dry-run --explain",
+        epilog="Examples: svf next --dry-run; semver-forge next --dry-run --explain",
     )
     next_cmd.add_argument(
         "--dry-run",
@@ -87,7 +87,7 @@ def parser():
             "Copy the canonical version into configured metadata fields. "
             "--discover registers additional supported version fields before synchronization."
         ),
-        epilog="Examples: semver-forge sync --dry-run; semver-forge sync --discover",
+        epilog="Examples: svf sync --dry-run; semver-forge sync --discover",
     )
     sync_cmd.add_argument(
         "--dry-run",
@@ -108,10 +108,10 @@ def parser():
         "config",
         help="view and manage system, user, and project configuration",
         description=(
-            "Print the selected TOML configuration by default. Use --list for recognized keys, "
+            "Print the selected TOML configuration by default. Use --list for grouped settings, "
             "get/set/unset to manage individual values, and --verbose for merged scope details."
         ),
-        epilog="Example: semver-forge config set commits.types.feat '\"minor\"'",
+        epilog="Example: svf config set commits.types.feat '\"minor\"'",
     )
     config_cmd.add_argument(
         "--global", dest="scope_global", action="store_true", help="select ~/.svfconfig"
@@ -123,7 +123,7 @@ def parser():
         "--edit", action="store_true", help="open the selected scope in VISUAL or EDITOR"
     )
     config_cmd.add_argument(
-        "--list", action="store_true", help="list recognized configuration keys"
+        "--list", action="store_true", help="list configuration settings grouped by TOML table"
     )
     config_cmd.add_argument(
         "--get", dest="get_key", metavar="KEY", help="read one effective setting"
@@ -205,22 +205,93 @@ def output(data, as_json=False):
     else:
         rendered = _format_output(data)
     if isinstance(data, str) and not as_json:
-        sys.stdout.write(rendered if rendered.endswith("\\n") else rendered + "\\n")
+        sys.stdout.write(rendered if rendered.endswith("\n") else rendered + "\n")
     else:
         print(rendered)
 
 
-def _recognized_config_keys(value=None, prefix=""):
-    """Return recognized configuration keys in stable dotted-key order."""
-    value = DEFAULTS if value is None else value
-    keys = []
-    for key, child in value.items():
-        dotted = f"{prefix}.{key}" if prefix else key
-        if isinstance(child, dict):
-            keys.extend(_recognized_config_keys(child, dotted))
-        else:
-            keys.append(dotted)
-    return keys
+def _format_config_list():
+    """Render configuration settings by TOML table with descriptions and defaults."""
+    sections = [
+        (
+            "project",
+            [
+                ("name", "string", "unset", "Optional project name used in reports."),
+                ("description", "string", '""', "Optional project description."),
+            ],
+        ),
+        (
+            "version",
+            [
+                ("initial", "string", '"0.1.0"', "Starting version; must be valid Semantic Versioning."),
+                ("source.type", "string", '"text"', "Version adapter: text, json, toml, yaml, shell, debian, or debian-changelog."),
+                ("source.file", "string", '"VERSION"', "Path to the canonical version file, relative to the project root unless absolute paths are explicitly supported by the adapter."),
+                ("source.key", "string", "optional", "Dotted key or variable name for structured formats; omit for whole-file text and Debian formats."),
+            ],
+        ),
+        (
+            "git",
+            [
+                ("tag_prefix", "string", '"v"', "Prefix removed from Git tags before parsing their version."),
+                ("require_clean", "boolean", "true", "Legacy release safety setting; the current next and sync commands do not enforce it."),
+                ("baseline", "string", "unset", "Optional commit or tag used as the history boundary when no valid release tag is available."),
+                ("unknown_commit", "string", '"ignore"', "Impact for unrecognized commit messages/types: ignore, major, minor, or patch."),
+                ("merge_commits", "string", '"ignore"', "Reserved setting; current Git history traversal does not apply this policy."),
+            ],
+        ),
+        (
+            "commits",
+            [
+                ("breaking_changes", "boolean", "true", "Treat a Conventional Commit ! marker or BREAKING CHANGE footer as a major impact."),
+                ("ignored_types", "array of strings", '["docs", "style", "refactor", "test", "build", "ci", "chore"]', "Commit types excluded from version impact classification."),
+                ("unknown", "string", '"ignore"', "Legacy fallback for unknown commits; git.unknown_commit currently takes precedence."),
+            ],
+        ),
+        (
+            "commits.types",
+            [
+                ("feat", "string", '"minor"', "Impact assigned to feat commits."),
+                ("fix", "string", '"patch"', "Impact assigned to fix commits."),
+                ("perf", "string", '"patch"', "Impact assigned to perf commits."),
+                ("revert", "string", '"patch"', "Impact assigned to revert commits."),
+                ("additional types", "string", "major | minor | patch", "Additional Conventional Commit types may be mapped to major, minor, or patch."),
+            ],
+        ),
+        (
+            "sync",
+            [
+                ("targets", "array of tables", "[]", "Version metadata targets. Each item requires type and file, and may include key for structured formats."),
+            ],
+        ),
+        (
+            "release",
+            [
+                ("commit_version", "boolean", "true", "Legacy release setting; no effect while release execution is disabled."),
+                ("annotated_tag", "boolean", "true", "Legacy release setting; no effect while release execution is disabled."),
+                ("notes_file", "string", '"CHANGELOG.md"', "Legacy release setting; no effect while release execution is disabled."),
+                ("require_confirmation", "boolean", "true", "Legacy release setting; no effect while release execution is disabled."),
+                ("release_when_no_changes", "boolean", "false", "Legacy release setting; no effect while release execution is disabled."),
+            ],
+        ),
+    ]
+    lines = [
+        "Recognized configuration settings",
+        "Entries are TOML keys grouped by their table. Defaults are shown where applicable.",
+        "Use dotted paths with config get/set/unset; use TOML table syntax when editing files.",
+    ]
+    for table, entries in sections:
+        lines.extend(["", f"[{table}]"])
+        for key, value_type, default, description in entries:
+            lines.append(f"  {key:<22} {value_type:<17} default: {default}")
+            lines.append(f"    {description}")
+    lines.extend(
+        [
+            "",
+            "Version source and sync target types: text, json, toml, yaml, shell, debian, debian-changelog.",
+            "See svf-config(5) for TOML syntax, complete configuration details, and examples.",
+        ]
+    )
+    return "\n".join(lines)
 
 
 def _check_summary(report):
@@ -513,7 +584,7 @@ def main(argv=None):
                 return 0
             if args.action == "get":
                 if not args.key or args.value is not None:
-                    raise ConfigError("usage: semver-forge config [--global|--system] get KEY")
+                    raise ConfigError("usage: svf config [--global|--system] get KEY")
                 output(
                     config_get(root, args.key, read_scope),
                     args.json,
@@ -522,7 +593,7 @@ def main(argv=None):
             if args.action == "set":
                 if not args.key or args.value is None:
                     raise ConfigError(
-                        "usage: semver-forge config [--global|--system] set KEY TOML_VALUE"
+                        "usage: svf config [--global|--system] set KEY TOML_VALUE"
                     )
                 output(
                     config_write(root, scope, args.key, args.value),
@@ -531,7 +602,7 @@ def main(argv=None):
                 return 0
             if args.action == "unset":
                 if not args.key or args.value is not None:
-                    raise ConfigError("usage: semver-forge config [--global|--system] unset KEY")
+                    raise ConfigError("usage: svf config [--global|--system] unset KEY")
                 output(config_write(root, scope, args.key, None, unset=True), args.json)
                 return 0
             if args.action or args.key or args.value:
@@ -539,7 +610,7 @@ def main(argv=None):
                     "use config --get KEY, --set KEY TOML_VALUE, --unset KEY, or config --list"
                 )
             if args.list:
-                output(_recognized_config_keys(), args.json)
+                output(_format_config_list(), args.json)
             elif args.verbose or args.debug or args.json:
                 output(config_report(root, read_scope), args.json)
             else:
@@ -554,7 +625,7 @@ def main(argv=None):
             return 0
         config_path = find_config(root)
         if not config_path:
-            raise ConfigError("no .semver-forge.toml found; run semver-forge init")
+            raise ConfigError("no .semver-forge.toml found; run svf init")
         cfg, _paths, unknown = effective_config(root)
         if unknown:
             print("warning: unknown configuration keys: " + ", ".join(unknown), file=sys.stderr)
