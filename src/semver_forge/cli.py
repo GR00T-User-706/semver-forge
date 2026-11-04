@@ -67,7 +67,7 @@ def parser():
             "Classify commits since the saved Git boundary and apply the highest configured "
             "Semantic Versioning impact. Use --dry-run to preview and --explain for the decision."
         ),
-        epilog="Examples: svf next --dry-run; semver-forge next --dry-run --explain",
+        epilog="Examples: svf next --dry-run; svf next --dry-run --explain",
     )
     next_cmd.add_argument(
         "--dry-run",
@@ -87,7 +87,7 @@ def parser():
             "Copy the canonical version into configured metadata fields. "
             "--discover registers additional supported version fields before synchronization."
         ),
-        epilog="Examples: svf sync --dry-run; semver-forge sync --discover",
+        epilog="Examples: svf sync --dry-run; svf sync --discover",
     )
     sync_cmd.add_argument(
         "--dry-run",
