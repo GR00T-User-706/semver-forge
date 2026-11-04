@@ -178,11 +178,36 @@ def _format_output(data, indent=0):
     return str(data)
 
 
+OUTPUT_VERBOSE = False
+OUTPUT_COMMAND = None
+
+
+def _minimal_output(data):
+    if OUTPUT_COMMAND == "init" and isinstance(data, dict):
+        return f"Initialized: {data.get('initialized', 'project')}\\nVersion: {data.get('version', 'unknown')}"
+    if OUTPUT_COMMAND == "next" and isinstance(data, dict):
+        return (
+            f"Current version: {data.get('current', 'unknown')}\\n"
+            f"Next version: {data.get('next', 'unknown')}"
+        )
+    if OUTPUT_COMMAND == "sync":
+        items = data.get("synchronization", []) if isinstance(data, dict) else data
+        lines = ["Synchronized files"]
+        lines.extend(
+            str(item.get("file", "")) for item in items
+            if isinstance(item, dict) and item.get("file")
+        )
+        return "\\n".join(lines)
+    return _format_output(data)
+
+
 def output(data, as_json=False):
     if as_json:
         rendered = json.dumps(data, indent=2, sort_keys=True, default=str)
     elif isinstance(data, str):
         rendered = data
+    elif not OUTPUT_VERBOSE:
+        rendered = _minimal_output(data)
     else:
         rendered = _format_output(data)
     print(rendered)
@@ -241,6 +266,9 @@ def main(argv=None):
             rest.append(argv[i])
             i += 1
     args = parser().parse_args(moved + rest)
+    global OUTPUT_VERBOSE, OUTPUT_COMMAND
+    OUTPUT_VERBOSE = args.verbose or args.debug or args.json
+    OUTPUT_COMMAND = args.cmd
     try:
         if args.cmd == "init":
             project = Path(args.project or ".").expanduser().resolve()
