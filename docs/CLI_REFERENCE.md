@@ -14,7 +14,9 @@ SemVer Forge exposes five project commands.
 |---|---|
 | `init [--yes]` | Discover the project's canonical version source and synchronization targets, then create `.semver-forge.toml`. Existing configuration is preserved unless replacement is explicitly approved. |
 | `next [--dry-run] [--explain]` | Analyze Git commits since the last processed history boundary. Select the highest qualifying SemVer impact and update the canonical version source plus configured targets. Save the processed commit boundary so the same commits are not counted twice. |
-| `sync [--version VERSION] [--dry-run] [--discover]` | Synchronize configured metadata. `--discover` persists newly discovered targets in project configuration before syncing. |\n| `config [get KEY | set KEY VALUE | unset KEY] [--global | --system] [--edit]` | View or manage system, user, and project configuration. Project is the default write scope. |\n| `check` | Read-only report of canonical version, synchronization targets, discovered metadata, and configuration scopes. |
+| `sync [--version VERSION] [--dry-run] [--discover]` | Synchronize configured metadata. `--discover` persists newly discovered targets in project configuration before syncing. |
+| `config [get KEY | set KEY VALUE | unset KEY] [--global | --system] [--edit]` | View or manage system, user, and project configuration. Project is the default write scope. |
+| `check` | Read-only report of canonical version, synchronization targets, discovered metadata, and configuration scopes. |
 
 ## Version selection
 
