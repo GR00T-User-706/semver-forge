@@ -7,6 +7,12 @@ and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.2.1] - 2026-11-04
+
+### Fixed
+- Restored the original structured output for `init`, `next`, and `sync`; `--verbose` and `--debug` no longer alter successful output for those commands.
+- Added regression coverage ensuring `next` and `sync` output is identical with and without verbosity flags.
+
 ## [1.2.0] - 2026-11-04
 
 ### Added
