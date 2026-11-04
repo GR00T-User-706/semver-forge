@@ -30,7 +30,8 @@ dependencies = [
 dev = ["build>=1.2", "pytest>=8", "pytest-cov>=5", "ruff>=0.6", "mypy>=1.10"]
 
 [project.scripts]
-semver-forge = "semver_forge.cli:main"
+svf = "semver_forge.cli:main"
+semver-forge = "semver_forge.cli:main" # compatibility alias
 
 [tool.setuptools]
 package-dir = {"" = "src"}
