@@ -14,6 +14,7 @@ and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Vendor the pure-Python `ruamel.yaml` runtime dependency in Termux packages so YAML metadata support is available without a separate pip install.
 
 ### Fixed
+- Added the `check.py` and `config_scopes.py` modules to the Termux package payload so the installed CLI includes its newly introduced imports.
 - Corrected initialization reporting so it only reads fields actually returned by project discovery.
 - Made generated configurations omit inactive release, test-command, build-command, and artifact policy.
 - Kept CLI result formatting compatible with nested dictionaries and lists.
