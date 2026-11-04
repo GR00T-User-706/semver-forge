@@ -22,6 +22,10 @@ deb_dir: dist/termux
 tar_compression: xz
 
 data_files:
+  bin/svf:
+    source: packaging/termux/svf
+    perm: '755'
+
   bin/semver-forge:
     source: packaging/termux/semver-forge
     perm: '755'
@@ -79,6 +83,12 @@ data_files:
 
   lib/semver-forge/semver_forge/data/project-config.toml:
     source: src/semver_forge/data/project-config.toml
+
+  share/man/man1/svf.1:
+    source: man/svf.1
+
+  share/man/man5/svf-config.5:
+    source: man/svf-config.5
 
   share/man/man1/semver-forge.1:
     source: man/semver-forge.1
