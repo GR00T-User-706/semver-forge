@@ -90,3 +90,7 @@ Run the test suite with:
 ```sh
 ./tests/run-tests.sh
 ```
+
+## Project standards
+
+See [PROJECT_STANDARDS.md](docs/PROJECT_STANDARDS.md) for the project-specific documentation, packaging, contribution, and validation standards.
