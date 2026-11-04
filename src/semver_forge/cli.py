@@ -451,8 +451,6 @@ def main(argv=None):
             selected = sum(bool(item) for item in (args.get_key, args.set_pair, args.unset_key))
             if selected > 1 or (args.list and (selected or args.action or args.key or args.value)):
                 raise ConfigError("choose only one config operation")
-            if args.verbose and (args.list or selected or args.action):
-                raise ConfigError("--verbose applies to configuration display only")
             if args.edit:
                 if args.action or args.key or args.value or args.list or selected:
                     raise ConfigError("--edit cannot be combined with get, set, unset, or --list")
