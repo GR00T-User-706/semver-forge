@@ -111,7 +111,7 @@ def parser():
             "Print the selected TOML configuration by default. Use --list for recognized keys, "
             "get/set/unset to manage individual values, and --verbose for merged scope details."
         ),
-        epilog='Example: semver-forge config set commits.types.feat \'"minor"\'',
+        epilog="Example: semver-forge config set commits.types.feat '\"minor\"'",
     )
     config_cmd.add_argument(
         "--global", dest="scope_global", action="store_true", help="select ~/.svfconfig"
@@ -217,7 +217,8 @@ def _minimal_output(data):
         items = data.get("synchronization", []) if isinstance(data, dict) else data
         lines = ["Synchronized files"]
         lines.extend(
-            str(item.get("file", "")) for item in items
+            str(item.get("file", ""))
+            for item in items
             if isinstance(item, dict) and item.get("file")
         )
         return "\n".join(lines)
