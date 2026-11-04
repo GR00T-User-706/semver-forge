@@ -69,11 +69,14 @@ class CLIOutputModeTests(unittest.TestCase):
         self.assertIn("[project]", result.stdout)
         self.assertIn("[version]", result.stdout)
         self.assertIn("[commits.types]", result.stdout)
-        self.assertIn("source.type", result.stdout)
+        self.assertIn("source", result.stdout)
+        self.assertIn("inline table", result.stdout)
+        self.assertIn("  type", result.stdout)
         self.assertIn("targets", result.stdout)
         self.assertIn("Optional project name", result.stdout)
         self.assertIn("default:", result.stdout)
         self.assertNotIn("project.name", result.stdout)
+        self.assertNotIn("version.source.type", result.stdout)
         self.assertNotIn("sample", result.stdout)
 
     def test_verbose_and_debug_are_global_options_for_check(self):
