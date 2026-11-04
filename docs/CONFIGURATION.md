@@ -86,7 +86,8 @@ source = { type = "toml", file = "pyproject.toml", key = "project.version" }
 ```
 
 SemVer Forge uses inline tables for `version.source` and each item in
-`sync.targets`.
+`sync.targets`. Under TOML 1.0.0, an inline table must stay on one line.
+Line breaks may separate array elements, but not fields inside the braces.
 
 ### Arrays of inline tables
 
