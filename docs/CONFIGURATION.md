@@ -96,11 +96,7 @@ Synchronization targets are represented as an array of inline tables:
 [sync]
 targets = [
   { type = "text", file = "VERSION" },
-  {
-    type = "yaml",
-    file = "packaging/termux/manifest.yaml",
-    key = "control.Version",
-  },
+  { type = "yaml", file = "packaging/termux/manifest.yaml", key = "control.Version" },
 ]
 ```
 
@@ -161,11 +157,7 @@ Example:
 ```toml
 [version]
 initial = "1.2.3"
-source = {
-  type = "toml",
-  file = "pyproject.toml",
-  key = "project.version",
-}
+source = { type = "toml", file = "pyproject.toml", key = "project.version" }
 ```
 
 ### `[git]`
