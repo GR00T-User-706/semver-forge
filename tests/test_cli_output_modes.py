@@ -117,5 +117,6 @@ class CLIOutputModeTests(unittest.TestCase):
         self.assertEqual(normal.stdout, debug.stdout)
         self.assertIn("current:", normal.stdout)
 
+
 if __name__ == "__main__":
     unittest.main()
