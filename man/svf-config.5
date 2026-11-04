@@ -72,6 +72,8 @@ Inline tables are used for
 .B version.source
 and individual entries in
 .BR sync.targets .
+Under TOML 1.0.0, an inline table must stay on one line. Line breaks may
+separate array elements, but not fields inside the braces.
 .SS Arrays of inline tables
 Synchronization targets are an array of inline tables:
 .nf
