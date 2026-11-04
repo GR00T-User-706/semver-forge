@@ -255,7 +255,8 @@ def _format_config_list():
                     "source.key",
                     "string",
                     "optional",
-                    "Dotted key or variable name for structured formats; shell defaults to VERSION.",
+                    "Dotted key or variable name for structured formats; "
+                    "shell defaults to VERSION.",
                 ),
             ],
         ),
@@ -392,7 +393,8 @@ def _format_config_list():
     lines.extend(
         [
             "",
-            "Version source and sync target types: text, json, toml, yaml, shell, debian, debian-changelog.",
+            "Version source and sync target types: text, json, toml, yaml, shell, "
+            "debian, debian-changelog.",
             "See svf-config(5) for TOML syntax, complete configuration details, and examples.",
         ]
     )
