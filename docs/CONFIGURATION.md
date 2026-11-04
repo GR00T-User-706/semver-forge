@@ -7,7 +7,7 @@ SemVer Forge merges configuration from three scopes, in increasing precedence:
 
 Project configuration filenames are mutually exclusive. If both project names exist, SemVer Forge reports the duplicate and stops rather than silently choosing one. Higher-precedence scopes override lower-precedence values. Nested tables merge recursively; arrays, including `sync.targets`, are replaced by the higher-precedence scope. Files such as `pyproject.toml`, `package.json`, `Cargo.toml`, and `PKGBUILD` are project metadata/version sources, not alternate SemVer Forge configuration files.
 
-Unknown keys are reported by `config` and `check`; malformed TOML and invalid effective version settings are errors.
+Unknown keys and malformed settings are reported in verbose or debug diagnostics. Invalid effective version settings are errors.
 
 - `[project] name`, `description`: descriptive metadata.
 - `[version] initial`: discovered starting version, or `0.1.0` only when no usable version source exists. `source`: inline table with `type`, `file`, optional `key`.
@@ -34,7 +34,13 @@ If multiple recognized version sources disagree, initialization stops and report
 
 ## Configuration commands
 
-`semver-forge config` lists all scopes, the effective merged configuration, and the source scope for each effective value. Use `config get KEY`, `config set KEY TOML_VALUE`, or `config unset KEY`. The default write scope is project. Select `--global` or `--system` to write another scope. `config --edit` opens the selected file with `VISUAL`, then `EDITOR`, then `vi`.
+`semver-forge config` prints the selected configuration file exactly as stored, including comments and TOML syntax. The default scope is the project file. Use `--global` or `--system` to display or manage another scope.
+
+`semver-forge config --list` lists recognized dotted configuration keys. It does not print configured values.
+
+Use `config get KEY`, `config set KEY TOML_VALUE`, or `config unset KEY` to inspect or change one setting. The default write scope is project. Select `--global` or `--system` to write another scope. `config --edit` opens the selected file with `VISUAL`, then `EDITOR`, then `vi`.
+
+Use `--verbose` to show scope contents, merged effective settings, precedence, and value origins. Use `--debug` for the expanded report plus diagnostic tracebacks when an operation fails.
 
 Read operations never create files. Write operations create missing parent directories, validate TOML and effective required settings, and use an atomic replacement. Existing comments and unrelated values are retained when setting or unsetting a key. Arrays replace lower-scope arrays rather than being concatenated.
 
