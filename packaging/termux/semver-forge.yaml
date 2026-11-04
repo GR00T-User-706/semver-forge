@@ -4,7 +4,7 @@
 
 control:
   Package: semver-forge
-  Version: "1.0.0"
+  Version: "1.0.1"
   Architecture: all
   Maintainer: GR00T-User-706
   Depends:
@@ -38,10 +38,14 @@ data_files:
     source: src/semver_forge/build.py
   lib/semver-forge/semver_forge/changelog.py:
     source: src/semver_forge/changelog.py
+  lib/semver-forge/semver_forge/check.py:
+    source: src/semver_forge/check.py
   lib/semver-forge/semver_forge/cli.py:
     source: src/semver_forge/cli.py
   lib/semver-forge/semver_forge/config.py:
     source: src/semver_forge/config.py
+  lib/semver-forge/semver_forge/config_scopes.py:
+    source: src/semver_forge/config_scopes.py
   lib/semver-forge/semver_forge/conventional_commits.py:
     source: src/semver_forge/conventional_commits.py
   lib/semver-forge/semver_forge/discovery.py:
