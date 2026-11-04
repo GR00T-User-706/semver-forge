@@ -10,8 +10,8 @@ From the extracted project directory:
 ./scripts/install.sh --prefix "$HOME/.local"
 export PATH="$HOME/.local/bin:$PATH"
 export MANPATH="$HOME/.local/share/man${MANPATH:+:$MANPATH}"
-semver-forge --help
-man semver-forge
+svf --help
+man svf
 ```
 
 ## Uninstall
@@ -23,7 +23,7 @@ man semver-forge
 ## Source-tree use
 
 ```sh
-./bin/semver-forge --help
+./bin/svf --help
 ```
 
 ## Termux
