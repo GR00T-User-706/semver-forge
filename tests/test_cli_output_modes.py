@@ -22,7 +22,7 @@ class CLIOutputModeTests(unittest.TestCase):
             encoding="utf-8",
         )
         self.config = (
-            '# generated config\n'
+            "# generated config\n"
             '[project]\nname = "sample"\n\n'
             '[version]\ninitial = "2.3.4"\n'
             'source = { type = "text", file = "VERSION" }\n\n'
@@ -49,8 +49,7 @@ class CLIOutputModeTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(
             result.stdout,
-            "Project: sample\nVersion: 2.3.4\n\nSynchronized files\n"
-            "VERSION\npyproject.toml\n",
+            "Project: sample\nVersion: 2.3.4\n\nSynchronized files\nVERSION\npyproject.toml\n",
         )
 
     def test_check_verbose_keeps_full_report(self):
