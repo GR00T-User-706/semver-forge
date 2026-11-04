@@ -42,3 +42,8 @@ Report checks that could not be run. Do not claim unrun checks passed.
 ## Pull requests
 
 Explain what changed and why, important implementation decisions, tests/checks performed, documentation/version/changelog updates, compatibility or migration implications, and known limitations. Keep each pull request focused on one coherent change.
+
+
+## Packaging and user documentation contributions
+
+All changes to package formats, metadata, build scripts, installers, release payloads, configuration, CLI help, man pages, and user manuals MUST comply with the Cross-Platform Packaging and User Documentation Contract in `AGENTS.md`. Inspect every supported package path, preserve parity across package formats, update user documentation and payload tests, and report the precise validation performed. Do not claim parity from a successful build of only one format.
