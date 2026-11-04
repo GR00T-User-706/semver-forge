@@ -27,5 +27,5 @@ perf = "patch"
 revert = "patch"
 
 [sync]
-targets = [{ type = "text", file = "VERSION" }]
+targets = [{ type = "text", file = "VERSION" }, { type = "yaml", file = "packaging/termux/semver-forge.yaml", key = "control.Version" }]
 
