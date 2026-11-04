@@ -10,7 +10,7 @@ from pathlib import Path
 
 from . import __version__, git
 from .check import inspect_project
-from .config import DEFAULTS, find_config
+from .config import find_config
 from .config_scopes import (
     config_edit,
     config_get,
@@ -216,35 +216,105 @@ def _format_config_list():
         (
             "project",
             [
-                ("name", "string", "unset", "Optional project name used in reports."),
-                ("description", "string", '""', "Optional project description."),
+                (
+                    "name",
+                    "string",
+                    "unset",
+                    "Optional project name used in reports.",
+                ),
+                (
+                    "description",
+                    "string",
+                    '""',
+                    "Optional project description.",
+                ),
             ],
         ),
         (
             "version",
             [
-                ("initial", "string", '"0.1.0"', "Starting version; must be valid Semantic Versioning."),
-                ("source.type", "string", '"text"', "Version adapter: text, json, toml, yaml, shell, debian, or debian-changelog."),
-                ("source.file", "string", '"VERSION"', "Path to the canonical version file, relative to the project root unless absolute paths are explicitly supported by the adapter."),
-                ("source.key", "string", "optional", "Dotted key or variable name for structured formats; omit for whole-file text and Debian formats."),
+                (
+                    "initial",
+                    "string",
+                    '"0.1.0"',
+                    "Starting version; must be valid Semantic Versioning.",
+                ),
+                (
+                    "source.type",
+                    "string",
+                    '"text"',
+                    "Version adapter: text, json, toml, yaml, shell, debian, or debian-changelog.",
+                ),
+                (
+                    "source.file",
+                    "string",
+                    '"VERSION"',
+                    "Path to the canonical version file, relative to the project root.",
+                ),
+                (
+                    "source.key",
+                    "string",
+                    "optional",
+                    "Dotted key or variable name for structured formats; shell defaults to VERSION.",
+                ),
             ],
         ),
         (
             "git",
             [
-                ("tag_prefix", "string", '"v"', "Prefix removed from Git tags before parsing their version."),
-                ("require_clean", "boolean", "true", "Legacy release safety setting; the current next and sync commands do not enforce it."),
-                ("baseline", "string", "unset", "Optional commit or tag used as the history boundary when no valid release tag is available."),
-                ("unknown_commit", "string", '"ignore"', "Impact for unrecognized commit messages/types: ignore, major, minor, or patch."),
-                ("merge_commits", "string", '"ignore"', "Reserved setting; current Git history traversal does not apply this policy."),
+                (
+                    "tag_prefix",
+                    "string",
+                    '"v"',
+                    "Prefix removed from Git tags before parsing their version.",
+                ),
+                (
+                    "require_clean",
+                    "boolean",
+                    "true",
+                    "Legacy release safety setting; next and sync do not enforce it.",
+                ),
+                (
+                    "baseline",
+                    "string",
+                    "unset",
+                    "Optional commit or tag used as the history boundary.",
+                ),
+                (
+                    "unknown_commit",
+                    "string",
+                    '"ignore"',
+                    "Policy for unrecognized commits: ignore, major, minor, or patch.",
+                ),
+                (
+                    "merge_commits",
+                    "string",
+                    '"ignore"',
+                    "Reserved; current Git history traversal does not apply this policy.",
+                ),
             ],
         ),
         (
             "commits",
             [
-                ("breaking_changes", "boolean", "true", "Treat a Conventional Commit ! marker or BREAKING CHANGE footer as a major impact."),
-                ("ignored_types", "array of strings", '["docs", "style", "refactor", "test", "build", "ci", "chore"]', "Commit types excluded from version impact classification."),
-                ("unknown", "string", '"ignore"', "Legacy fallback for unknown commits; git.unknown_commit currently takes precedence."),
+                (
+                    "breaking_changes",
+                    "boolean",
+                    "true",
+                    "Treat Conventional Commit breaking markers as a major impact.",
+                ),
+                (
+                    "ignored_types",
+                    "array of strings",
+                    '["docs", "style", "refactor", "test", "build", "ci", "chore"]',
+                    "Commit types excluded from version impact classification.",
+                ),
+                (
+                    "unknown",
+                    "string",
+                    '"ignore"',
+                    "Legacy fallback; git.unknown_commit currently takes precedence.",
+                ),
             ],
         ),
         (
@@ -254,23 +324,58 @@ def _format_config_list():
                 ("fix", "string", '"patch"', "Impact assigned to fix commits."),
                 ("perf", "string", '"patch"', "Impact assigned to perf commits."),
                 ("revert", "string", '"patch"', "Impact assigned to revert commits."),
-                ("additional types", "string", "major | minor | patch", "Additional Conventional Commit types may be mapped to major, minor, or patch."),
+                (
+                    "additional types",
+                    "string",
+                    "major | minor | patch",
+                    "Additional Conventional Commit types may be mapped to an impact.",
+                ),
             ],
         ),
         (
             "sync",
             [
-                ("targets", "array of tables", "[]", "Version metadata targets. Each item requires type and file, and may include key for structured formats."),
+                (
+                    "targets",
+                    "array of tables",
+                    "[]",
+                    "Version targets; each item requires type and file, with optional key.",
+                ),
             ],
         ),
         (
             "release",
             [
-                ("commit_version", "boolean", "true", "Legacy release setting; no effect while release execution is disabled."),
-                ("annotated_tag", "boolean", "true", "Legacy release setting; no effect while release execution is disabled."),
-                ("notes_file", "string", '"CHANGELOG.md"', "Legacy release setting; no effect while release execution is disabled."),
-                ("require_confirmation", "boolean", "true", "Legacy release setting; no effect while release execution is disabled."),
-                ("release_when_no_changes", "boolean", "false", "Legacy release setting; no effect while release execution is disabled."),
+                (
+                    "commit_version",
+                    "boolean",
+                    "true",
+                    "Legacy release setting; no effect while release execution is disabled.",
+                ),
+                (
+                    "annotated_tag",
+                    "boolean",
+                    "true",
+                    "Legacy release setting; no effect while release execution is disabled.",
+                ),
+                (
+                    "notes_file",
+                    "string",
+                    '"CHANGELOG.md"',
+                    "Legacy release setting; no effect while release execution is disabled.",
+                ),
+                (
+                    "require_confirmation",
+                    "boolean",
+                    "true",
+                    "Legacy release setting; no effect while release execution is disabled.",
+                ),
+                (
+                    "release_when_no_changes",
+                    "boolean",
+                    "false",
+                    "Legacy release setting; no effect while release execution is disabled.",
+                ),
             ],
         ),
     ]
