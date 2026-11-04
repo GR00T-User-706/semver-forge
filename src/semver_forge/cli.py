@@ -154,6 +154,17 @@ def parser():
         ),
         epilog="This command is read-only and never changes project files.",
     )
+    for command in (init_cmd, next_cmd, sync_cmd, config_cmd):
+        command.add_argument(
+            "--verbose",
+            action="store_true",
+            help="show expanded operation details",
+        )
+        command.add_argument(
+            "--debug",
+            action="store_true",
+            help="show diagnostic details and tracebacks",
+        )
     return p
 
 
