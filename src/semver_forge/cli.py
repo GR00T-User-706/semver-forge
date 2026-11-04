@@ -11,7 +11,14 @@ from pathlib import Path
 from . import __version__, git
 from .check import inspect_project
 from .config import DEFAULTS, find_config
-from .config_scopes import (\n    config_edit,\n    config_get,\n    config_report,\n    config_write,\n    effective_config,\n    scope_paths,\n)
+from .config_scopes import (
+    config_edit,
+    config_get,
+    config_report,
+    config_write,
+    effective_config,
+    scope_paths,
+)
 from .discovery import discover
 from .errors import ConfigError, ForgeError
 from .metadata_discovery import discover_sync_targets
@@ -33,7 +40,9 @@ def parser():
     )
     p.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     p.add_argument("--project", help="project path (default: current directory)")
-    p.add_argument("--json", action="store_true", help="emit machine-readable JSON")\n    p.add_argument("--verbose", action="store_true", help="show expanded operation details")\n    p.add_argument("--debug", action="store_true", help="show diagnostic details and tracebacks")
+    p.add_argument("--json", action="store_true", help="emit machine-readable JSON")
+    p.add_argument("--verbose", action="store_true", help="show expanded operation details")
+    p.add_argument("--debug", action="store_true", help="show diagnostic details and tracebacks")
     sub = p.add_subparsers(dest="cmd", required=True)
 
     init_cmd = sub.add_parser(
@@ -184,7 +193,7 @@ OUTPUT_COMMAND = None
 
 def _minimal_output(data):
     if OUTPUT_COMMAND == "init" and isinstance(data, dict):
-        return f"Initialized: {data.get('initialized', 'project')}\\nVersion: {data.get('version', 'unknown')}"
+        return f"Initialized: {data.get('initialized', 'project')}\nVersion: {data.get('version', 'unknown')}"
     if OUTPUT_COMMAND == "next" and isinstance(data, dict):
         return (
             f"Current version: {data.get('current', 'unknown')}\\n"
