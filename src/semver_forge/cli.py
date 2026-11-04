@@ -204,7 +204,10 @@ OUTPUT_COMMAND = None
 
 def _minimal_output(data):
     if OUTPUT_COMMAND == "init" and isinstance(data, dict):
-        return f"Initialized: {data.get('initialized', 'project')}\nVersion: {data.get('version', 'unknown')}"
+        return (
+            f"Initialized: {data.get('initialized', 'project')}\n"
+            f"Version: {data.get('version', 'unknown')}"
+        )
     if OUTPUT_COMMAND == "next" and isinstance(data, dict):
         return (
             f"Current version: {data.get('current', 'unknown')}\n"
@@ -230,7 +233,10 @@ def output(data, as_json=False):
         rendered = _minimal_output(data)
     else:
         rendered = _format_output(data)
-    print(rendered)
+    if isinstance(data, str) and not as_json:
+        sys.stdout.write(rendered if rendered.endswith("\n") else rendered + "\n")
+    else:
+        print(rendered)
 
 
 def _recognized_config_keys(value=None, prefix=""):
