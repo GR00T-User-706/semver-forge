@@ -10,12 +10,10 @@ svf \- automatic semantic version tracking and metadata synchronization
 .B svf
 manages a project's semantic version. It selects a canonical version source, calculates version increments from Git history, and synchronizes configured version metadata.
 .PP
-The Python distribution remains named
+The Python distribution and package are named
 .BR semver-forge ;
 .B svf
-is the primary installed command. The former
-.B semver-forge
-command remains available as a compatibility alias.
+is the installed command.
 .PP
 Normal output is intentionally concise. Use
 .B --verbose
@@ -189,6 +187,5 @@ Zero indicates success. A nonzero status indicates invalid configuration, unavai
 Python 3.10 or later. Git is required for commit-history-based version selection.
 .SH SEE ALSO
 .BR svf-config (5),
-.BR semver-forge (1),
 .BR git (1),
 .BR python3 (1)
