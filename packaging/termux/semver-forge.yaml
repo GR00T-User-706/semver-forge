@@ -26,9 +26,6 @@ data_files:
     source: packaging/termux/svf
     perm: '755'
 
-  bin/semver-forge:
-    source: packaging/termux/semver-forge
-    perm: '755'
 
   lib/semver-forge/vendor:
     source: packaging/termux/.build/vendor
@@ -90,5 +87,3 @@ data_files:
   share/man/man5/svf-config.5:
     source: man/svf-config.5
 
-  share/man/man1/semver-forge.1:
-    source: man/semver-forge.1
