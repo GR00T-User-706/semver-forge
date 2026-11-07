@@ -1,10 +1,10 @@
 # SemVer Forge
 
-Automatic project version tracking. SemVer Forge has exactly three project commands:
+Automatic project version tracking. SemVer Forge provides version tracking plus Git/changelog maintenance:
 
 - `init`: initialize version tracking.
 - `next`: inspect Git history, choose the correct SemVer increment, and update configured version files.
-- `sync`: synchronize configured metadata to the current canonical version.
+- `sync`: synchronize configured metadata to the current canonical version.\n- `changelog`: reconcile Git history with the configured changelog and append missing entries to `[Unreleased]`.\n- `commit`: infer a Conventional Commit type/scope/message and create the commit interactively or non-interactively.
 
 There is no release or publishing workflow in this command interface.
 

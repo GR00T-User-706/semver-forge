@@ -84,5 +84,60 @@ def commits(path, since=None):
     return out
 
 
+
+def history(path, since=None):
+    """Return commit records for all commits in the selected history range."""
+    args = ["log", "--format=%H%x1f%s%x1f%b%x1e"]
+    if since:
+        args.append(f"{since}..HEAD")
+    raw = run(args, cwd=path).stdout
+    out = []
+    for rec in raw.split("\x1e"):
+        rec = rec.strip("\n")
+        if not rec:
+            continue
+        bits = rec.split("\x1f", 2)
+        if len(bits) == 3:
+            out.append(
+                {
+                    "hash": bits[0],
+                    "subject": bits[1],
+                    "body": bits[2],
+                    "message": bits[1] + ("\n\n" + bits[2] if bits[2] else ""),
+                }
+            )
+    return out
+
+
+def status_paths(path):
+    """Return paths reported by Git status."""
+    paths = []
+    for line in run(["status", "--porcelain"], cwd=path).stdout.splitlines():
+        if len(line) < 4:
+            continue
+        value = line[3:]
+        if " -> " in value:
+            value = value.split(" -> ", 1)[1]
+        paths.append(value)
+    return paths
+
+
+def diff_head(path):
+    """Return the complete working-tree diff relative to HEAD."""
+    return run(["diff", "HEAD", "--"], cwd=path, check=False).stdout
+
+
+def staged_diff(path):
+    """Return the currently staged diff."""
+    return run(["diff", "--cached", "--"], cwd=path, check=False).stdout
+
+
+def stage_all(path):
+    run(["add", "-A"], cwd=path)
+
+
+def commit(path, message):
+    return run(["commit", "-m", message], cwd=path)
+
 def tag_commit(path, tag):
     return run(["rev-list", "-n", "1", tag], cwd=path, check=False).stdout.strip() or None

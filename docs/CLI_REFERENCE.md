@@ -52,3 +52,16 @@ YAML synchronization uses a round-trip parser and updates only the configured do
 ## Configuration
 
 The project configuration is `.semver-forge.toml`. See [the example](../config/semver-forge.example.toml) and [configuration guide](CONFIGURATION.md).
+
+    
+## changelog
+
+`semver-forge changelog` compares commits since the latest SemVer tag with commit references and descriptions already represented in the configured changelog. Missing entries are appended to `[Unreleased]`.
+
+Use `--dry-run` to preview changes and `--yes` to bypass confirmation.
+
+## commit
+
+`semver-forge commit` analyzes the current worktree and proposes a Conventional Commit type, scope, and message. It can interactively adjust the proposal or run non-interactively with `--type`, `--scope`, `--message`, `--all`, and `--yes`.
+
+Use `--dry-run` to preview without staging or committing.

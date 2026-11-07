@@ -2,7 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from semver_forge.changelog import update_changelog
+from semver_forge.changelog import sync_unreleased, update_changelog
 
 
 class ChangelogUpdateTests(unittest.TestCase):
@@ -55,6 +55,36 @@ class ChangelogUpdateTests(unittest.TestCase):
                 update_changelog(path, "1.1.0", "- replacement")
 
             self.assertEqual(path.read_text(encoding="utf-8"), original)
+
+    
+    def test_sync_unreleased_detects_and_writes_missing_commit(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "CHANGELOG.md"
+            path.write_text(
+                "# Changelog\\n\\n## [Unreleased]\\n\\n### Features\\n\\n"
+                "- existing feature (abc1234)\\n",
+                encoding="utf-8",
+            )
+            commits = [
+                {"hash": "abc123456789", "message": "feat: existing feature", "subject": "feat: existing feature", "body": ""},
+                {"hash": "def567812345", "message": "fix: correct broken behavior", "subject": "fix: correct broken behavior", "body": ""},
+            ]
+            result = sync_unreleased(path, commits)
+            self.assertTrue(result["diverged"])
+            self.assertTrue(result["changed"])
+            self.assertEqual(result["missing_count"], 1)
+            self.assertIn("correct broken behavior (def56781)", path.read_text(encoding="utf-8"))
+
+    def test_sync_unreleased_dry_run_does_not_write(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "CHANGELOG.md"
+            path.write_text("# Changelog\\n", encoding="utf-8")
+            commits = [{"hash": "1234567890ab", "message": "feat: add feature", "subject": "feat: add feature", "body": ""}]
+            result = sync_unreleased(path, commits, dry_run=True)
+            self.assertTrue(result["diverged"])
+            self.assertFalse(result["changed"])
+            self.assertIn("add feature", result["notes"])
+            self.assertEqual(path.read_text(encoding="utf-8"), "# Changelog\\n")
 
 
 if __name__ == "__main__":
