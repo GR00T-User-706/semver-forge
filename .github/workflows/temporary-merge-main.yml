@@ -1,0 +1,26 @@
+name: Temporary main merge reconciliation
+
+on:
+  push:
+    branches:
+      - feat/config-scopes-check-discovery
+
+permissions:
+  contents: write
+
+jobs:
+  merge-main:
+    if: github.event.head_commit.message != 'merge(main): reconcile actual main into working branch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: feat/config-scopes-check-discovery
+      - name: Merge actual main into working branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git merge origin/main --no-edit -X ours -m "merge(main): reconcile actual main into working branch"
+          git push origin HEAD:feat/config-scopes-check-discovery
