@@ -24,3 +24,4 @@ jobs:
           git fetch origin main
           git merge origin/main --no-edit -X ours -m "merge(main): reconcile actual main into working branch"
           git push origin HEAD:feat/config-scopes-check-discovery
+
