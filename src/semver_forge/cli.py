@@ -80,6 +80,25 @@ def parser():
         help="include why the version was or was not changed",
     )
 
+    changelog_cmd = sub.add_parser(
+        "changelog",
+        help="compare Git history with CHANGELOG.md and append missing entries",
+    )
+    changelog_cmd.add_argument("--dry-run", action="store_true", help="show changes without writing")
+    changelog_cmd.add_argument("--yes", action="store_true", help="apply changes without prompting")
+
+    commit_cmd = sub.add_parser(
+        "commit",
+        help="intelligently create a Conventional Commit from current changes",
+    )
+    commit_cmd.add_argument("--type", choices=COMMIT_TYPES, help="override the inferred commit type")
+    commit_cmd.add_argument("--scope", help="override the inferred commit scope")
+    commit_cmd.add_argument("--message", help="use this complete commit message")
+    commit_cmd.add_argument("--breaking", action="store_true", help="mark the generated commit as breaking")
+    commit_cmd.add_argument("--all", action="store_true", help="stage all current changes before committing")
+    commit_cmd.add_argument("--yes", action="store_true", help="accept inferred values and stage all changes")
+    commit_cmd.add_argument("--dry-run", action="store_true", help="show the proposal without staging or committing")
+
     sync_cmd = sub.add_parser(
         "sync",
         help="synchronize configured metadata to the canonical version",
@@ -740,6 +759,132 @@ def main(argv=None):
         if unknown:
             print("warning: unknown configuration keys: " + ", ".join(unknown), file=sys.stderr)
         current = Version.parse(read_version(root, cfg["version"]["source"]))
+
+        if args.cmd == "changelog":
+            from .changelog import sync_unreleased
+            from .release import latest_release, resolve_changelog_path
+
+            notes_file = cfg.get("release", {}).get("notes_file") or "CHANGELOG.md"
+            notes_path = resolve_changelog_path(root, notes_file)
+            _previous, tag = latest_release(root, cfg)
+            commits = git.history(root, tag)
+            preview = sync_unreleased(notes_path, commits, cfg.get("commits", {}), dry_run=True)
+
+            if args.dry_run:
+                preview["status"] = "would_update" if preview["diverged"] else "synchronized"
+                output(preview, args.json)
+                return 0
+
+            if not preview["diverged"]:
+                preview["status"] = "synchronized"
+                preview["changed"] = False
+                output(preview, args.json)
+                return 0
+
+            if not args.yes:
+                try:
+                    answer = input(
+                        f"Update {notes_path} with {preview['missing_count']} missing commit entries? [y/N] "
+                    ).strip().lower()
+                except EOFError:
+                    answer = ""
+                if answer not in ("y", "yes"):
+                    preview["status"] = "cancelled"
+                    preview["changed"] = False
+                    output(preview, args.json)
+                    return 0
+
+            result = sync_unreleased(notes_path, commits, cfg.get("commits", {}), dry_run=False)
+            result["status"] = "updated"
+            record("INFO", "changelog", "updated", missing=result["missing_count"])
+            output(result, args.json)
+            return 0
+
+        if args.cmd == "commit":
+            paths = git.status_paths(root)
+            if not paths:
+                raise ConfigError("working tree is clean; nothing to commit")
+
+            diff = git.diff_head(root)
+            inferred_type, confidence = infer_type(paths, diff)
+            inferred_scope = infer_scope(paths)
+            inferred_summary = generate_summary(inferred_type, inferred_scope)
+
+            commit_type = args.type or inferred_type
+            scope = args.scope if args.scope is not None else inferred_scope
+            message = args.message
+
+            if not message and not args.yes and not args.dry_run:
+                print(f"Suggested type: {inferred_type} (confidence: {confidence})")
+                print("Changed files:")
+                for path in paths:
+                    print(f"  {path}")
+                choices = ", ".join(
+                    f"{index + 1}={value}" for index, value in enumerate(COMMIT_TYPES)
+                )
+                selection = input(f"Commit type [{commit_type}] choices: {choices}: ").strip()
+                if selection:
+                    if selection.isdigit() and 1 <= int(selection) <= len(COMMIT_TYPES):
+                        commit_type = COMMIT_TYPES[int(selection) - 1]
+                    elif selection in COMMIT_TYPES:
+                        commit_type = selection
+                    else:
+                        raise ConfigError(f"unknown commit type: {selection}")
+                scope_value = input(f"Scope [{scope or 'none'}]: ").strip()
+                if scope_value:
+                    scope = scope_value
+                summary = input(f"Summary [{inferred_summary}]: ").strip() or inferred_summary
+                message = format_message(commit_type, scope, summary, breaking=args.breaking)
+                print(f"Commit message: {message}")
+                answer = input("Create this commit? [Y/n/e] ").strip().lower()
+                if answer == "e":
+                    edited = input("Commit message: ").strip()
+                    if edited:
+                        message = edited
+                elif answer not in ("", "y", "yes"):
+                    raise ConfigError("commit cancelled")
+
+            if not message:
+                message = format_message(commit_type, scope, inferred_summary, breaking=args.breaking)
+
+            if args.dry_run:
+                output(
+                    {
+                        "type": commit_type,
+                        "scope": scope,
+                        "message": message,
+                        "confidence": confidence,
+                        "files": paths,
+                        "committed": False,
+                        "dry_run": True,
+                    },
+                    args.json,
+                )
+                return 0
+
+            if not args.yes and not args.all:
+                answer = input("Stage all current changes for this commit? [Y/n] ").strip().lower()
+                if answer not in ("", "y", "yes"):
+                    raise ConfigError("commit cancelled")
+
+            git.stage_all(root)
+            if not git.staged_diff(root).strip():
+                raise ConfigError("no changes are staged for commit")
+            git.commit(root, message)
+            record("INFO", "commit", "completed")
+            output(
+                {
+                    "type": commit_type,
+                    "scope": scope,
+                    "message": message,
+                    "confidence": confidence,
+                    "files": paths,
+                    "committed": True,
+                    "dry_run": False,
+                },
+                args.json,
+            )
+            return 0
 
         if args.cmd == "next":
             proposed = plan(root, cfg)
