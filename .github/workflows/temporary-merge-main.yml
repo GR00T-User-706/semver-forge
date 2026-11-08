@@ -4,13 +4,15 @@ on:
   push:
     branches:
       - feat/config-scopes-check-discovery
+  pull_request:
+    types: [opened, synchronize]
 
 permissions:
   contents: write
 
 jobs:
   merge-main:
-    if: github.event.head_commit.message != 'merge(main): reconcile actual main into working branch'
+    if: github.event.pull_request.number == 7 || github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
