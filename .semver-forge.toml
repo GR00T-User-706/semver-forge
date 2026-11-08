@@ -10,7 +10,7 @@ source = { type = "toml", file = "pyproject.toml", key = "project.version" }
 
 [git]
 tag_prefix = "v"
-baseline = "7bf4ab493598a041f75904d87ef9b88550dbf41e"
+baseline = "334913c0eecf12a76f870add0ee4a7a33c85d455"
 require_clean = true
 unknown_commit = "ignore"
 merge_commits = "ignore"
@@ -27,5 +27,5 @@ perf = "patch"
 revert = "patch"
 
 [sync]
-targets = [{ type = "text", file = "VERSION" }]
+targets = [{ type = "text", file = "VERSION" }, { type = "yaml", file = "packaging/termux/semver-forge.yaml", key = "control.Version" }]
 

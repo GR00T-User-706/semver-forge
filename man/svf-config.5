@@ -1,0 +1,356 @@
+.TH SVF-CONFIG 5 "2026-11-04" "Semantic Version Forge 1.3.0" "File Formats"
+.SH NAME
+svf-config \- Semantic Version Forge TOML configuration format
+.SH DESCRIPTION
+The Semantic Version Forge configuration file controls the canonical version source, Git history policy, Conventional Commit impact mapping, and metadata synchronization targets.
+.PP
+The project configuration file is normally
+.I .semver-forge.toml
+in the project root. The legacy filename
+.I semver-forge.toml
+is also recognized, but both names must not exist at the same time.
+.PP
+This manual documents both TOML syntax as used by Semantic Version Forge and the application's configuration schema. For the complete TOML v1.0.0 language specification, see
+.UR https://toml.io/en/v1.0.0
+.UE .
+.SH TOML SYNTAX
+TOML is a text format made of key/value assignments and tables. A table begins with a bracketed header. Keys below that header belong to that table until another table header appears.
+.PP
+Example:
+.nf
+[project]
+name = "example-project"
+description = "An example application"
+
+[git]
+tag_prefix = "v"
+require_clean = true
+.fi
+.PP
+The dotted reference
+.B git.tag_prefix
+means the
+.B tag_prefix
+key inside the
+.B [git]
+table. It is a reference notation, not how the table must be written in the file.
+.SS Strings
+Strings must be quoted. Basic strings use double quotes:
+.nf
+name = "example-project"
+.fi
+.PP
+Literal strings may use single quotes when escape processing is not wanted:
+.nf
+path = 'relative/path with spaces'
+.fi
+.PP
+Use escaped quotes and backslashes in basic strings where necessary. TOML does not expand shell variables such as
+.BR $HOME .
+.SS Booleans
+Boolean values are the unquoted lowercase tokens
+.B true
+and
+.BR false :
+.nf
+require_clean = true
+.fi
+.SS Arrays
+Arrays use square brackets and comma-separated values:
+.nf
+ignored_types = ["docs", "test", "chore"]
+.fi
+.PP
+A trailing comma is allowed. Array values must have compatible types for the setting being configured.
+.SS Inline tables
+An inline table places several related key/value pairs between braces on one line:
+.nf
+source = { type = "toml", file = "pyproject.toml", key = "project.version" }
+.fi
+.PP
+Inline tables are used for
+.B version.source
+and individual entries in
+.BR sync.targets .
+Under TOML 1.0.0, an inline table must stay on one line. Line breaks may
+separate array elements, but not fields inside the braces.
+.SS Arrays of inline tables
+Synchronization targets are an array of inline tables:
+.nf
+[sync]
+targets = [
+  { type = "text", file = "VERSION" },
+  { type = "yaml", file = "packaging/termux/manifest.yaml", key = "control.Version" },
+]
+.fi
+.PP
+Each item describes one version field to update. The
+.B type
+and
+.B file
+fields are required. The
+.B key
+field selects a value inside structured formats and is optional where the adapter has a default.
+.SS Comments and whitespace
+A number sign begins a comment outside a quoted string. Blank lines and indentation are for readability. Keep comments outside inline tables; TOML inline tables are deliberately compact.
+.SS Paths
+File paths in version sources and synchronization targets are interpreted relative to the project root by the relevant adapter. Prefer relative paths so a project configuration remains portable. Do not assume TOML expands environment variables or home-directory shortcuts.
+.SH CONFIGURATION FILE LOCATIONS
+Configuration is merged in increasing precedence:
+.IP 1. 4
+System: /etc/svfconfig, or $PREFIX/etc/svfconfig when running in Termux.
+.IP 2. 4
+User: ~/.svfconfig.
+.IP 3. 4
+Project: .semver-forge.toml, or the legacy semver-forge.toml.
+.PP
+Higher-precedence values override matching lower-precedence values. Nested tables merge recursively. Arrays are replaced as a whole by the higher-precedence scope; they are not concatenated. The project scope therefore overrides a lower-scope
+.B sync.targets
+array in its entirety.
+.SH CONFIGURATION SCHEMA
+The defaults below describe the current application defaults. Omit optional settings to use their defaults.
+.SS [project]
+.TP
+.B name
+String. Optional project name used in reports. Default: unset.
+.TP
+.B description
+String. Optional project description. Default: empty string.
+.SS [version]
+.TP
+.B initial
+String containing a valid Semantic Versioning version. Default:
+.BR "0.1.0" .
+This is the initial version used when no existing version source can be discovered.
+.TP
+.B source
+Inline table defining the canonical version source. Required fields:
+.B type
+and
+.BR file ;
+optional field:
+.BR key .
+Default:
+.BR "{ type = \"text\", file = \"VERSION\" }" .
+.RS
+.TP
+.B type
+String. One of
+.BR text ,
+.BR json ,
+.BR toml ,
+.BR yaml ,
+.BR shell ,
+.BR debian ,
+or
+.BR debian-changelog .
+.TP
+.B file
+Non-empty string path to the file containing the canonical version.
+.TP
+.B key
+Optional string identifying a dotted data key or shell variable. JSON defaults to
+.B version
+when omitted; TOML defaults to
+.BR project.version ;
+YAML defaults to
+.BR version ;
+shell defaults to the variable name VERSION. Text and Debian adapters do not use a dotted key.
+.RE
+.SS [git]
+.TP
+.B tag_prefix
+String prepended to version tags, commonly
+.BR v .
+Default:
+.BR "v" .
+Use an empty string for tags without a prefix.
+.TP
+.B require_clean
+Boolean. Default:
+.BR true .
+Legacy release safety setting. The current
+.B next
+and
+.B sync
+commands do not enforce this option; release execution is disabled.
+.TP
+.B baseline
+Optional string containing a Git commit or tag used as the history boundary when no valid release tag is available. Default: unset. The
+.B next
+command updates the saved baseline after successfully processing the current Git history.
+.TP
+.B unknown_commit
+String policy for commit messages/types that cannot be classified. Accepted values:
+.BR ignore ,
+.BR major ,
+.BR minor ,
+or
+.BR patch .
+Default:
+.BR ignore .
+.TP
+.B merge_commits
+Reserved string setting. Default:
+.BR ignore .
+The current Git history traversal does not apply a separate merge-commit policy. Changing this setting currently has no effect.
+.SS [commits]
+.TP
+.B breaking_changes
+Boolean. Default:
+.BR true .
+When enabled, a Conventional Commit header with
+.B !
+or a
+.B BREAKING CHANGE:
+or
+.B BREAKING-CHANGE:
+footer produces a major impact.
+.TP
+.B ignored_types
+Array of strings. Default:
+.BR '["docs", "style", "refactor", "test", "build", "ci", "chore"]' .
+Commit types in this list do not produce a version impact.
+.TP
+.B unknown
+Legacy string fallback for unrecognized commits. Default:
+.BR ignore .
+The current planner obtains the unknown-commit policy from
+.BR git.unknown_commit ,
+which takes precedence. Configure
+.B git.unknown_commit
+to change this behavior.
+.SS [commits.types]
+Each key maps a Conventional Commit type to an impact string. Accepted impact values are
+.BR major ,
+.BR minor ,
+and
+.BR patch .
+Defaults:
+.nf
+[commits.types]
+feat = "minor"
+fix = "patch"
+perf = "patch"
+revert = "patch"
+.fi
+.PP
+Additional type names may be added, for example:
+.nf
+docs = "patch"
+security = "patch"
+.fi
+.SS [sync]
+.TP
+.B targets
+Array of inline tables. Default: empty array. Each target requires
+.B type
+and
+.BR file ;
+.B key
+is optional when the adapter supplies a default. Supported types are
+.BR text ,
+.BR json ,
+.BR toml ,
+.BR yaml ,
+.BR shell ,
+.BR debian ,
+and
+.BR debian-changelog .
+The canonical version source is synchronized as well as these additional targets.
+.SS [release] (legacy)
+The following settings remain in the defaults for compatibility with older configuration files. Release execution is currently disabled, and these values do not affect the public
+.B svf
+commands.
+.TP
+.B commit_version
+Boolean. Default:
+.BR true .
+Legacy option for committing synchronized version changes during a release.
+.TP
+.B annotated_tag
+Boolean. Default:
+.BR true .
+Legacy option for creating annotated rather than lightweight Git tags.
+.TP
+.B notes_file
+String path. Default:
+.BR "CHANGELOG.md" .
+Legacy release-notes destination.
+.TP
+.B require_confirmation
+Boolean. Default:
+.BR true .
+Legacy option requiring interactive confirmation before release execution.
+.TP
+.B release_when_no_changes
+Boolean. Default:
+.BR false .
+Legacy option controlling releases without a classified version impact.
+.SH MANUALLY EDITING CONFIGURATION
+Edit the project file with any text editor. Preserve valid TOML syntax and table structure. A minimal configuration can look like:
+.nf
+[project]
+name = "example-project"
+description = "Example application"
+
+[version]
+initial = "1.2.3"
+source = { type = "toml", file = "pyproject.toml", key = "project.version" }
+
+[git]
+tag_prefix = "v"
+require_clean = true
+unknown_commit = "ignore"
+
+[commits]
+breaking_changes = true
+ignored_types = ["docs", "style", "refactor", "test", "build", "ci", "chore"]
+
+[commits.types]
+feat = "minor"
+fix = "patch"
+perf = "patch"
+revert = "patch"
+
+[sync]
+targets = [
+  { type = "text", file = "VERSION" },
+  { type = "yaml", file = "packaging/termux/manifest.yaml", key = "control.Version" },
+]
+.fi
+.PP
+Before saving, check that table headers are spelled correctly, every string is quoted, booleans are lowercase, arrays use square brackets, and inline tables use braces. Keep each setting in the correct table. A key written under the wrong table is a different TOML setting.
+.SH VALIDATING CONFIGURATION
+The plain
+.B svf config
+command prints the selected file as stored; it does not validate the file. Run
+.B svf check
+to parse the effective configuration and report malformed TOML or invalid required settings without writing:
+.nf
+svf check
+.fi
+.PP
+Use
+.B svf config --edit
+to open the selected scope in
+.B VISUAL
+or
+.BR EDITOR .
+Use
+.B svf config --list
+to display recognized settings grouped by table. Use dotted paths with
+.B svf config get
+and
+.BR svf config set ;
+the value supplied to
+.B config set
+must itself be a valid TOML value. For example:
+.nf
+svf config set git.tag_prefix '"v"'
+svf config set git.require_clean true
+svf config set commits.ignored_types '["docs", "test"]'
+.fi
+.SH SEE ALSO
+.BR svf (1),
+.BR toml (5)

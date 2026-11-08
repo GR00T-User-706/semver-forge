@@ -1,6 +1,6 @@
 # CLI Reference
 
-SemVer Forge exposes exactly three project commands.
+SemVer Forge exposes five project commands.
 
 ## Global options
 
@@ -14,7 +14,9 @@ SemVer Forge exposes exactly three project commands.
 |---|---|
 | `init [--yes]` | Discover the project's canonical version source and synchronization targets, then create `.semver-forge.toml`. Existing configuration is preserved unless replacement is explicitly approved. |
 | `next [--dry-run] [--explain]` | Analyze Git commits since the last processed history boundary. Select the highest qualifying SemVer impact and update the canonical version source plus configured targets. Save the processed commit boundary so the same commits are not counted twice. |
-| `sync [--version VERSION] [--dry-run] [--discover]` | Synchronize configured metadata to the canonical version, or to an explicitly supplied version. `--discover` also scans nested project directories for supported metadata. |
+| `sync [--version VERSION] [--dry-run] [--discover]` | Synchronize configured metadata. `--discover` persists newly discovered targets in project configuration before syncing. |
+| `config [get KEY | set KEY VALUE | unset KEY] [--global | --system] [--edit]` | View or manage system, user, and project configuration. Project is the default write scope. |
+| `check` | Read-only report of canonical version, synchronization targets, discovered metadata, and configuration scopes. |
 
 ## Version selection
 
@@ -45,23 +47,29 @@ After a successful run, the current Git commit is saved as the new baseline. Thi
 
 Synchronization is independent of commit classification. It copies the selected version to the canonical source and configured targets. Use `--dry-run` to preview all file changes before writing.
 
-Use `sync --discover` to scan nested project directories for supported version metadata, including YAML manifests with one unambiguous version field. The scan skips Git internals, virtual environments, dependency trees, and generated build directories. Discovered targets are synchronized for that invocation only; the project configuration is not rewritten.
+Use `sync --discover` to scan nested project directories for supported version metadata, including YAML manifests with one unambiguous version field. The scan skips Git internals, virtual environments, dependency trees, and generated build directories. Discovered targets are deduplicated and persisted to project `[sync].targets` before synchronization. A dry run previews both config and metadata changes without writing.
 
 YAML synchronization uses a round-trip parser and updates only the configured dotted key while preserving comments and unrelated fields.
 
 ## Configuration
 
-The project configuration is `.semver-forge.toml`. See [the example](../config/semver-forge.example.toml) and [configuration guide](CONFIGURATION.md).
+The project configuration is `.semver-forge.toml`. The command is `svf`; the Python distribution remains `semver-forge`. See [the example](../config/semver-forge.example.toml), [configuration guide](CONFIGURATION.md), and the installed `svf-config(5)` manual for TOML syntax and schema.
 
-    
-## changelog
 
-`semver-forge changelog` compares commits since the latest SemVer tag with commit references and descriptions already represented in the configured changelog. Missing entries are appended to `[Unreleased]`.
+### config
 
-Use `--dry-run` to preview changes and `--yes` to bypass confirmation.
+The precedence order is system, global/user, project. System configuration is `/etc/svfconfig`, or `$PREFIX/etc/svfconfig` in Termux; global configuration is `~/.svfconfig`; project configuration is `.semver-forge.toml` (or the supported legacy filename). Nested tables merge; arrays are replaced by higher-precedence scopes.
 
-## commit
+```sh
+svf config
+svf config get commits.types.feat
+svf config set commits.types.feat '"minor"'
+svf config --global set git.tag_prefix '"v"'
+svf config --system --edit
+```
 
-`semver-forge commit` analyzes the current worktree and proposes a Conventional Commit type, scope, and message. It can interactively adjust the proposal or run non-interactively with `--type`, `--scope`, `--message`, `--all`, and `--yes`.
+Reads do not create files. Writes preserve unrelated TOML content, validate the resulting TOML and effective required settings, create missing parent directories, and atomically replace the selected file.
 
-Use `--dry-run` to preview without staging or committing.
+### check
+
+`check` is read-only. It reports canonical source/version, every configured target and its state, discovered supported metadata, configuration scope files, precedence, effective values, source scopes, unknown keys, and readable errors. It performs no synchronization and makes no changes. Add `--json` for machine-readable output.

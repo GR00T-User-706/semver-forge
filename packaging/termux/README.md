@@ -1,8 +1,13 @@
 # Termux package
 
-SemVer Forge is packaged as a normal Termux .deb. Termux's package manager
-owns the installed launcher, application modules, vendored YAML dependency,
-and man page. Upgrades replace the previous package-managed files.
+Semantic Version Forge is packaged as a normal Termux .deb. The distribution
+package remains named `semver-forge`; the primary installed command is
+`svf`. The former `semver-forge` command is retained as a compatibility
+alias.
+
+Termux's package manager owns the installed launchers, application modules,
+vendored YAML dependency, and manual pages. Upgrades replace the previous
+package-managed files.
 
 ## Build prerequisites
 
@@ -45,20 +50,35 @@ If installing directly with dpkg:
 
 Prefer apt install ./package.deb because it resolves declared dependencies.
 
+## Commands and manuals
+
+- $PREFIX/bin/svf: primary CLI launcher
+- $PREFIX/bin/semver-forge: compatibility launcher
+- $PREFIX/share/man/man1/svf.1: CLI manual
+- $PREFIX/share/man/man5/svf-config.5: TOML configuration manual
+- $PREFIX/share/man/man1/semver-forge.1: compatibility manual alias
+
+Use:
+
+    svf --help
+    man svf
+    man svf-config
+
 ## Remove
 
     apt remove semver-forge
 
-This removes the package-owned launcher, Python modules, vendored dependency,
-and man page. It does not remove project configuration files such as
+This removes the package-owned launchers, Python modules, vendored dependency,
+and manual pages. It does not remove project configuration files such as
 .semver-forge.toml from repositories where SemVer Forge was initialized.
 
 ## Package layout
 
-- $PREFIX/bin/semver-forge: CLI launcher
+- $PREFIX/bin/svf and $PREFIX/bin/semver-forge: CLI launchers
 - $PREFIX/lib/semver-forge/semver_forge/: application modules and data
 - $PREFIX/lib/semver-forge/vendor/: package-owned ruamel.yaml runtime dependency
-- $PREFIX/share/man/man1/semver-forge.1: manual page
+- $PREFIX/share/man/man1/: CLI manuals
+- $PREFIX/share/man/man5/: configuration manual
 
 The package is architecture-independent (all): it installs Python source
 files and does not compile native extensions.

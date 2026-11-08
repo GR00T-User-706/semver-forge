@@ -7,14 +7,31 @@ and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-### Documentation
-- Added project-specific standards for version-source discovery, synchronization targets, CLI side effects, changelog handling, and Git safety.
+## [1.2.1] - 2026-11-04
 
+### Fixed
+- Restored the original structured output for `init`, `next`, and `sync`; `--verbose` and `--debug` no longer alter successful output for those commands.
+- Added regression coverage ensuring `next` and `sync` output is identical with and without verbosity flags.
+
+## [1.2.0] - 2026-11-04
 
 ### Added
+- Added global `--verbose` and `--debug` output modes, concise default check output, direct TOML display for `config`, and recognized-key listing with `config --list`.
+- Expanded command help and the manpage with command behavior, configuration key meanings, valid values, syntax, and examples.
+
+### Changed
+- Separated normal CLI output from expanded operational and diagnostic reports.
+
+## [1.2.0] - 2026-11-04
+
+### Added
+- Added layered system, user, and project configuration management with get/set/unset/edit operations.
+- Added read-only project diagnostics for version synchronization and configuration scopes.
+- Persist discovered synchronization targets before sync, with deduplicated merging and dry-run previews.
 - Vendor the pure-Python `ruamel.yaml` runtime dependency in Termux packages so YAML metadata support is available without a separate pip install.
 
 ### Fixed
+- Added the `check.py` and `config_scopes.py` modules to the Termux package payload so the installed CLI includes its newly introduced imports.
 - Corrected initialization reporting so it only reads fields actually returned by project discovery.
 - Made generated configurations omit inactive release, test-command, build-command, and artifact policy.
 - Kept CLI result formatting compatible with nested dictionaries and lists.

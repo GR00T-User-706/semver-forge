@@ -46,7 +46,7 @@ def merge(a, b):
 def load(path):
     p = Path(path)
     if not p.exists():
-        raise ConfigError(f"configuration not found: {p}; run semver-forge init")
+        raise ConfigError(f"configuration not found: {p}; run svf init")
     try:
         raw = tomllib.loads(p.read_text(encoding="utf-8"))
     except (OSError, tomllib.TOMLDecodeError) as e:
