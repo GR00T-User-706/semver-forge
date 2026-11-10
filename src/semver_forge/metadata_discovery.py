@@ -105,7 +105,6 @@ def _custom_key_sources(path: Path, relative: str, keys):
         if len(versions) == 1:
             matches.append({"type": "shell", "file": relative, "key": key})
     return matches
-
 def discover_sync_targets(root, canonical_source=None, custom_keys=None):
     """Find supported version metadata recursively, without changing files.
 
