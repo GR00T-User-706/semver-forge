@@ -133,6 +133,15 @@ adds diagnostic tracebacks when operations fail.
 writes the requested configuration change directly. Supplying the configuration command itself is the authorization to make that change. The
 .B --edit
 operation opens the selected file in the configured editor; editing and saving the file is the user-directed write operation.
+.SS Write authorization
+Mutating commands require interactive authorization by default. The effective
+.B [authorization].require_confirmation
+setting can be set to
+.B false
+to bypass the prompt for trusted local workflows. The
+.B --yes
+option remains available for one-off bypasses. Discovery commands still show their discovered targets before writing; the configuration override controls whether the final authorization prompt is required.
+
 .SH CONFIGURATION
 Project configuration is stored in
 .I .semver-forge.toml
