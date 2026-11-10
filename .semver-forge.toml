@@ -27,5 +27,7 @@ perf = "patch"
 revert = "patch"
 
 [sync]
-targets = [{ type = "text", file = "VERSION" }, { type = "yaml", file = "packaging/termux/semver-forge.yaml", key = "control.Version" }]
+targets = [{ type = "text", file = "VERSION" }, { type = "yaml", file = "packaging/termux/semver-forge.yaml", key = "control.Version" }, { type = "shell", file = "src/semver_forge/__init__.py", key = "__version__" }]
 
+[authorization]
+require_confirmation = false
