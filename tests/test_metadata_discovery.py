@@ -209,6 +209,74 @@ class RecursiveMetadataDiscoveryTests(unittest.TestCase):
                 (root / ".semver-forge.toml").read_text(encoding="utf-8"),
             )
 
+    def test_custom_key_discovers_arbitrary_text_file(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "VERSION").write_text("1.2.3\n", encoding="utf-8")
+            path = root / "src" / "version.py"
+            path.parent.mkdir()
+            path.write_text('__version__ = "1.2.2"\n', encoding="utf-8")
+
+            targets = discover_sync_targets(
+                root,
+                {"type": "text", "file": "VERSION"},
+                custom_keys=["__version__"],
+            )
+
+            self.assertEqual(
+                [item for item in targets if item["file"] == "src/version.py"],
+                [{"type": "shell", "file": "src/version.py", "key": "__version__"}],
+            )
+
+    def test_custom_key_ignores_ambiguous_assignments(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "VERSION").write_text("1.2.3\n", encoding="utf-8")
+            path = root / "version.py"
+            path.write_text(
+                '__version__ = "1.2.2"\n__version__ = "1.2.3"\n',
+                encoding="utf-8",
+            )
+
+            targets = discover_sync_targets(
+                root,
+                {"type": "text", "file": "VERSION"},
+                custom_keys=["__version__"],
+            )
+
+            self.assertEqual(targets, [])
+
+    def test_sync_discover_uses_configured_custom_key(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+            (root / "VERSION").write_text("1.2.3\n", encoding="utf-8")
+            custom = root / "src" / "version.py"
+            custom.parent.mkdir()
+            custom.write_text('SME_VERSION = "1.2.2"\n', encoding="utf-8")
+            (root / ".semver-forge.toml").write_text(
+                '[version]\ninitial = "1.2.3"\n'
+                'source = { type = "text", file = "VERSION" }\n\n'
+                '[sync]\n'
+                'targets = []\n'
+                'discovery_keys = ["SME_VERSION"]\n',
+                encoding="utf-8",
+            )
+
+            output = io.StringIO()
+            with contextlib.redirect_stdout(output):
+                status = main(["--project", str(root), "--json", "sync", "--discover"])
+
+            self.assertEqual(status, 0)
+            self.assertIn(
+                "src/version.py",
+                (root / ".semver-forge.toml").read_text(encoding="utf-8"),
+            )
+            self.assertIn(
+                'SME_VERSION = "1.2.3"',
+                custom.read_text(encoding="utf-8"),
+            )
+
     def test_discovers_nested_debian_control_metadata(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
