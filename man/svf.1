@@ -49,29 +49,39 @@ If configuration already exists, initialization asks before replacing it. Use
 .B --yes
 to authorize replacement without the prompt.
 .TP
-.B next [--dry-run] [--explain]
-Inspect Git commits since the last processed commit boundary and select the highest configured semantic-version impact. Breaking changes select MAJOR, features select MINOR, and fixes/performance changes select PATCH by default. The selected version is written to the canonical source and configured synchronization targets when a bump is warranted. The processed Git boundary is saved so the same commits are not counted again.
+.B next [--yes] [--explain]
+Inspect Git commits since the last processed commit boundary and select the highest configured semantic-version impact. Breaking changes select MAJOR, features select MINOR, and fixes/performance changes select PATCH by default. The selected version is written to the canonical source and configured synchronization targets when a bump is warranted. The processed Git boundary is saved so the same commits are not counted again. Writes require authorization by default.
 .IP
-.B --dry-run
-previews the decision without writing.
+.B --yes
+authorizes the proposed writes without prompting.
 .B --explain
 includes the reason for the selected version or no-change decision.
 .TP
-.B sync [--dry-run] [--discover] [--version VERSION]
-Write the canonical version to every configured synchronization target.
-.B --dry-run
-previews file changes without writing.
+.B sync [--yes] [--discover] [--key KEY] [--version VERSION]
+Write the canonical version to every configured synchronization target. Writes require authorization by default.
+.B --yes
+authorizes the proposed writes without prompting.
 .B --discover
 recursively searches for supported version metadata, adds newly discovered targets to the project
 .I [sync].targets
 configuration, and synchronizes them. The operation is idempotent: existing targets are not duplicated.
+.B --key KEY
+adds a custom assignment key to the discovery search. The option may be repeated. Keys supplied with
+.B --key
+are combined with
+.B sync.discovery_keys .
+For each custom key, SVF recognizes shell-style assignments such as
+.B SME_VERSION="1.2.3"
+or
+.B export SME_VERSION="1.2.3"
+and registers an unambiguous valid assignment as a shell synchronization target.
 .B --version VERSION
 uses the supplied version for this synchronization instead of reading the canonical version.
 .TP
 .B check [--verbose] [--debug]
 Print the project name, canonical version, and synchronized file paths. The command is read-only. Verbose mode includes canonical-source validation, target values and statuses, discovered metadata, and configuration diagnostics.
 .TP
-.B config [OPTIONS] [get KEY | set KEY TOML_VALUE | unset KEY]
+.B config [--yes] [OPTIONS] [get KEY | set KEY TOML_VALUE | unset KEY]
 Inspect and manage Semantic Version Forge configuration.
 .IP
 With no action or selection, print the selected configuration file as stored, preserving its TOML syntax and comments. The default scope is the project configuration.
@@ -118,6 +128,14 @@ when running in Termux.
 prints the configuration scopes, merged effective settings, precedence, and the source scope of each value.
 .B --debug
 adds diagnostic tracebacks when operations fail.
+.IP
+.B --yes
+authorizes configuration writes without prompting. It is relevant to
+.B set ,
+.BR unset ,
+and other configuration writes. The
+.B --edit
+operation opens the selected file in the configured editor and does not use a separate pre-edit authorization prompt.
 .SH CONFIGURATION
 Project configuration is stored in
 .I .semver-forge.toml
@@ -156,9 +174,11 @@ svf init --yes
 svf check
 svf check --verbose
 svf check --debug
-svf next --dry-run --explain
-svf sync --dry-run
+svf next --explain
+svf next --yes --explain
 svf sync --discover
+svf sync --discover --key SME_VERSION
+svf sync --discover --key SME_VERSION --yes
 svf config
 svf config --list
 svf config get commits.types.feat
