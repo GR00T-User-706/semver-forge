@@ -71,7 +71,7 @@ targets = []
             git(root, "add", "feature.txt")
             git(root, "commit", "-m", "feat: add feature")
 
-            self.assertEqual(main(["--project", str(root), "next"]), 0)
+            self.assertEqual(main(["--project", str(root), "next", "--yes"]), 0)
             self.assertEqual((root / "VERSION").read_text(encoding="utf-8").strip(), "1.1.0")
             changelog = (root / "CHANGELOG.md").read_text(encoding="utf-8")
             self.assertIn("## [1.1.0]", changelog)
