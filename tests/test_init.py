@@ -36,7 +36,7 @@ class InitTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             project = Path(directory) / "plain"
             project.mkdir()
-            result = self.run_cli(project, "init", "--json")
+            result = self.run_cli(project, "init", "--json", "--yes")
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertTrue((project / ".semver-forge.toml").is_file())
             self.assertEqual((project / "VERSION").read_text(), "0.1.0\n")
