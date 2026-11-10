@@ -75,7 +75,7 @@ svf config --global set git.tag_prefix '"v"'
 svf config --system --edit
 ```
 
-Reads do not create files. Configuration writes require interactive authorization by default; use `--yes` to authorize without prompting. Writes preserve unrelated TOML content, validate the resulting TOML and effective required settings, create missing parent directories, and atomically replace the selected file.
+Reads do not create files. Direct configuration writes are user-authorized by the `config` command itself. Other mutating commands require interactive authorization by default; the effective `[authorization].require_confirmation` setting or one-off `--yes` can bypass that prompt. Writes preserve unrelated TOML content, validate the resulting TOML and effective required settings, create missing parent directories, and atomically replace the selected file.
 
 ### check
 
