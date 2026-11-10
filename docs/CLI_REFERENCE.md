@@ -55,6 +55,13 @@ YAML synchronization uses a round-trip parser and updates only the configured do
 
 The project configuration is `.semver-forge.toml`. The command is `svf`; the Python distribution remains `semver-forge`. See [the example](../config/semver-forge.example.toml), [configuration guide](CONFIGURATION.md), and the installed `svf-config(5)` manual for TOML syntax and schema.
 
+Mutating commands require write authorization by default. The effective
+`[authorization].require_confirmation` setting can be set to `false` when
+a trusted local workflow should bypass interactive confirmation. The `--yes`
+option remains available for one-off bypasses. Discovery commands still report
+what they found before writing; the configuration override controls whether the
+final authorization prompt is required.
+
 
 ### config
 
