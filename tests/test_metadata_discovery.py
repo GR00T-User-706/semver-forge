@@ -1,6 +1,5 @@
 import contextlib
 import io
-import json
 import subprocess
 import tempfile
 import unittest
@@ -161,31 +160,10 @@ class RecursiveMetadataDiscoveryTests(unittest.TestCase):
                 encoding="utf-8",
             )
 
-            dry_output = io.StringIO()
-            with contextlib.redirect_stdout(dry_output):
-                dry_status = main(
-                    ["--project", str(root), "--json", "sync", "--discover", "--dry-run"]
-                )
+            with patch("builtins.input", return_value="n"):
+                cancelled = main(["--project", str(root), "--json", "sync", "--discover"])
 
-            preview = json.loads(dry_output.getvalue())
-            self.assertEqual(dry_status, 0)
-            expected_target = {
-                "type": "yaml",
-                "file": "packaging/termux/manifest.yaml",
-                "key": "control.Version",
-            }
-            self.assertEqual(preview["discovered_targets"], [expected_target])
-            self.assertTrue(preview["configuration"]["changed"])
-            self.assertIn(expected_target, preview["configuration"]["proposed_targets"])
-            sync_files = {
-                Path(item["file"]).relative_to(root).as_posix()
-                for item in preview["synchronization"]
-            }
-            self.assertEqual(
-                sync_files,
-                {"VERSION", "packaging/configured-version.txt", "packaging/termux/manifest.yaml"},
-            )
-            self.assertEqual(sum(item["changed"] for item in preview["synchronization"]), 2)
+            self.assertEqual(cancelled, 3)
             self.assertEqual(configured.read_text(encoding="utf-8"), "1.2.2\n")
             self.assertIn("Version: 1.2.2", manifest.read_text(encoding="utf-8"))
             self.assertNotIn(
@@ -195,7 +173,7 @@ class RecursiveMetadataDiscoveryTests(unittest.TestCase):
 
             run_output = io.StringIO()
             with contextlib.redirect_stdout(run_output):
-                run_status = main(["--project", str(root), "--json", "sync", "--discover"])
+                run_status = main(["--project", str(root), "--json", "sync", "--discover", "--yes"])
 
             self.assertEqual(run_status, 0)
             self.assertEqual(configured.read_text(encoding="utf-8"), "1.2.3\n")
@@ -207,6 +185,109 @@ class RecursiveMetadataDiscoveryTests(unittest.TestCase):
             self.assertIn(
                 "packaging/termux/manifest.yaml",
                 (root / ".semver-forge.toml").read_text(encoding="utf-8"),
+            )
+
+    def test_custom_key_discovers_arbitrary_text_file(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "VERSION").write_text("1.2.3\n", encoding="utf-8")
+            path = root / "src" / "version.py"
+            path.parent.mkdir()
+            path.write_text('__version__ = "1.2.2"\n', encoding="utf-8")
+
+            targets = discover_sync_targets(
+                root,
+                {"type": "text", "file": "VERSION"},
+                custom_keys=["__version__"],
+            )
+
+            self.assertEqual(
+                [item for item in targets if item["file"] == "src/version.py"],
+                [{"type": "shell", "file": "src/version.py", "key": "__version__"}],
+            )
+
+    def test_custom_key_ignores_ambiguous_assignments(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "VERSION").write_text("1.2.3\n", encoding="utf-8")
+            path = root / "version.py"
+            path.write_text(
+                '__version__ = "1.2.2"\n__version__ = "1.2.3"\n',
+                encoding="utf-8",
+            )
+
+            targets = discover_sync_targets(
+                root,
+                {"type": "text", "file": "VERSION"},
+                custom_keys=["__version__"],
+            )
+
+            self.assertEqual(targets, [])
+
+    def test_sync_discover_accepts_cli_custom_key(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+            (root / "VERSION").write_text("1.2.3\n", encoding="utf-8")
+            custom = root / "version.inc"
+            custom.write_text('SME_VERSION="1.2.2"\n', encoding="utf-8")
+            (root / ".semver-forge.toml").write_text(
+                '[version]\ninitial = "1.2.3"\n'
+                'source = { type = "text", file = "VERSION" }\n'
+                "[sync]\ntargets = []\n",
+                encoding="utf-8",
+            )
+
+            output = io.StringIO()
+            with contextlib.redirect_stdout(output):
+                status = main(
+                    [
+                        "--project",
+                        str(root),
+                        "--json",
+                        "sync",
+                        "--discover",
+                        "--key",
+                        "SME_VERSION",
+                        "--yes",
+                    ]
+                )
+
+            self.assertEqual(status, 0)
+            self.assertIn(
+                'SME_VERSION="1.2.3"',
+                custom.read_text(encoding="utf-8"),
+            )
+
+    def test_sync_discover_uses_configured_custom_key(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+            (root / "VERSION").write_text("1.2.3\n", encoding="utf-8")
+            custom = root / "src" / "version.py"
+            custom.parent.mkdir()
+            custom.write_text('SME_VERSION = "1.2.2"\n', encoding="utf-8")
+            (root / ".semver-forge.toml").write_text(
+                '[version]\ninitial = "1.2.3"\n'
+                'source = { type = "text", file = "VERSION" }\n\n'
+                "[sync]\n"
+                "targets = []\n"
+                'discovery_keys = ["SME_VERSION"]\n',
+                encoding="utf-8",
+            )
+
+            output = io.StringIO()
+            with contextlib.redirect_stdout(output):
+                status = main(["--project", str(root), "--json", "sync", "--discover", "--yes"])
+
+            self.assertEqual(status, 0)
+            self.assertIn(
+                "src/version.py",
+                (root / ".semver-forge.toml").read_text(encoding="utf-8"),
+            )
+            self.assertIn(
+                'SME_VERSION = "1.2.3"',
+                custom.read_text(encoding="utf-8"),
             )
 
     def test_discovers_nested_debian_control_metadata(self):

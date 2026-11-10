@@ -9,7 +9,9 @@ import tempfile
 from pathlib import Path
 
 from . import __version__, git
+from .changelog import release_notes, update_changelog
 from .check import inspect_project
+from .commit import COMMIT_TYPES, format_message, generate_summary, infer_scope, infer_type
 from .config import find_config
 from .config_scopes import (
     config_edit,
@@ -23,7 +25,7 @@ from .discovery import discover
 from .errors import ConfigError, ForgeError
 from .metadata_discovery import discover_sync_targets
 from .operation_log import record
-from .release import plan
+from .release import plan, resolve_changelog_path
 from .semver import Version
 from .synchronization import sync
 from .version_sources import read_version
@@ -65,14 +67,15 @@ def parser():
         help="inspect Git history, choose the next version, and update configured version files",
         description=(
             "Classify commits since the saved Git boundary and apply the highest configured "
-            "Semantic Versioning impact. Use --dry-run to preview and --explain for the decision."
+            "Semantic Versioning impact. By default, show the proposed changes and ask for "
+            "authorization before writing. Use --yes to authorize without prompting."
         ),
-        epilog="Examples: svf next --dry-run; svf next --dry-run --explain",
+        epilog="Examples: svf next; svf next --yes --explain",
     )
     next_cmd.add_argument(
-        "--dry-run",
+        "--yes",
         action="store_true",
-        help="show the proposed change without writing",
+        help="authorize all proposed writes without prompting",
     )
     next_cmd.add_argument(
         "--explain",
@@ -84,20 +87,26 @@ def parser():
         "changelog",
         help="compare Git history with CHANGELOG.md and append missing entries",
     )
-    changelog_cmd.add_argument("--dry-run", action="store_true", help="show changes without writing")
     changelog_cmd.add_argument("--yes", action="store_true", help="apply changes without prompting")
 
     commit_cmd = sub.add_parser(
         "commit",
         help="intelligently create a Conventional Commit from current changes",
     )
-    commit_cmd.add_argument("--type", choices=COMMIT_TYPES, help="override the inferred commit type")
+    commit_cmd.add_argument(
+        "--type", choices=COMMIT_TYPES, help="override the inferred commit type"
+    )
     commit_cmd.add_argument("--scope", help="override the inferred commit scope")
     commit_cmd.add_argument("--message", help="use this complete commit message")
-    commit_cmd.add_argument("--breaking", action="store_true", help="mark the generated commit as breaking")
-    commit_cmd.add_argument("--all", action="store_true", help="stage all current changes before committing")
-    commit_cmd.add_argument("--yes", action="store_true", help="accept inferred values and stage all changes")
-    commit_cmd.add_argument("--dry-run", action="store_true", help="show the proposal without staging or committing")
+    commit_cmd.add_argument(
+        "--breaking", action="store_true", help="mark the generated commit as breaking"
+    )
+    commit_cmd.add_argument(
+        "--all", action="store_true", help="stage all current changes before committing"
+    )
+    commit_cmd.add_argument(
+        "--yes", action="store_true", help="accept inferred values and stage all changes"
+    )
 
     sync_cmd = sub.add_parser(
         "sync",
@@ -106,17 +115,24 @@ def parser():
             "Copy the canonical version into configured metadata fields. "
             "--discover registers additional supported version fields before synchronization."
         ),
-        epilog="Examples: svf sync --dry-run; svf sync --discover",
+        epilog="Examples: svf sync; svf sync --discover; svf sync --yes",
     )
     sync_cmd.add_argument(
-        "--dry-run",
+        "--yes",
         action="store_true",
-        help="show changes without writing",
+        help="authorize all proposed writes without prompting",
     )
     sync_cmd.add_argument(
         "--discover",
         action="store_true",
         help="recursively discover supported version metadata before synchronizing",
+    )
+    sync_cmd.add_argument(
+        "--key",
+        dest="discover_keys",
+        action="append",
+        metavar="KEY",
+        help="custom version key to search for during --discover; may be repeated",
     )
     sync_cmd.add_argument(
         "--version",
@@ -140,6 +156,9 @@ def parser():
     )
     config_cmd.add_argument(
         "--edit", action="store_true", help="open the selected scope in VISUAL or EDITOR"
+    )
+    config_cmd.add_argument(
+        "--yes", action="store_true", help="authorize configuration writes without prompting"
     )
     config_cmd.add_argument(
         "--list", action="store_true", help="list configuration settings grouped by TOML table"
@@ -184,6 +203,19 @@ def parser():
         help="show configuration diagnostics and tracebacks",
     )
     return p
+
+
+def _authorize_write(args, description):
+    """Require explicit authorization for a mutating operation unless --yes was supplied."""
+    if args.yes:
+        return
+    print(description)
+    try:
+        answer = input("Authorize these writes? [y/N] ").strip().lower()
+    except EOFError:
+        answer = ""
+    if answer not in ("y", "yes"):
+        raise ConfigError("operation cancelled")
 
 
 def _format_output(data, indent=0):
@@ -366,6 +398,12 @@ def _format_config_list():
                     "[]",
                     "Version targets; each item requires type and file, with optional key.",
                 ),
+                (
+                    "discovery_keys",
+                    "array of strings",
+                    "[]",
+                    "Custom assignment keys searched by sync --discover.",
+                ),
             ],
         ),
         (
@@ -536,6 +574,10 @@ def main(argv=None):
                         f"{version_path}"
                     )
                 generated[version_path] = result["version"]["initial"] + "\n"
+            _authorize_write(
+                args,
+                "SVF will create/update: " + ", ".join(str(target) for target in generated),
+            )
             written = []
             try:
                 for target, contents in generated.items():
@@ -702,15 +744,18 @@ def main(argv=None):
             if args.edit:
                 if args.action or args.key or args.value or args.list or selected:
                     raise ConfigError("--edit cannot be combined with get, set, unset, or --list")
+                _authorize_write(args, f"SVF will open {scope} configuration for editing.")
                 output(config_edit(root, scope), args.json)
                 return 0
             if args.get_key:
                 output(config_get(root, args.get_key, read_scope), args.json)
                 return 0
             if args.set_pair:
+                _authorize_write(args, f"SVF will set configuration key {args.set_pair[0]}.")
                 output(config_write(root, scope, args.set_pair[0], args.set_pair[1]), args.json)
                 return 0
             if args.unset_key:
+                _authorize_write(args, f"SVF will remove configuration key {args.unset_key}.")
                 output(config_write(root, scope, args.unset_key, None, unset=True), args.json)
                 return 0
             if args.action == "get":
@@ -724,6 +769,7 @@ def main(argv=None):
             if args.action == "set":
                 if not args.key or args.value is None:
                     raise ConfigError("usage: svf config [--global|--system] set KEY TOML_VALUE")
+                _authorize_write(args, f"SVF will set configuration key {args.key}.")
                 output(
                     config_write(root, scope, args.key, args.value),
                     args.json,
@@ -732,6 +778,7 @@ def main(argv=None):
             if args.action == "unset":
                 if not args.key or args.value is not None:
                     raise ConfigError("usage: svf config [--global|--system] unset KEY")
+                _authorize_write(args, f"SVF will remove configuration key {args.key}.")
                 output(config_write(root, scope, args.key, None, unset=True), args.json)
                 return 0
             if args.action or args.key or args.value:
@@ -762,18 +809,13 @@ def main(argv=None):
 
         if args.cmd == "changelog":
             from .changelog import sync_unreleased
-            from .release import latest_release, resolve_changelog_path
+            from .release import latest_release
 
             notes_file = cfg.get("release", {}).get("notes_file") or "CHANGELOG.md"
             notes_path = resolve_changelog_path(root, notes_file)
             _previous, tag = latest_release(root, cfg)
             commits = git.history(root, tag)
             preview = sync_unreleased(notes_path, commits, cfg.get("commits", {}), dry_run=True)
-
-            if args.dry_run:
-                preview["status"] = "would_update" if preview["diverged"] else "synchronized"
-                output(preview, args.json)
-                return 0
 
             if not preview["diverged"]:
                 preview["status"] = "synchronized"
@@ -783,9 +825,14 @@ def main(argv=None):
 
             if not args.yes:
                 try:
-                    answer = input(
-                        f"Update {notes_path} with {preview['missing_count']} missing commit entries? [y/N] "
-                    ).strip().lower()
+                    answer = (
+                        input(
+                            f"Update {notes_path} with {preview['missing_count']} missing commit "
+                            "entries? [y/N] "
+                        )
+                        .strip()
+                        .lower()
+                    )
                 except EOFError:
                     answer = ""
                 if answer not in ("y", "yes"):
@@ -814,7 +861,7 @@ def main(argv=None):
             scope = args.scope if args.scope is not None else inferred_scope
             message = args.message
 
-            if not message and not args.yes and not args.dry_run:
+            if not message and not args.yes:
                 print(f"Suggested type: {inferred_type} (confidence: {confidence})")
                 print("Changed files:")
                 for path in paths:
@@ -845,22 +892,9 @@ def main(argv=None):
                     raise ConfigError("commit cancelled")
 
             if not message:
-                message = format_message(commit_type, scope, inferred_summary, breaking=args.breaking)
-
-            if args.dry_run:
-                output(
-                    {
-                        "type": commit_type,
-                        "scope": scope,
-                        "message": message,
-                        "confidence": confidence,
-                        "files": paths,
-                        "committed": False,
-                        "dry_run": True,
-                    },
-                    args.json,
+                message = format_message(
+                    commit_type, scope, inferred_summary, breaking=args.breaking
                 )
-                return 0
 
             if not args.yes and not args.all:
                 answer = input("Stage all current changes for this commit? [Y/n] ").strip().lower()
@@ -870,6 +904,10 @@ def main(argv=None):
             git.stage_all(root)
             if not git.staged_diff(root).strip():
                 raise ConfigError("no changes are staged for commit")
+            if not args.yes:
+                answer = input(f"Authorize commit {message!r}? [y/N] ").strip().lower()
+                if answer not in ("y", "yes"):
+                    raise ConfigError("commit cancelled")
             git.commit(root, message)
             record("INFO", "commit", "completed")
             output(
@@ -880,7 +918,6 @@ def main(argv=None):
                     "confidence": confidence,
                     "files": paths,
                     "committed": True,
-                    "dry_run": False,
                 },
                 args.json,
             )
@@ -891,47 +928,81 @@ def main(argv=None):
             next_version = proposed["next"]
             changed = next_version.compare(current) > 0
             sync_result = []
+            changelog_result = None
+            notes_file = cfg.get("release", {}).get("notes_file", "CHANGELOG.md")
+            changelog_path = resolve_changelog_path(root, notes_file)
+            notes = release_notes(proposed["commits"], proposed["rules"]) if changed else []
+
             if changed:
-                sync_result = sync(root, cfg, str(next_version), dry_run=args.dry_run)
-            if not args.dry_run:
-                # Remember the processed Git boundary so the same commits are not
-                # counted again on the next invocation.
-                head = git.head(root)
-                config_text = config_path.read_text(encoding="utf-8")
-                baseline_line = f'baseline = "{head}"'
-                if re.search(r"(?m)^baseline\s*=", config_text):
-                    config_text = re.sub(
-                        r"(?m)^baseline\s*=.*$",
-                        lambda _match: baseline_line,
-                        config_text,
-                        count=1,
-                    )
-                else:
-                    config_text = re.sub(
-                        r"(?m)^(tag_prefix\s*=.*)$",
-                        lambda match: match.group(1) + chr(10) + baseline_line,
-                        config_text,
-                        count=1,
-                    )
-                fd, temp_path = tempfile.mkstemp(prefix=".semver-forge-", dir=root)
+                print(f"SVF will update the project version from {current} to {next_version}.")
+                print(f"SVF will update configured version targets and {changelog_path}.")
+            else:
+                print(
+                    f"SVF will record the current Git history boundary in {config_path}; "
+                    f"the version remains {current}."
+                )
+            if not args.yes:
                 try:
-                    with os.fdopen(fd, "w", encoding="utf-8", newline="") as stream:
-                        stream.write(config_text)
-                        stream.flush()
-                        os.fsync(stream.fileno())
-                    os.replace(temp_path, config_path)
-                finally:
-                    if os.path.exists(temp_path):
-                        os.unlink(temp_path)
+                    answer = input("Authorize these writes? [y/N] ").strip().lower()
+                except EOFError:
+                    answer = ""
+                if answer not in ("y", "yes"):
+                    raise ConfigError("operation cancelled")
+
+            if changed:
+                sync_result = sync(root, cfg, str(next_version), dry_run=False)
+                update_changelog(
+                    changelog_path,
+                    str(next_version),
+                    notes,
+                    dry_run=False,
+                )
+                changelog_result = {
+                    "path": str(changelog_path),
+                    "changed": True,
+                    "authorized": args.yes,
+                    "notes": notes,
+                }
+
+            # Remember the processed Git boundary so the same commits are not
+            # counted again on the next invocation.
+            head = git.head(root)
+            config_text = config_path.read_text(encoding="utf-8")
+            baseline_line = f'baseline = "{head}"'
+            if re.search(r"(?m)^baseline\s*=", config_text):
+                config_text = re.sub(
+                    r"(?m)^baseline\s*=.*$",
+                    lambda _match: baseline_line,
+                    config_text,
+                    count=1,
+                )
+            else:
+                config_text = re.sub(
+                    r"(?m)^(tag_prefix\s*=.*)$",
+                    lambda match: match.group(1) + chr(10) + baseline_line,
+                    config_text,
+                    count=1,
+                )
+            fd, temp_path = tempfile.mkstemp(prefix=".semver-forge-", dir=root)
+            try:
+                with os.fdopen(fd, "w", encoding="utf-8", newline="") as stream:
+                    stream.write(config_text)
+                    stream.flush()
+                    os.fsync(stream.fileno())
+                os.replace(temp_path, config_path)
+            finally:
+                if os.path.exists(temp_path):
+                    os.unlink(temp_path)
+
             data = {
                 "current": str(current),
                 "next": str(next_version),
                 "impact": proposed["impact"],
                 "commit_count": len(proposed["commits"]),
-                "would_change": changed,
-                "changed": changed and not args.dry_run,
-                "dry_run": args.dry_run,
+                "changed": changed,
+                "authorized": args.yes,
                 "synchronization": sync_result,
+                "changelog": changelog_result,
             }
             if args.explain:
                 data["reason"] = (
@@ -939,7 +1010,7 @@ def main(argv=None):
                     if proposed["impact"]
                     else "no release-relevant commits; version remains unchanged"
                 )
-            record("INFO", "next", "dry-run" if args.dry_run else "completed")
+            record("INFO", "next", "completed")
             output(data, args.json)
         elif args.cmd == "sync":
             version = args.version or str(current)
@@ -947,7 +1018,13 @@ def main(argv=None):
             discovered = []
             config_changes = None
             if args.discover:
-                discovered = discover_sync_targets(root, cfg["version"]["source"])
+                configured_keys = cfg.get("sync", {}).get("discovery_keys", [])
+                custom_keys = [*configured_keys, *(args.discover_keys or [])]
+                discovered = discover_sync_targets(
+                    root,
+                    cfg["version"]["source"],
+                    custom_keys=custom_keys,
+                )
                 configured = cfg.get("sync", {}).get("targets", [])
                 merged = []
                 seen = set()
@@ -959,24 +1036,33 @@ def main(argv=None):
                 sync_cfg = dict(cfg)
                 sync_cfg["sync"] = dict(cfg.get("sync", {}))
                 sync_cfg["sync"]["targets"] = merged
-                if merged != configured:
-                    config_changes = {
-                        "file": str(config_path),
-                        "previous_targets": configured,
-                        "proposed_targets": merged,
-                        "changed": True,
-                    }
-                    if not args.dry_run:
-                        config_write(root, "project", "sync.targets", merged)
-                else:
-                    config_changes = {
-                        "file": str(config_path),
-                        "previous_targets": configured,
-                        "proposed_targets": merged,
-                        "changed": False,
-                    }
-            result = sync(root, sync_cfg, version, args.dry_run)
-            record("INFO", "sync", "dry-run" if args.dry_run else "completed")
+                config_changes = {
+                    "file": str(config_path),
+                    "previous_targets": configured,
+                    "proposed_targets": merged,
+                    "changed": merged != configured,
+                }
+
+            print(f"SVF will synchronize metadata to version {version}.")
+            if config_changes and config_changes["changed"]:
+                print(
+                    "SVF will update discovered synchronization targets in the project "
+                    "configuration."
+                )
+                for target in discovered:
+                    print(f"  {target}")
+            if not args.yes:
+                try:
+                    answer = input("Authorize these writes? [y/N] ").strip().lower()
+                except EOFError:
+                    answer = ""
+                if answer not in ("y", "yes"):
+                    raise ConfigError("operation cancelled")
+
+            if config_changes and config_changes["changed"]:
+                config_write(root, "project", "sync.targets", config_changes["proposed_targets"])
+            result = sync(root, sync_cfg, version, False)
+            record("INFO", "sync", "completed")
             if args.discover:
                 output(
                     {
@@ -984,7 +1070,7 @@ def main(argv=None):
                         "discovered_targets": discovered,
                         "configuration": config_changes,
                         "synchronization": result,
-                        "dry_run": args.dry_run,
+                        "authorized": args.yes,
                     },
                     args.json,
                 )

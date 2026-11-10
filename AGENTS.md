@@ -55,6 +55,11 @@ Semantic Versioning:
 - MINOR: backward-compatible functionality.
 - MAJOR: incompatible public API or behavior changes.
 
+
+### Version-manager ownership
+
+If a project is configured for and actively managed by Semantic Version Forge (svf), the project's semantic-version source and synchronization targets are owned by svf. Agents MUST NOT manually bump, synchronize, or otherwise alter those managed version values as part of unrelated repository changes. Version changes in an svf-managed project MUST be performed through svf and its configured synchronization workflow. Manual version bumps are permitted only for projects that are not being managed by svf, or when the maintainer explicitly authorizes an exception.
+
 ## 7. Changelog Is Mandatory
 
 Every version bump must append an entry to `CHANGELOG.md`. Use Keep a Changelog categories where applicable: Added, Changed, Deprecated, Removed, Fixed, Security. Add new entries at the top. Do not rewrite historical entries.
@@ -66,6 +71,10 @@ If a change affects behavior, usage, configuration, architecture, packaging, dep
 ## 9. Runtime and Interface Integrity
 
 Every exposed command, public function, configuration option, endpoint, or user-facing control must have honest operational behavior. It must be implemented, explicitly disabled, intentionally hidden, or clearly documented as unsupported. Active dead placeholders are prohibited. Validate inputs and report errors clearly.
+
+## Write Authorization
+
+Commands that mutate project files, configuration, Git state, package state, or other persistent state MUST be interactive by default. Before performing a write, the command MUST clearly describe the proposed mutation and ask the user for authorization. A command MAY provide a `--yes` option to explicitly authorize the proposed writes without prompting. Do not use a dry-run CLI mode as a substitute for write authorization. Read-only inspection commands remain non-interactive unless they are about to cross into a mutating operation.
 
 ## 10. Testing and Validation
 

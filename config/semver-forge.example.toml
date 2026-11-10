@@ -29,6 +29,8 @@ revert = "patch"
 
 [sync]
 targets = []
+# Literal variable/assignment keys searched in all readable text files by svf sync --discover.
+# discovery_keys = ["SME_VERSION"]
 
 [release]
 commit_version = true

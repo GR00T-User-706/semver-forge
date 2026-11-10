@@ -84,7 +84,6 @@ def commits(path, since=None):
     return out
 
 
-
 def history(path, since=None):
     """Return commit records for all commits in the selected history range."""
     args = ["log", "--format=%H%x1f%s%x1f%b%x1e"]
@@ -138,6 +137,7 @@ def stage_all(path):
 
 def commit(path, message):
     return run(["commit", "-m", message], cwd=path)
+
 
 def tag_commit(path, tag):
     return run(["rev-list", "-n", "1", tag], cwd=path, check=False).stdout.strip() or None

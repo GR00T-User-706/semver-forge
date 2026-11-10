@@ -87,6 +87,13 @@ def effective_config(root: Path) -> tuple[dict, dict, list[str]]:
     targets = merged.get("sync", {}).get("targets", [])
     if not isinstance(targets, list):
         raise ConfigError("effective config [sync].targets must be an array")
+    discovery_keys = merged.get("sync", {}).get("discovery_keys", [])
+    if not isinstance(discovery_keys, list) or not all(
+        isinstance(key, str) and key for key in discovery_keys
+    ):
+        raise ConfigError(
+            "effective config [sync].discovery_keys must be an array of non-empty strings"
+        )
     for index, target in enumerate(targets):
         if (
             not isinstance(target, dict)

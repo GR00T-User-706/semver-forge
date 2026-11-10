@@ -209,6 +209,30 @@ Types listed in `ignored_types` do not produce an impact.
 | Key | Type | Default | Meaning |
 |---|---|---|---|
 | `targets` | array of inline tables | `[]` | Additional version fields to synchronize. Each item requires `type` and `file`; `key` is optional when the adapter has a default. |
+| `discovery_keys` | array of strings | `[]` | Custom assignment keys searched during `svf sync --discover`. Each key is searched as text in readable UTF-8 files; an unambiguous SemVer assignment becomes a shell-style synchronization target. |
+
+Custom discovery is useful for project-specific variables that are not represented by
+the built-in metadata filename rules. For example:
+
+```toml
+[sync]
+discovery_keys = ["SME_VERSION"]
+```
+
+Given:
+
+```sh
+SME_VERSION="1.2.3"
+```
+
+`svf sync --discover` can discover that file and persist a target equivalent to:
+
+```toml
+{ type = "shell", file = "path/to/file", key = "SME_VERSION" }
+```
+
+The key is treated literally. A file containing multiple valid assignments for the
+same configured key is considered ambiguous and is not added.
 
 Target types are the same adapters listed under `version.source.type`.
 The canonical version source is synchronized in addition to the targets in
