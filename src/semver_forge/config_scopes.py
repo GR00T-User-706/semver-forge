@@ -87,6 +87,13 @@ def effective_config(root: Path) -> tuple[dict, dict, list[str]]:
     targets = merged.get("sync", {}).get("targets", [])
     if not isinstance(targets, list):
         raise ConfigError("effective config [sync].targets must be an array")
+    authorization = merged.get("authorization", {})
+    if not isinstance(authorization, dict) or not isinstance(
+        authorization.get("require_confirmation", True), bool
+    ):
+        raise ConfigError(
+            "effective config [authorization].require_confirmation must be a boolean"
+        )
     discovery_keys = merged.get("sync", {}).get("discovery_keys", [])
     if not isinstance(discovery_keys, list) or not all(
         isinstance(key, str) and key for key in discovery_keys

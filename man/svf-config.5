@@ -283,6 +283,24 @@ option adds custom discovery keys for one invocation. It may be repeated and is 
 svf sync --discover --key SME_VERSION
 svf sync --discover --key SME_VERSION --key __version__
 .fi
+.SS [authorization]
+The
+.B require_confirmation
+setting controls the interactive write-authorization prompt used by mutating commands. Its default is
+.B true .
+Set it to
+.B false
+to bypass the prompt without supplying
+.B --yes
+on each invocation. This is a user-configured safety override and follows normal system, user, and project configuration precedence. Discovery commands still report what they discovered before writing; this setting controls whether the final authorization prompt is required.
+
+Direct
+.B config set ,
+.B config unset ,
+and
+.B config --edit
+operations are already directly authorized by the user's explicit configuration action.
+
 .SS [release] (legacy)
 The following settings remain in the defaults for compatibility with older configuration files. Release execution is currently disabled, and these values do not affect the public
 .B svf

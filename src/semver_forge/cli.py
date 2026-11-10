@@ -223,6 +223,10 @@ def _authorize_write(args, description, root=None):
         raise ConfigError("operation cancelled")
 
 
+def _writes_authorized(args, root):
+    return bool(args.yes or not _authorization_required(root))
+
+
 def _format_output(data, indent=0):
     """Format nested result data as readable, indentation-based text."""
     prefix = " " * indent
@@ -391,6 +395,17 @@ def _format_config_list():
                     "string",
                     "major | minor | patch",
                     "Additional Conventional Commit types may be mapped to an impact.",
+                ),
+            ],
+        ),
+        (
+            "authorization",
+            [
+                (
+                    "require_confirmation",
+                    "boolean",
+                    "true",
+                    "Require interactive authorization before mutating writes.",
                 ),
             ],
         ),
@@ -959,7 +974,7 @@ def main(argv=None):
                 changelog_result = {
                     "path": str(changelog_path),
                     "changed": True,
-                    "authorized": args.yes,
+                    "authorized": _writes_authorized(args, root),
                     "notes": notes,
                 }
 
@@ -999,7 +1014,7 @@ def main(argv=None):
                 "impact": proposed["impact"],
                 "commit_count": len(proposed["commits"]),
                 "changed": changed,
-                "authorized": args.yes,
+                "authorized": _writes_authorized(args, root),
                 "synchronization": sync_result,
                 "changelog": changelog_result,
             }
@@ -1067,7 +1082,7 @@ def main(argv=None):
                         "discovered_targets": discovered,
                         "configuration": config_changes,
                         "synchronization": result,
-                        "authorized": args.yes,
+                        "authorized": _writes_authorized(args, root),
                     },
                     args.json,
                 )
