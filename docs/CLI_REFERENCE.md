@@ -13,8 +13,8 @@ SemVer Forge exposes five project commands.
 | Command | Behavior |
 |---|---|
 | `init [--yes]` | Discover the project's canonical version source and synchronization targets, then create `.semver-forge.toml`. Existing configuration is preserved unless replacement is explicitly approved. |
-| `next [--dry-run] [--explain]` | Analyze Git commits since the last processed history boundary. Select the highest qualifying SemVer impact, update the canonical version source plus configured targets, and write the corresponding release notes to the configured changelog. Save the processed commit boundary so the same commits are not counted twice. |
-| `sync [--version VERSION] [--dry-run] [--discover] [--key KEY]` | Synchronize configured metadata. `--discover` persists newly discovered targets in project configuration before syncing. `--key` adds a custom assignment key to the discovery scan and may be repeated. |
+| `next [--yes] [--explain]` | Analyze Git commits since the last processed history boundary. Select the highest qualifying SemVer impact, update the canonical version source plus configured targets, and write the corresponding release notes to the configured changelog. Save the processed commit boundary so the same commits are not counted twice. |
+| `sync [--version VERSION] [--yes] [--discover] [--key KEY]` | Synchronize configured metadata. `--discover` persists newly discovered targets in project configuration before syncing. `--key` adds a custom assignment key to the discovery scan and may be repeated. |
 | `config [get KEY | set KEY VALUE | unset KEY] [--global | --system] [--edit]` | View or manage system, user, and project configuration. Project is the default write scope. |
 | `check` | Read-only report of canonical version, synchronization targets, discovered metadata, and configuration scopes. |
 
@@ -41,13 +41,13 @@ Initialization is project discovery and tracking setup. It does not calculate a 
 
 This is the automatic version-selection command. It reads commits since the saved `[git].baseline`, or the latest valid SemVer tag when no baseline has been saved. It updates the canonical source and every configured synchronization target only when a qualifying commit warrants a higher version.
 
-After a successful run, the current Git commit is saved as the new baseline. This prevents the same commits from causing another increment on the next invocation. When the version changes, `next` also writes the calculated release notes to the configured `release.notes_file` (default `CHANGELOG.md`). A dry run previews the synchronization and changelog update without writing files or advancing the baseline.
+After a successful run, the current Git commit is saved as the new baseline. This prevents the same commits from causing another increment on the next invocation. When the version changes, `next` also writes the calculated release notes to the configured `release.notes_file` (default `CHANGELOG.md`). Without `--yes`, `next` displays the planned version, synchronization targets, and changelog path and asks for authorization before writing. `--yes` authorizes the operation without prompting.
 
 ### sync
 
-Synchronization is independent of commit classification. It copies the selected version to the canonical source and configured targets. Use `--dry-run` to preview all file changes before writing.
+Synchronization is independent of commit classification. It copies the selected version to the canonical source and configured targets. Without `--yes`, `sync` displays the target version and any discovered configuration targets and asks for authorization before writing. `--yes` authorizes the operation without prompting.
 
-Use `sync --discover` to scan nested project directories for supported version metadata, including YAML manifests with one unambiguous version field. The scan skips Git internals, virtual environments, dependency trees, and generated build directories. Discovered targets are deduplicated and persisted to project `[sync].targets` before synchronization. A dry run previews both config and metadata changes without writing. Custom keys can be configured with `[sync].discovery_keys = ["SME_VERSION"]` or supplied directly with `--key SME_VERSION`. A custom key is searched as a literal assignment in readable UTF-8 text files; an unambiguous SemVer value becomes a shell-style target. Multiple valid assignments for the same key in one file are treated as ambiguous and ignored.
+Use `sync --discover` to scan nested project directories for supported version metadata, including YAML manifests with one unambiguous version field. The scan skips Git internals, virtual environments, dependency trees, and generated build directories. Discovered targets are deduplicated and persisted to project `[sync].targets` before synchronization. The interactive authorization occurs after discovery and before either configuration or metadata is written. Custom keys can be configured with `[sync].discovery_keys = ["SME_VERSION"]` or supplied directly with `--key SME_VERSION`. A custom key is searched as a literal assignment in readable UTF-8 text files; an unambiguous SemVer value becomes a shell-style target. Multiple valid assignments for the same key in one file are treated as ambiguous and ignored.
 
 YAML synchronization uses a round-trip parser and updates only the configured dotted key while preserving comments and unrelated fields.
 
