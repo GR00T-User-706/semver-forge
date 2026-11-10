@@ -911,7 +911,7 @@ def main(argv=None):
                 notes_file = cfg.get("release", {}).get("notes_file", "CHANGELOG.md")
                 changelog_path = resolve_changelog_path(root, notes_file)
                 notes = release_notes(proposed["commits"], proposed["rules"])
-                changelog_text = update_changelog(
+                update_changelog(
                     changelog_path,
                     str(next_version),
                     notes,
