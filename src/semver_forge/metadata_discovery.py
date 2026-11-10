@@ -74,17 +74,51 @@ def _raise_walk_error(error):
     raise error
 
 
-def discover_sync_targets(root, canonical_source=None):
+def _custom_key_sources(path: Path, relative: str, keys):
+    """Find user-configured version assignments by scanning files as text."""
+    try:
+        raw = path.read_bytes()
+    except OSError:
+        return []
+    if b"\\x00" in raw:
+        return []
+    try:
+        text = raw.decode("utf-8")
+    except UnicodeDecodeError:
+        return []
+
+    matches = []
+    for key in keys:
+        pattern = re.compile(
+            rf"^\\s*(?:export\\s+)?{re.escape(key)}\\s*=\\s*[\\"']?([^\\"'\\s#]+)",
+            re.M,
+        )
+        versions = []
+        for match in pattern.finditer(text):
+            candidate = match.group(1).strip()
+            try:
+                Version.parse(candidate)
+            except (TypeError, ValueError):
+                continue
+            versions.append(candidate)
+        if len(versions) == 1:
+            matches.append({"type": "shell", "file": relative, "key": key})
+    return matches
+
+def discover_sync_targets(root, canonical_source=None, custom_keys=None):
     """Find supported version metadata recursively, without changing files.
 
-    Only known metadata filenames and unambiguous YAML version fields qualify.
-    Invalid, unsupported, or ambiguous files are ignored. Returned paths are
-    relative to the project root and can be passed directly to synchronization.
+    Known metadata filenames and unambiguous YAML version fields are always
+    considered. User-configured keys are additionally searched for as literal
+    text assignments in every readable UTF-8 text file. A custom-key match
+    becomes a shell-style synchronization target so the original text is
+    updated in place. Invalid or ambiguous matches are ignored.
     """
     root = Path(root).resolve()
     canonical_path = None
     if canonical_source:
         canonical_path = (root / canonical_source["file"]).resolve()
+    custom_keys = tuple(dict.fromkeys(key for key in (custom_keys or ()) if key))
 
     found = []
     seen = set()
@@ -121,6 +155,9 @@ def discover_sync_targets(root, canonical_source=None):
 
             if path.suffix.lower() in {".yaml", ".yml"}:
                 candidates.extend(_yaml_sources(path, relative))
+
+            if custom_keys:
+                candidates.extend(_custom_key_sources(path, relative, custom_keys))
 
             # One file can match multiple known filename rules. Keep only one
             # source descriptor; ambiguous YAML documents were already rejected.
