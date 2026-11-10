@@ -395,6 +395,17 @@ def _format_config_list():
             ],
         ),
         (
+            "authorization",
+            [
+                (
+                    "require_confirmation",
+                    "boolean",
+                    "true",
+                    "Require interactive authorization before mutating writes.",
+                ),
+            ],
+        ),
+        (
             "sync",
             [
                 (
