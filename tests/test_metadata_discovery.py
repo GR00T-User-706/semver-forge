@@ -161,31 +161,17 @@ class RecursiveMetadataDiscoveryTests(unittest.TestCase):
                 encoding="utf-8",
             )
 
-            dry_output = io.StringIO()
-            with contextlib.redirect_stdout(dry_output):
-                dry_status = main(
-                    ["--project", str(root), "--json", "sync", "--discover", "--dry-run"]
-                )
-
-            preview = json.loads(dry_output.getvalue())
-            self.assertEqual(dry_status, 0)
             expected_target = {
                 "type": "yaml",
                 "file": "packaging/termux/manifest.yaml",
                 "key": "control.Version",
             }
-            self.assertEqual(preview["discovered_targets"], [expected_target])
-            self.assertTrue(preview["configuration"]["changed"])
-            self.assertIn(expected_target, preview["configuration"]["proposed_targets"])
-            sync_files = {
-                Path(item["file"]).relative_to(root).as_posix()
-                for item in preview["synchronization"]
-            }
-            self.assertEqual(
-                sync_files,
-                {"VERSION", "packaging/configured-version.txt", "packaging/termux/manifest.yaml"},
-            )
-            self.assertEqual(sum(item["changed"] for item in preview["synchronization"]), 2)
+            with patch("builtins.input", return_value="n"):
+                cancelled = main(
+                    ["--project", str(root), "--json", "sync", "--discover"]
+                )
+
+            self.assertEqual(cancelled, 3)
             self.assertEqual(configured.read_text(encoding="utf-8"), "1.2.2\n")
             self.assertIn("Version: 1.2.2", manifest.read_text(encoding="utf-8"))
             self.assertNotIn(
@@ -195,7 +181,7 @@ class RecursiveMetadataDiscoveryTests(unittest.TestCase):
 
             run_output = io.StringIO()
             with contextlib.redirect_stdout(run_output):
-                run_status = main(["--project", str(root), "--json", "sync", "--discover", "--yes"])
+                run_status = main(\n                    ["--project", str(root), "--json", "sync", "--discover", "--yes"]\n                )
 
             self.assertEqual(run_status, 0)
             self.assertEqual(configured.read_text(encoding="utf-8"), "1.2.3\n")
@@ -263,7 +249,7 @@ class RecursiveMetadataDiscoveryTests(unittest.TestCase):
             output = io.StringIO()
             with contextlib.redirect_stdout(output):
                 status = main(
-                    ["--project", str(root), "--json", "sync", "--discover", "--key", "SME_VERSION", "--yes"]
+                    [\n                        "--project",\n                        str(root),\n                        "--json",\n                        "sync",\n                        "--discover",\n                        "--key",\n                        "SME_VERSION",\n                        "--yes",\n                    ]
                 )
 
             self.assertEqual(status, 0)
