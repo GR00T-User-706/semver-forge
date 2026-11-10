@@ -809,7 +809,7 @@ def main(argv=None):
 
         if args.cmd == "changelog":
             from .changelog import sync_unreleased
-            from .release import latest_release, resolve_changelog_path
+            from .release import latest_release
 
             notes_file = cfg.get("release", {}).get("notes_file") or "CHANGELOG.md"
             notes_path = resolve_changelog_path(root, notes_file)
