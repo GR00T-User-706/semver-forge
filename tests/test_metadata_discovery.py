@@ -1,6 +1,5 @@
 import contextlib
 import io
-import json
 import subprocess
 import tempfile
 import unittest
@@ -161,11 +160,6 @@ class RecursiveMetadataDiscoveryTests(unittest.TestCase):
                 encoding="utf-8",
             )
 
-            expected_target = {
-                "type": "yaml",
-                "file": "packaging/termux/manifest.yaml",
-                "key": "control.Version",
-            }
             with patch("builtins.input", return_value="n"):
                 cancelled = main(
                     ["--project", str(root), "--json", "sync", "--discover"]
@@ -288,7 +282,7 @@ class RecursiveMetadataDiscoveryTests(unittest.TestCase):
 
             output = io.StringIO()
             with contextlib.redirect_stdout(output):
-                status = main(["--project", str(root), "--json", "sync", "--discover"])
+                status = main(["--project", str(root), "--json", "sync", "--discover", "--yes"])
 
             self.assertEqual(status, 0)
             self.assertIn(
