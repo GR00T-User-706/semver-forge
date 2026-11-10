@@ -91,7 +91,7 @@ def _custom_key_sources(path: Path, relative: str, keys):
     matches = []
     for key in keys:
         pattern = re.compile(
-            rf"^\\s*(?:export\\s+)?{re.escape(key)}\\s*=\\s*[\\"']?([^\\"'\\s#]+)",
+            rf"^\s*(?:export\s+)?{re.escape(key)}\s*=\s*[\"\']?([^\"\'\s#]+)",
             re.M,
         )
         versions = []
