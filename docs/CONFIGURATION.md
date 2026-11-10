@@ -250,6 +250,16 @@ targets = [
 ]
 ```
 
+### `[authorization]`
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `require_confirmation` | boolean | `true` | Controls the interactive authorization prompt used by mutating commands. Set to `false` to allow those commands to write without requiring `--yes` or an interactive confirmation. This is a user-configured safety override and applies through the normal system/user/project configuration precedence. |
+
+This setting is intentionally separate from direct `svf config set`, `unset`, and
+`--edit` operations. Those commands are already explicitly authorized by the
+user's direct configuration action.
+
 ### `[release]` legacy settings
 
 These keys remain in the defaults for compatibility with older configuration
