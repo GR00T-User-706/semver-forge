@@ -25,7 +25,7 @@ class CLIHelpTests(unittest.TestCase):
     def test_no_arguments_shows_help_and_succeeds(self):
         result = self.run_cli()
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("{init,next,sync,config,check}", result.stdout)
+        self.assertIn("{init,next,changelog,commit,sync,config,check}", result.stdout)
         self.assertIn("usage: svf", result.stdout)
         self.assertNotIn("the following arguments are required", result.stderr)
 
