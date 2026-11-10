@@ -25,7 +25,7 @@ DEFAULTS = {
         "types": {"feat": "minor", "fix": "patch", "perf": "patch", "revert": "patch"},
         "unknown": "ignore",
     },
-    "sync": {"targets": []},
+    "sync": {"targets": [], "discovery_keys": []},
     "release": {
         "commit_version": True,
         "annotated_tag": True,
