@@ -27,59 +27,9 @@ data_files:
     perm: '755'
 
 
-  lib/semver-forge/vendor:
-    source: packaging/termux/.build/vendor
+  lib/semver-forge/semver_forge:
+    source: src/semver_forge
     source_recurse: true
-
-  lib/semver-forge/semver_forge/__init__.py:
-    source: src/semver_forge/__init__.py
-  lib/semver-forge/semver_forge/__main__.py:
-    source: src/semver_forge/__main__.py
-  lib/semver-forge/semver_forge/build.py:
-    source: src/semver_forge/build.py
-  lib/semver-forge/semver_forge/changelog.py:
-    source: src/semver_forge/changelog.py
-  lib/semver-forge/semver_forge/check.py:
-    source: src/semver_forge/check.py
-  lib/semver-forge/semver_forge/cli.py:
-    source: src/semver_forge/cli.py
-  lib/semver-forge/semver_forge/config.py:
-    source: src/semver_forge/config.py
-  lib/semver-forge/semver_forge/config_scopes.py:
-    source: src/semver_forge/config_scopes.py
-  lib/semver-forge/semver_forge/conventional_commits.py:
-    source: src/semver_forge/conventional_commits.py
-  lib/semver-forge/semver_forge/discovery.py:
-    source: src/semver_forge/discovery.py
-  lib/semver-forge/semver_forge/errors.py:
-    source: src/semver_forge/errors.py
-  lib/semver-forge/semver_forge/git.py:
-    source: src/semver_forge/git.py
-  lib/semver-forge/semver_forge/installation.py:
-    source: src/semver_forge/installation.py
-  lib/semver-forge/semver_forge/locking.py:
-    source: src/semver_forge/locking.py
-  lib/semver-forge/semver_forge/metadata_discovery.py:
-    source: src/semver_forge/metadata_discovery.py
-  lib/semver-forge/semver_forge/operation_log.py:
-    source: src/semver_forge/operation_log.py
-  lib/semver-forge/semver_forge/release.py:
-    source: src/semver_forge/release.py
-  lib/semver-forge/semver_forge/reporting.py:
-    source: src/semver_forge/reporting.py
-  lib/semver-forge/semver_forge/safety.py:
-    source: src/semver_forge/safety.py
-  lib/semver-forge/semver_forge/semver.py:
-    source: src/semver_forge/semver.py
-  lib/semver-forge/semver_forge/synchronization.py:
-    source: src/semver_forge/synchronization.py
-  lib/semver-forge/semver_forge/vcs.py:
-    source: src/semver_forge/vcs.py
-  lib/semver-forge/semver_forge/version_sources.py:
-    source: src/semver_forge/version_sources.py
-
-  lib/semver-forge/semver_forge/data/project-config.toml:
-    source: src/semver_forge/data/project-config.toml
 
   share/man/man1/svf.1:
     source: man/svf.1
