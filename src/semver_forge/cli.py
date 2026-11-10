@@ -825,10 +825,14 @@ def main(argv=None):
 
             if not args.yes:
                 try:
-                    answer = input(
-                        f"Update {notes_path} with {preview['missing_count']} missing commit "
-                        "entries? [y/N] "
-                    ).strip().lower()
+                    answer = (
+                        input(
+                            f"Update {notes_path} with {preview['missing_count']} missing commit "
+                            "entries? [y/N] "
+                        )
+                        .strip()
+                        .lower()
+                    )
                 except EOFError:
                     answer = ""
                 if answer not in ("y", "yes"):
