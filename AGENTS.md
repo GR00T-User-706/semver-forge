@@ -72,6 +72,10 @@ If a change affects behavior, usage, configuration, architecture, packaging, dep
 
 Every exposed command, public function, configuration option, endpoint, or user-facing control must have honest operational behavior. It must be implemented, explicitly disabled, intentionally hidden, or clearly documented as unsupported. Active dead placeholders are prohibited. Validate inputs and report errors clearly.
 
+## Write Authorization
+
+Commands that mutate project files, configuration, Git state, package state, or other persistent state MUST be interactive by default. Before performing a write, the command MUST clearly describe the proposed mutation and ask the user for authorization. A command MAY provide a `--yes` option to explicitly authorize the proposed writes without prompting. Do not use a dry-run CLI mode as a substitute for write authorization. Read-only inspection commands remain non-interactive unless they are about to cross into a mutating operation.
+
 ## 10. Testing and Validation
 
 Run the most relevant available checks before finishing. Depending on the project:
