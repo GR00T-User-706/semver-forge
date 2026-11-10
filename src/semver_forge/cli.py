@@ -782,11 +782,6 @@ def main(argv=None):
             commits = git.history(root, tag)
             preview = sync_unreleased(notes_path, commits, cfg.get("commits", {}), dry_run=True)
 
-            if args.dry_run:
-                preview["status"] = "would_update" if preview["diverged"] else "synchronized"
-                output(preview, args.json)
-                return 0
-
             if not preview["diverged"]:
                 preview["status"] = "synchronized"
                 preview["changed"] = False
@@ -826,7 +821,7 @@ def main(argv=None):
             scope = args.scope if args.scope is not None else inferred_scope
             message = args.message
 
-            if not message and not args.yes and not args.dry_run:
+            if not message and not args.yes:
                 print(f"Suggested type: {inferred_type} (confidence: {confidence})")
                 print("Changed files:")
                 for path in paths:
@@ -867,6 +862,10 @@ def main(argv=None):
             git.stage_all(root)
             if not git.staged_diff(root).strip():
                 raise ConfigError("no changes are staged for commit")
+            if not args.yes:
+                answer = input(f"Authorize commit {message!r}? [y/N] ").strip().lower()
+                if answer not in ("y", "yes"):
+                    raise ConfigError("commit cancelled")
             git.commit(root, message)
             record("INFO", "commit", "completed")
             output(
@@ -888,11 +887,22 @@ def main(argv=None):
             changed = next_version.compare(current) > 0
             sync_result = []
             changelog_result = None
+            notes_file = cfg.get("release", {}).get("notes_file", "CHANGELOG.md")
+            changelog_path = resolve_changelog_path(root, notes_file)
+            notes = release_notes(proposed["commits"], proposed["rules"]) if changed else []
+
             if changed:
+                print(f"SVF will update the project version from {current} to {next_version}.")
+                print(f"SVF will update configured version targets and {changelog_path}.")
+                if not args.yes:
+                    try:
+                        answer = input("Authorize these writes? [y/N] ").strip().lower()
+                    except EOFError:
+                        answer = ""
+                    if answer not in ("y", "yes"):
+                        raise ConfigError("operation cancelled")
+
                 sync_result = sync(root, cfg, str(next_version), dry_run=False)
-                notes_file = cfg.get("release", {}).get("notes_file", "CHANGELOG.md")
-                changelog_path = resolve_changelog_path(root, notes_file)
-                notes = release_notes(proposed["commits"], proposed["rules"])
                 update_changelog(
                     changelog_path,
                     str(next_version),
@@ -901,21 +911,11 @@ def main(argv=None):
                 )
                 changelog_result = {
                     "path": str(changelog_path),
-                    "changed": not args.dry_run,
-                    "would_change": args.dry_run,
+                    "changed": True,
                     "authorized": args.yes,
                     "notes": notes,
                 }
-            if changed and not args.yes:
-                print(f"SVF will update the project version from {current} to {next_version}.")
-                print(f"SVF will update configured version targets and the configured changelog.")
-                try:
-                    answer = input("Authorize these writes? [y/N] ").strip().lower()
-                except EOFError:
-                    answer = ""
-                if answer not in ("y", "yes"):
-                    raise ConfigError("operation cancelled")
-            if changed:
+
                 # Remember the processed Git boundary so the same commits are not
                 # counted again on the next invocation.
                 head = git.head(root)
@@ -945,12 +945,12 @@ def main(argv=None):
                 finally:
                     if os.path.exists(temp_path):
                         os.unlink(temp_path)
+
             data = {
                 "current": str(current),
                 "next": str(next_version),
                 "impact": proposed["impact"],
                 "commit_count": len(proposed["commits"]),
-                "would_change": changed,
                 "changed": changed,
                 "authorized": args.yes,
                 "synchronization": sync_result,
@@ -988,35 +988,29 @@ def main(argv=None):
                 sync_cfg = dict(cfg)
                 sync_cfg["sync"] = dict(cfg.get("sync", {}))
                 sync_cfg["sync"]["targets"] = merged
-                if merged != configured:
-                    config_changes = {
-                        "file": str(config_path),
-                        "previous_targets": configured,
-                        "proposed_targets": merged,
-                        "changed": True,
-                    }
-                    if not args.dry_run:
-                        config_write(root, "project", "sync.targets", merged)
-                else:
-                    config_changes = {
-                        "file": str(config_path),
-                        "previous_targets": configured,
-                        "proposed_targets": merged,
-                        "changed": False,
-                    }
-            result = sync(root, sync_cfg, version, False)
+                config_changes = {
+                    "file": str(config_path),
+                    "previous_targets": configured,
+                    "proposed_targets": merged,
+                    "changed": merged != configured,
+                }
+
+            print(f"SVF will synchronize metadata to version {version}.")
+            if config_changes and config_changes["changed"]:
+                print("SVF will update discovered synchronization targets in the project configuration.")
+                for target in discovered:
+                    print(f"  {target}")
             if not args.yes:
-                print(f"SVF will synchronize metadata to version {version}.")
-                if discovered:
-                    print("Discovered targets:")
-                    for target in discovered:
-                        print(f"  {target}")
                 try:
                     answer = input("Authorize these writes? [y/N] ").strip().lower()
                 except EOFError:
                     answer = ""
                 if answer not in ("y", "yes"):
                     raise ConfigError("operation cancelled")
+
+            if config_changes and config_changes["changed"]:
+                config_write(root, "project", "sync.targets", config_changes["proposed_targets"])
+            result = sync(root, sync_cfg, version, False)
             record("INFO", "sync", "completed")
             if args.discover:
                 output(
@@ -1025,7 +1019,7 @@ def main(argv=None):
                         "discovered_targets": discovered,
                         "configuration": config_changes,
                         "synchronization": result,
-                        "dry_run": args.dry_run,
+                        "authorized": args.yes,
                     },
                     args.json,
                 )
