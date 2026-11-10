@@ -51,7 +51,7 @@ class InitTests(unittest.TestCase):
                 check=True,
             )
             (project / "VERSION").write_text("3.1.0\n")
-            result = self.run_cli(project, "init", "--json")
+            result = self.run_cli(project, "init", "--json", "--yes")
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertEqual((project / "VERSION").read_text(), "3.1.0\n")
             committed = subprocess.run(
@@ -72,7 +72,7 @@ class InitTests(unittest.TestCase):
                 ),
                 encoding="utf-8",
             )
-            result = self.run_cli(project, "init", "--json")
+            result = self.run_cli(project, "init", "--json", "--yes")
             self.assertEqual(result.returncode, 0, result.stderr)
             config = (project / ".semver-forge.toml").read_text(encoding="utf-8")
             self.assertIn('name = "derived-name"', config)
@@ -131,7 +131,7 @@ class InitTests(unittest.TestCase):
             unrelated = project / "unrelated.txt"
             unrelated.write_text("staged before init")
             subprocess.run(["git", "-C", str(project), "add", "unrelated.txt"], check=True)
-            result = self.run_cli(project, "init", "--json")
+            result = self.run_cli(project, "init", "--json", "--yes")
             self.assertEqual(result.returncode, 0, result.stderr)
             committed = subprocess.run(
                 ["git", "-C", str(project), "show", "--pretty=format:", "--name-only", "HEAD"],
@@ -158,7 +158,7 @@ class InitTests(unittest.TestCase):
                 check=True,
             )
             (project / ".gitignore").write_text("/.semver-forge.toml\n", encoding="utf-8")
-            result = self.run_cli(project, "init", "--json")
+            result = self.run_cli(project, "init", "--json", "--yes")
             self.assertEqual(result.returncode, 2)
             self.assertIn("staging failed", result.stdout)
             self.assertIn('"committed": false', result.stdout)
