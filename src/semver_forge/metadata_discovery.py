@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import re
 from pathlib import Path
 
 from .discovery import VERSION_FILES, _candidate
@@ -80,7 +81,7 @@ def _custom_key_sources(path: Path, relative: str, keys):
         raw = path.read_bytes()
     except OSError:
         return []
-    if b"\\x00" in raw:
+    if b"\x00" in raw:
         return []
     try:
         text = raw.decode("utf-8")
