@@ -47,6 +47,9 @@ data_files:
     source: src/semver_forge/config.py
   lib/semver-forge/semver_forge/config_scopes.py:
     source: src/semver_forge/config_scopes.py
+  lib/semver-forge/semver_forge/commit.py:
+    source: src/semver_forge/commit.py
+
   lib/semver-forge/semver_forge/conventional_commits.py:
     source: src/semver_forge/conventional_commits.py
   lib/semver-forge/semver_forge/discovery.py:
