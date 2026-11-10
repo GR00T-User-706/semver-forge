@@ -9,8 +9,8 @@ import tempfile
 from pathlib import Path
 
 from . import __version__, git
-from .check import inspect_project
 from .changelog import release_notes, update_changelog
+from .check import inspect_project
 from .commit import COMMIT_TYPES, format_message, generate_summary, infer_scope, infer_type
 from .config import find_config
 from .config_scopes import (
@@ -67,7 +67,8 @@ def parser():
         help="inspect Git history, choose the next version, and update configured version files",
         description=(
             "Classify commits since the saved Git boundary and apply the highest configured "
-            "Semantic Versioning impact. By default, show the proposed changes and ask for authorization before writing. Use --yes to authorize without prompting."
+            "Semantic Versioning impact. By default, show the proposed changes and ask for "
+            "authorization before writing. Use --yes to authorize without prompting."
         ),
         epilog="Examples: svf next; svf next --yes --explain",
     )
@@ -92,12 +93,20 @@ def parser():
         "commit",
         help="intelligently create a Conventional Commit from current changes",
     )
-    commit_cmd.add_argument("--type", choices=COMMIT_TYPES, help="override the inferred commit type")
+    commit_cmd.add_argument(
+        "--type", choices=COMMIT_TYPES, help="override the inferred commit type"
+    )
     commit_cmd.add_argument("--scope", help="override the inferred commit scope")
     commit_cmd.add_argument("--message", help="use this complete commit message")
-    commit_cmd.add_argument("--breaking", action="store_true", help="mark the generated commit as breaking")
-    commit_cmd.add_argument("--all", action="store_true", help="stage all current changes before committing")
-    commit_cmd.add_argument("--yes", action="store_true", help="accept inferred values and stage all changes")
+    commit_cmd.add_argument(
+        "--breaking", action="store_true", help="mark the generated commit as breaking"
+    )
+    commit_cmd.add_argument(
+        "--all", action="store_true", help="stage all current changes before committing"
+    )
+    commit_cmd.add_argument(
+        "--yes", action="store_true", help="accept inferred values and stage all changes"
+    )
 
     sync_cmd = sub.add_parser(
         "sync",
@@ -817,7 +826,8 @@ def main(argv=None):
             if not args.yes:
                 try:
                     answer = input(
-                        f"Update {notes_path} with {preview['missing_count']} missing commit entries? [y/N] "
+                        f"Update {notes_path} with {preview['missing_count']} missing commit "
+                        "entries? [y/N] "
                     ).strip().lower()
                 except EOFError:
                     answer = ""
@@ -878,7 +888,9 @@ def main(argv=None):
                     raise ConfigError("commit cancelled")
 
             if not message:
-                message = format_message(commit_type, scope, inferred_summary, breaking=args.breaking)
+                message = format_message(
+                    commit_type, scope, inferred_summary, breaking=args.breaking
+                )
 
             if not args.yes and not args.all:
                 answer = input("Stage all current changes for this commit? [Y/n] ").strip().lower()
@@ -921,7 +933,10 @@ def main(argv=None):
                 print(f"SVF will update the project version from {current} to {next_version}.")
                 print(f"SVF will update configured version targets and {changelog_path}.")
             else:
-                print(f"SVF will record the current Git history boundary in {config_path}; the version remains {current}.")
+                print(
+                    f"SVF will record the current Git history boundary in {config_path}; "
+                    f"the version remains {current}."
+                )
             if not args.yes:
                 try:
                     answer = input("Authorize these writes? [y/N] ").strip().lower()
@@ -1026,7 +1041,10 @@ def main(argv=None):
 
             print(f"SVF will synchronize metadata to version {version}.")
             if config_changes and config_changes["changed"]:
-                print("SVF will update discovered synchronization targets in the project configuration.")
+                print(
+                    "SVF will update discovered synchronization targets in the project "
+                    "configuration."
+                )
                 for target in discovered:
                     print(f"  {target}")
             if not args.yes:
