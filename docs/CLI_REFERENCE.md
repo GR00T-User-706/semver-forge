@@ -13,7 +13,7 @@ SemVer Forge exposes five project commands.
 | Command | Behavior |
 |---|---|
 | `init [--yes]` | Discover the project's canonical version source and synchronization targets, then create `.semver-forge.toml`. Existing configuration is preserved unless replacement is explicitly approved. |
-| `next [--dry-run] [--explain]` | Analyze Git commits since the last processed history boundary. Select the highest qualifying SemVer impact and update the canonical version source plus configured targets. Save the processed commit boundary so the same commits are not counted twice. |
+| `next [--dry-run] [--explain]` | Analyze Git commits since the last processed history boundary. Select the highest qualifying SemVer impact, update the canonical version source plus configured targets, and write the corresponding release notes to the configured changelog. Save the processed commit boundary so the same commits are not counted twice. |
 | `sync [--version VERSION] [--dry-run] [--discover] [--key KEY]` | Synchronize configured metadata. `--discover` persists newly discovered targets in project configuration before syncing. `--key` adds a custom assignment key to the discovery scan and may be repeated. |
 | `config [get KEY | set KEY VALUE | unset KEY] [--global | --system] [--edit]` | View or manage system, user, and project configuration. Project is the default write scope. |
 | `check` | Read-only report of canonical version, synchronization targets, discovered metadata, and configuration scopes. |
@@ -41,7 +41,7 @@ Initialization is project discovery and tracking setup. It does not calculate a 
 
 This is the automatic version-selection command. It reads commits since the saved `[git].baseline`, or the latest valid SemVer tag when no baseline has been saved. It updates the canonical source and every configured synchronization target only when a qualifying commit warrants a higher version.
 
-After a successful run, the current Git commit is saved as the new baseline. This prevents the same commits from causing another increment on the next invocation. A dry run does not write files or advance the baseline.
+After a successful run, the current Git commit is saved as the new baseline. This prevents the same commits from causing another increment on the next invocation. When the version changes, `next` also writes the calculated release notes to the configured `release.notes_file` (default `CHANGELOG.md`). A dry run previews the synchronization and changelog update without writing files or advancing the baseline.
 
 ### sync
 
