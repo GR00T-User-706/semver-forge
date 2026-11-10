@@ -66,8 +66,18 @@ class ChangelogUpdateTests(unittest.TestCase):
                 encoding="utf-8",
             )
             commits = [
-                {"hash": "abc123456789", "message": "feat: existing feature", "subject": "feat: existing feature", "body": ""},
-                {"hash": "def567812345", "message": "fix: correct broken behavior", "subject": "fix: correct broken behavior", "body": ""},
+                {
+            "hash": "abc123456789",
+            "message": "feat: existing feature",
+            "subject": "feat: existing feature",
+            "body": "",
+        },
+                {
+            "hash": "def567812345",
+            "message": "fix: correct broken behavior",
+            "subject": "fix: correct broken behavior",
+            "body": "",
+        },
             ]
             result = sync_unreleased(path, commits)
             self.assertTrue(result["diverged"])
@@ -79,7 +89,14 @@ class ChangelogUpdateTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "CHANGELOG.md"
             path.write_text("# Changelog\\n", encoding="utf-8")
-            commits = [{"hash": "1234567890ab", "message": "feat: add feature", "subject": "feat: add feature", "body": ""}]
+            commits = [
+                {
+                    "hash": "1234567890ab",
+                    "message": "feat: add feature",
+                    "subject": "feat: add feature",
+                    "body": "",
+                }
+            ]
             result = sync_unreleased(path, commits, dry_run=True)
             self.assertTrue(result["diverged"])
             self.assertFalse(result["changed"])
