@@ -119,6 +119,13 @@ def parser():
         help="recursively discover supported version metadata before synchronizing",
     )
     sync_cmd.add_argument(
+        "--key",
+        dest="discover_keys",
+        action="append",
+        metavar="KEY",
+        help="custom version key to search for during --discover; may be repeated",
+    )
+    sync_cmd.add_argument(
         "--version",
         metavar="VERSION",
         help="use this target version instead of the canonical version",
@@ -947,7 +954,13 @@ def main(argv=None):
             discovered = []
             config_changes = None
             if args.discover:
-                discovered = discover_sync_targets(root, cfg["version"]["source"])
+                configured_keys = cfg.get("sync", {}).get("discovery_keys", [])
+                custom_keys = [*configured_keys, *(args.discover_keys or [])]
+                discovered = discover_sync_targets(
+                    root,
+                    cfg["version"]["source"],
+                    custom_keys=custom_keys,
+                )
                 configured = cfg.get("sync", {}).get("targets", [])
                 merged = []
                 seen = set()
