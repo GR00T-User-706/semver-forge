@@ -246,6 +246,32 @@ class RecursiveMetadataDiscoveryTests(unittest.TestCase):
 
             self.assertEqual(targets, [])
 
+    def test_sync_discover_accepts_cli_custom_key(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+            (root / "VERSION").write_text("1.2.3\n", encoding="utf-8")
+            custom = root / "version.inc"
+            custom.write_text('SME_VERSION="1.2.2"\n', encoding="utf-8")
+            (root / ".semver-forge.toml").write_text(
+                '[version]\ninitial = "1.2.3"\n'
+                'source = { type = "text", file = "VERSION" }\n'
+                '[sync]\ntargets = []\n',
+                encoding="utf-8",
+            )
+
+            output = io.StringIO()
+            with contextlib.redirect_stdout(output):
+                status = main(
+                    ["--project", str(root), "--json", "sync", "--discover", "--key", "SME_VERSION"]
+                )
+
+            self.assertEqual(status, 0)
+            self.assertIn(
+                'SME_VERSION="1.2.3"',
+                custom.read_text(encoding="utf-8"),
+            )
+
     def test_sync_discover_uses_configured_custom_key(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
