@@ -10,7 +10,7 @@ source = { type = "toml", file = "pyproject.toml", key = "project.version" }
 
 [git]
 tag_prefix = "v"
-baseline = "304975aa92b5f257ca34a6e466fbbcb59193629e"
+baseline = "5f156629bde8f8764b66d8113e103a0bf9487452"
 require_clean = true
 unknown_commit = "ignore"
 merge_commits = "ignore"

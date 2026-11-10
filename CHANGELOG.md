@@ -1,5 +1,41 @@
 # Changelog
 
+## [1.6.0]
+
+### Features
+
+- add write confirmation setting (205ba0c5)
+- add configurable write confirmation override (db2a7c42)
+
+### Fixes
+
+- report config-based authorization (de595de8)
+- remove duplicate authorization block (20489a21)
+- report effective write authorization (235357b0)
+- validate authorization setting (32f8084c)
+- use direct user edits as authorization (85b20f46)
+- prevent bytecode cache in vendor directory (0391bfd0)
+
+### Documentation
+
+- clarify config authorization semantics (94716e65)
+- expose authorization configuration (8f2f098d)
+- document configurable write confirmation (4baf30d8)
+- document configurable write confirmation (63cb22f5)
+- document configurable confirmation override (5354ceaf)
+- document configurable confirmation override (a172df14)
+- document configurable confirmation override (4e2214f2)
+- clarify direct config authorization (b739046e)
+- clarify direct config authorization (801d5814)
+- document current svf command behavior (4acad099)
+- document configuration discovery features (b0869bf3)
+
+### Maintenance
+
+- bumped (5f156629)
+- cover configurable write confirmation (a2d60f27)
+
+
 All notable changes to SemVer Forge are documented here.
 
 This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
