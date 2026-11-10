@@ -66,18 +66,18 @@ class ChangelogUpdateTests(unittest.TestCase):
                 encoding="utf-8",
             )
             commits = [
-                {
-            "hash": "abc123456789",
-            "message": "feat: existing feature",
-            "subject": "feat: existing feature",
-            "body": "",
-        },
-                {
-            "hash": "def567812345",
-            "message": "fix: correct broken behavior",
-            "subject": "fix: correct broken behavior",
-            "body": "",
-        },
+                    {
+                        "hash": "abc123456789",
+                        "message": "feat: existing feature",
+                        "subject": "feat: existing feature",
+                        "body": "",
+                    },
+                    {
+                        "hash": "def567812345",
+                        "message": "fix: correct broken behavior",
+                        "subject": "fix: correct broken behavior",
+                        "body": "",
+                    },
             ]
             result = sync_unreleased(path, commits)
             self.assertTrue(result["diverged"])
