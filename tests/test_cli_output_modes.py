@@ -100,9 +100,9 @@ class CLIOutputModeTests(unittest.TestCase):
 
     def test_sync_output_is_unchanged_by_verbose_and_debug(self):
         self.init_git()
-        normal = self.run_cli("sync", "--project", str(self.project))
-        verbose = self.run_cli("sync", "--verbose", "--project", str(self.project))
-        debug = self.run_cli("sync", "--debug", "--project", str(self.project))
+        normal = self.run_cli("sync", "--yes", "--project", str(self.project))
+        verbose = self.run_cli("sync", "--yes", "--verbose", "--project", str(self.project))
+        debug = self.run_cli("sync", "--yes", "--debug", "--project", str(self.project))
         for result in (normal, verbose, debug):
             self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(normal.stdout, verbose.stdout)
@@ -111,9 +111,9 @@ class CLIOutputModeTests(unittest.TestCase):
 
     def test_next_output_is_unchanged_by_verbose_and_debug(self):
         self.init_git()
-        normal = self.run_cli("next", "--project", str(self.project))
-        verbose = self.run_cli("next", "--verbose", "--project", str(self.project))
-        debug = self.run_cli("next", "--debug", "--project", str(self.project))
+        normal = self.run_cli("next", "--yes", "--project", str(self.project))
+        verbose = self.run_cli("next", "--yes", "--verbose", "--project", str(self.project))
+        debug = self.run_cli("next", "--yes", "--debug", "--project", str(self.project))
         for result in (normal, verbose, debug):
             self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(normal.stdout, verbose.stdout)
