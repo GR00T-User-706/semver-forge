@@ -56,7 +56,6 @@ class ChangelogUpdateTests(unittest.TestCase):
 
             self.assertEqual(path.read_text(encoding="utf-8"), original)
 
-    
     def test_sync_unreleased_detects_and_writes_missing_commit(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "CHANGELOG.md"
