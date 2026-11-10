@@ -148,6 +148,9 @@ def parser():
         "--edit", action="store_true", help="open the selected scope in VISUAL or EDITOR"
     )
     config_cmd.add_argument(
+        "--yes", action="store_true", help="authorize configuration writes without prompting"
+    )
+    config_cmd.add_argument(
         "--list", action="store_true", help="list configuration settings grouped by TOML table"
     )
     config_cmd.add_argument(
@@ -190,6 +193,19 @@ def parser():
         help="show configuration diagnostics and tracebacks",
     )
     return p
+
+
+def _authorize_write(args, description):
+    """Require explicit authorization for a mutating operation unless --yes was supplied."""
+    if args.yes:
+        return
+    print(description)
+    try:
+        answer = input("Authorize these writes? [y/N] ").strip().lower()
+    except EOFError:
+        answer = ""
+    if answer not in ("y", "yes"):
+        raise ConfigError("operation cancelled")
 
 
 def _format_output(data, indent=0):
@@ -538,6 +554,10 @@ def main(argv=None):
                 raise ConfigError(
                     f"internal error: generated configuration is invalid TOML: {exc}"
                 ) from exc
+            _authorize_write(
+                args,
+                "SVF will create/update: " + ", ".join(str(target) for target in generated),
+            )
             version_source = result["version"]["source"]
             version_path = root / version_source["file"]
             generated = {path: config_text}
@@ -714,15 +734,18 @@ def main(argv=None):
             if args.edit:
                 if args.action or args.key or args.value or args.list or selected:
                     raise ConfigError("--edit cannot be combined with get, set, unset, or --list")
+                _authorize_write(args, f"SVF will open {scope} configuration for editing.")
                 output(config_edit(root, scope), args.json)
                 return 0
             if args.get_key:
                 output(config_get(root, args.get_key, read_scope), args.json)
                 return 0
             if args.set_pair:
+                _authorize_write(args, f"SVF will set configuration key {args.set_pair[0]}.")
                 output(config_write(root, scope, args.set_pair[0], args.set_pair[1]), args.json)
                 return 0
             if args.unset_key:
+                _authorize_write(args, f"SVF will remove configuration key {args.unset_key}.")
                 output(config_write(root, scope, args.unset_key, None, unset=True), args.json)
                 return 0
             if args.action == "get":
@@ -736,6 +759,7 @@ def main(argv=None):
             if args.action == "set":
                 if not args.key or args.value is None:
                     raise ConfigError("usage: svf config [--global|--system] set KEY TOML_VALUE")
+                _authorize_write(args, f"SVF will set configuration key {args.key}.")
                 output(
                     config_write(root, scope, args.key, args.value),
                     args.json,
@@ -744,6 +768,7 @@ def main(argv=None):
             if args.action == "unset":
                 if not args.key or args.value is not None:
                     raise ConfigError("usage: svf config [--global|--system] unset KEY")
+                _authorize_write(args, f"SVF will remove configuration key {args.key}.")
                 output(config_write(root, scope, args.key, None, unset=True), args.json)
                 return 0
             if args.action or args.key or args.value:
