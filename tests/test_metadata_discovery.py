@@ -161,9 +161,7 @@ class RecursiveMetadataDiscoveryTests(unittest.TestCase):
             )
 
             with patch("builtins.input", return_value="n"):
-                cancelled = main(
-                    ["--project", str(root), "--json", "sync", "--discover"]
-                )
+                cancelled = main(["--project", str(root), "--json", "sync", "--discover"])
 
             self.assertEqual(cancelled, 3)
             self.assertEqual(configured.read_text(encoding="utf-8"), "1.2.2\n")
@@ -175,9 +173,7 @@ class RecursiveMetadataDiscoveryTests(unittest.TestCase):
 
             run_output = io.StringIO()
             with contextlib.redirect_stdout(run_output):
-                run_status = main(
-                    ["--project", str(root), "--json", "sync", "--discover", "--yes"]
-                )
+                run_status = main(["--project", str(root), "--json", "sync", "--discover", "--yes"])
 
             self.assertEqual(run_status, 0)
             self.assertEqual(configured.read_text(encoding="utf-8"), "1.2.3\n")
