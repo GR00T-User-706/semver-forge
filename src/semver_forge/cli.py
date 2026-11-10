@@ -554,10 +554,6 @@ def main(argv=None):
                 raise ConfigError(
                     f"internal error: generated configuration is invalid TOML: {exc}"
                 ) from exc
-            _authorize_write(
-                args,
-                "SVF will create/update: " + ", ".join(str(target) for target in generated),
-            )
             version_source = result["version"]["source"]
             version_path = root / version_source["file"]
             generated = {path: config_text}
@@ -568,6 +564,10 @@ def main(argv=None):
                         f"{version_path}"
                     )
                 generated[version_path] = result["version"]["initial"] + "\n"
+            _authorize_write(
+                args,
+                "SVF will create/update: " + ", ".join(str(target) for target in generated),
+            )
             written = []
             try:
                 for target, contents in generated.items():
