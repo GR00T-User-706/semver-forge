@@ -373,6 +373,12 @@ def _format_config_list():
                     "[]",
                     "Version targets; each item requires type and file, with optional key.",
                 ),
+                (
+                    "discovery_keys",
+                    "array of strings",
+                    "[]",
+                    "Custom assignment keys searched by sync --discover.",
+                ),
             ],
         ),
         (
