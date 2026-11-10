@@ -223,6 +223,16 @@ def _authorize_write(args, description, root=None):
         raise ConfigError("operation cancelled")
 
 
+def _writes_authorized(args, root):
+    return bool(args.yes or not _authorization_required(root))
+    try:
+        answer = input("Authorize these writes? [y/N] ").strip().lower()
+    except EOFError:
+        answer = ""
+    if answer not in ("y", "yes"):
+        raise ConfigError("operation cancelled")
+
+
 def _format_output(data, indent=0):
     """Format nested result data as readable, indentation-based text."""
     prefix = " " * indent
@@ -970,7 +980,7 @@ def main(argv=None):
                 changelog_result = {
                     "path": str(changelog_path),
                     "changed": True,
-                    "authorized": args.yes,
+                    "authorized": _writes_authorized(args, root),
                     "notes": notes,
                 }
 
