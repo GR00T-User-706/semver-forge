@@ -258,6 +258,31 @@ is optional when the adapter supplies a default. Supported types are
 and
 .BR debian-changelog .
 The canonical version source is synchronized as well as these additional targets.
+.TP
+.B discovery_keys
+Array of strings. Default: empty array. These are additional assignment keys searched by
+.BR "svf sync --discover" .
+Each key is matched as a shell-style assignment in readable text files, including assignments with an optional
+.B export
+prefix. A discovered assignment is registered as a
+.B shell
+synchronization target when exactly one valid Semantic Versioning assignment is found for that key in the file. Duplicate or ambiguous assignments are ignored rather than guessed.
+.PP
+For example:
+.nf
+[sync]
+targets = []
+discovery_keys = ["SME_VERSION", "__version__"]
+.fi
+.PP
+The command-line
+.B --key
+option adds custom discovery keys for one invocation. It may be repeated and is combined with
+.B sync.discovery_keys . For example:
+.nf
+svf sync --discover --key SME_VERSION
+svf sync --discover --key SME_VERSION --key __version__
+.fi
 .SS [release] (legacy)
 The following settings remain in the defaults for compatibility with older configuration files. Release execution is currently disabled, and these values do not affect the public
 .B svf
@@ -339,13 +364,21 @@ or
 .BR EDITOR .
 Use
 .B svf config --list
-to display recognized settings grouped by table. Use dotted paths with
+to display recognized settings grouped by table, including
+.BR sync.discovery_keys .
+Use dotted paths with
 .B svf config get
 and
 .BR svf config set ;
 the value supplied to
 .B config set
-must itself be a valid TOML value. For example:
+must itself be a valid TOML value.
+.PP
+Mutating configuration commands request explicit authorization before writing by default. Use
+.B --yes
+to authorize configuration writes without the prompt. The
+.B --edit
+operation opens the selected configuration in the configured editor; the editor is the user-directed editing step. If the selected configuration file does not exist, SVF creates it before opening the editor. For example:
 .nf
 svf config set git.tag_prefix '"v"'
 svf config set git.require_clean true
