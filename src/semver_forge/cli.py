@@ -151,6 +151,9 @@ def parser():
         "--yes", action="store_true", help="authorize configuration writes without prompting"
     )
     config_cmd.add_argument(
+        "--yes", action="store_true", help="authorize configuration writes without prompting"
+    )
+    config_cmd.add_argument(
         "--list", action="store_true", help="list configuration settings grouped by TOML table"
     )
     config_cmd.add_argument(
