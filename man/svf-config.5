@@ -374,11 +374,13 @@ the value supplied to
 .B config set
 must itself be a valid TOML value.
 .PP
-Mutating configuration commands request explicit authorization before writing by default. Use
-.B --yes
-to authorize configuration writes without the prompt. The
-.B --edit
-operation opens the selected configuration in the configured editor; the editor is the user-directed editing step. If the selected configuration file does not exist, SVF creates it before opening the editor. For example:
+Configuration commands are direct user-authorized operations: invoking
+.B config set
+or
+.B config unset
+requests that specific change, while
+.B config --edit
+opens the selected configuration in the configured editor. Editing and saving the file is the user-directed write operation. If the selected configuration file does not exist, SVF creates it before opening the editor. For example:
 .nf
 svf config set git.tag_prefix '"v"'
 svf config set git.require_clean true
