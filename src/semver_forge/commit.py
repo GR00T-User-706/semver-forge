@@ -40,7 +40,8 @@ def infer_type(paths: list[str], diff: str) -> tuple[str, str]:
     if _path_matches(paths, prefixes=(".github",)):
         return "ci", "high"
     if paths and all(
-        path.lower() in {"pyproject.toml", "setup.cfg", "setup.py", "package-lock.json", "cargo.lock"}
+        path.lower()
+        in {"pyproject.toml", "setup.cfg", "setup.py", "package-lock.json", "cargo.lock"}
         or path.lower().startswith(("packaging/", "docker/", ".docker/", "build/"))
         for path in paths
     ):
@@ -103,7 +104,7 @@ def infer_scope(paths: list[str]) -> str | None:
     for path in clean[1:]:
         other = Path(path)
         shared = []
-        for left, right in zip(common.parts, other.parts):
+        for left, right in zip(common.parts, other.parts, strict=False):
             if left != right:
                 break
             shared.append(left)
@@ -129,7 +130,9 @@ def generate_summary(commit_type: str, scope: str | None) -> str:
     }.get(commit_type, f"update {target}")
 
 
-def format_message(commit_type: str, scope: str | None, summary: str, breaking: bool = False) -> str:
+def format_message(
+    commit_type: str, scope: str | None, summary: str, breaking: bool = False
+) -> str:
     scope_text = f"({scope})" if scope else ""
     bang = "!" if breaking else ""
     return f"{commit_type}{scope_text}{bang}: {summary.strip()}"
