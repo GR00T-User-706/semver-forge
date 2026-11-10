@@ -15,7 +15,7 @@ SemVer Forge exposes five project commands.
 | `init [--yes]` | Discover the project's canonical version source and synchronization targets, then create `.semver-forge.toml`. Existing configuration is preserved unless replacement is explicitly approved. |
 | `next [--yes] [--explain]` | Analyze Git commits since the last processed history boundary. Select the highest qualifying SemVer impact, update the canonical version source plus configured targets, and write the corresponding release notes to the configured changelog. Save the processed commit boundary so the same commits are not counted twice. |
 | `sync [--version VERSION] [--yes] [--discover] [--key KEY]` | Synchronize configured metadata. `--discover` persists newly discovered targets in project configuration before syncing. `--key` adds a custom assignment key to the discovery scan and may be repeated. |
-| `config [get KEY | set KEY VALUE | unset KEY] [--global | --system] [--edit]` | View or manage system, user, and project configuration. Project is the default write scope. |
+| `config [get KEY | set KEY VALUE | unset KEY] [--global | --system] [--edit] [--yes]` | View or manage system, user, and project configuration. Project is the default write scope. |
 | `check` | Read-only report of canonical version, synchronization targets, discovered metadata, and configuration scopes. |
 
 ## Version selection
@@ -68,7 +68,7 @@ svf config --global set git.tag_prefix '"v"'
 svf config --system --edit
 ```
 
-Reads do not create files. Writes preserve unrelated TOML content, validate the resulting TOML and effective required settings, create missing parent directories, and atomically replace the selected file.
+Reads do not create files. Configuration writes require interactive authorization by default; use `--yes` to authorize without prompting. Writes preserve unrelated TOML content, validate the resulting TOML and effective required settings, create missing parent directories, and atomically replace the selected file.
 
 ### check
 
