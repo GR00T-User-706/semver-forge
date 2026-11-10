@@ -919,14 +919,17 @@ def main(argv=None):
             if changed:
                 print(f"SVF will update the project version from {current} to {next_version}.")
                 print(f"SVF will update configured version targets and {changelog_path}.")
-                if not args.yes:
-                    try:
-                        answer = input("Authorize these writes? [y/N] ").strip().lower()
-                    except EOFError:
-                        answer = ""
-                    if answer not in ("y", "yes"):
-                        raise ConfigError("operation cancelled")
+            else:
+                print(f"SVF will record the current Git history boundary in {config_path}; the version remains {current}.")
+            if not args.yes:
+                try:
+                    answer = input("Authorize these writes? [y/N] ").strip().lower()
+                except EOFError:
+                    answer = ""
+                if answer not in ("y", "yes"):
+                    raise ConfigError("operation cancelled")
 
+            if changed:
                 sync_result = sync(root, cfg, str(next_version), dry_run=False)
                 update_changelog(
                     changelog_path,
@@ -941,35 +944,35 @@ def main(argv=None):
                     "notes": notes,
                 }
 
-                # Remember the processed Git boundary so the same commits are not
-                # counted again on the next invocation.
-                head = git.head(root)
-                config_text = config_path.read_text(encoding="utf-8")
-                baseline_line = f'baseline = "{head}"'
-                if re.search(r"(?m)^baseline\s*=", config_text):
-                    config_text = re.sub(
-                        r"(?m)^baseline\s*=.*$",
-                        lambda _match: baseline_line,
-                        config_text,
-                        count=1,
-                    )
-                else:
-                    config_text = re.sub(
-                        r"(?m)^(tag_prefix\s*=.*)$",
-                        lambda match: match.group(1) + chr(10) + baseline_line,
-                        config_text,
-                        count=1,
-                    )
-                fd, temp_path = tempfile.mkstemp(prefix=".semver-forge-", dir=root)
-                try:
-                    with os.fdopen(fd, "w", encoding="utf-8", newline="") as stream:
-                        stream.write(config_text)
-                        stream.flush()
-                        os.fsync(stream.fileno())
-                    os.replace(temp_path, config_path)
-                finally:
-                    if os.path.exists(temp_path):
-                        os.unlink(temp_path)
+            # Remember the processed Git boundary so the same commits are not
+            # counted again on the next invocation.
+            head = git.head(root)
+            config_text = config_path.read_text(encoding="utf-8")
+            baseline_line = f'baseline = "{head}"'
+            if re.search(r"(?m)^baseline\s*=", config_text):
+                config_text = re.sub(
+                    r"(?m)^baseline\s*=.*$",
+                    lambda _match: baseline_line,
+                    config_text,
+                    count=1,
+                )
+            else:
+                config_text = re.sub(
+                    r"(?m)^(tag_prefix\s*=.*)$",
+                    lambda match: match.group(1) + chr(10) + baseline_line,
+                    config_text,
+                    count=1,
+                )
+            fd, temp_path = tempfile.mkstemp(prefix=".semver-forge-", dir=root)
+            try:
+                with os.fdopen(fd, "w", encoding="utf-8", newline="") as stream:
+                    stream.write(config_text)
+                    stream.flush()
+                    os.fsync(stream.fileno())
+                os.replace(temp_path, config_path)
+            finally:
+                if os.path.exists(temp_path):
+                    os.unlink(temp_path)
 
             data = {
                 "current": str(current),
