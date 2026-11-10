@@ -81,7 +81,7 @@ uses the supplied version for this synchronization instead of reading the canoni
 .B check [--verbose] [--debug]
 Print the project name, canonical version, and synchronized file paths. The command is read-only. Verbose mode includes canonical-source validation, target values and statuses, discovered metadata, and configuration diagnostics.
 .TP
-.B config [--yes] [OPTIONS] [get KEY | set KEY TOML_VALUE | unset KEY]
+.B config [OPTIONS] [get KEY | set KEY TOML_VALUE | unset KEY]
 Inspect and manage Semantic Version Forge configuration.
 .IP
 With no action or selection, print the selected configuration file as stored, preserving its TOML syntax and comments. The default scope is the project configuration.
@@ -129,13 +129,10 @@ prints the configuration scopes, merged effective settings, precedence, and the 
 .B --debug
 adds diagnostic tracebacks when operations fail.
 .IP
-.B --yes
-authorizes configuration writes without prompting. It is relevant to
-.B set ,
-.BR unset ,
-and other configuration writes. The
+.B config
+writes the requested configuration change directly. Supplying the configuration command itself is the authorization to make that change. The
 .B --edit
-operation opens the selected file in the configured editor and does not use a separate pre-edit authorization prompt.
+operation opens the selected file in the configured editor; editing and saving the file is the user-directed write operation.
 .SH CONFIGURATION
 Project configuration is stored in
 .I .semver-forge.toml
