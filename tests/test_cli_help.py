@@ -32,7 +32,7 @@ class CLIHelpTests(unittest.TestCase):
     def test_root_help_has_examples_and_command_guidance(self):
         result = self.run_cli("--help")
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("{init,next,sync,config,check}", result.stdout)
+        self.assertIn("{init,next,changelog,commit,sync,config,check}", result.stdout)
         self.assertIn("synchronize metadata", result.stdout)
 
     def test_every_subcommand_has_nonempty_description(self):
