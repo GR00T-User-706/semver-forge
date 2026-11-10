@@ -66,14 +66,14 @@ def parser():
         help="inspect Git history, choose the next version, and update configured version files",
         description=(
             "Classify commits since the saved Git boundary and apply the highest configured "
-            "Semantic Versioning impact. Use --dry-run to preview and --explain for the decision."
+            "Semantic Versioning impact. By default, show the proposed changes and ask for authorization before writing. Use --yes to authorize without prompting."
         ),
-        epilog="Examples: svf next --dry-run; svf next --dry-run --explain",
+        epilog="Examples: svf next; svf next --yes --explain",
     )
     next_cmd.add_argument(
-        "--dry-run",
+        "--yes",
         action="store_true",
-        help="show the proposed change without writing",
+        help="authorize all proposed writes without prompting",
     )
     next_cmd.add_argument(
         "--explain",
@@ -85,7 +85,6 @@ def parser():
         "changelog",
         help="compare Git history with CHANGELOG.md and append missing entries",
     )
-    changelog_cmd.add_argument("--dry-run", action="store_true", help="show changes without writing")
     changelog_cmd.add_argument("--yes", action="store_true", help="apply changes without prompting")
 
     commit_cmd = sub.add_parser(
@@ -98,7 +97,6 @@ def parser():
     commit_cmd.add_argument("--breaking", action="store_true", help="mark the generated commit as breaking")
     commit_cmd.add_argument("--all", action="store_true", help="stage all current changes before committing")
     commit_cmd.add_argument("--yes", action="store_true", help="accept inferred values and stage all changes")
-    commit_cmd.add_argument("--dry-run", action="store_true", help="show the proposal without staging or committing")
 
     sync_cmd = sub.add_parser(
         "sync",
@@ -107,12 +105,12 @@ def parser():
             "Copy the canonical version into configured metadata fields. "
             "--discover registers additional supported version fields before synchronization."
         ),
-        epilog="Examples: svf sync --dry-run; svf sync --discover",
+        epilog="Examples: svf sync; svf sync --discover; svf sync --yes",
     )
     sync_cmd.add_argument(
-        "--dry-run",
+        "--yes",
         action="store_true",
-        help="show changes without writing",
+        help="authorize all proposed writes without prompting",
     )
     sync_cmd.add_argument(
         "--discover",
@@ -861,21 +859,6 @@ def main(argv=None):
             if not message:
                 message = format_message(commit_type, scope, inferred_summary, breaking=args.breaking)
 
-            if args.dry_run:
-                output(
-                    {
-                        "type": commit_type,
-                        "scope": scope,
-                        "message": message,
-                        "confidence": confidence,
-                        "files": paths,
-                        "committed": False,
-                        "dry_run": True,
-                    },
-                    args.json,
-                )
-                return 0
-
             if not args.yes and not args.all:
                 answer = input("Stage all current changes for this commit? [Y/n] ").strip().lower()
                 if answer not in ("", "y", "yes"):
@@ -894,7 +877,6 @@ def main(argv=None):
                     "confidence": confidence,
                     "files": paths,
                     "committed": True,
-                    "dry_run": False,
                 },
                 args.json,
             )
@@ -907,7 +889,7 @@ def main(argv=None):
             sync_result = []
             changelog_result = None
             if changed:
-                sync_result = sync(root, cfg, str(next_version), dry_run=args.dry_run)
+                sync_result = sync(root, cfg, str(next_version), dry_run=False)
                 notes_file = cfg.get("release", {}).get("notes_file", "CHANGELOG.md")
                 changelog_path = resolve_changelog_path(root, notes_file)
                 notes = release_notes(proposed["commits"], proposed["rules"])
@@ -915,16 +897,25 @@ def main(argv=None):
                     changelog_path,
                     str(next_version),
                     notes,
-                    dry_run=args.dry_run,
+                    dry_run=False,
                 )
                 changelog_result = {
                     "path": str(changelog_path),
                     "changed": not args.dry_run,
                     "would_change": args.dry_run,
-                    "dry_run": args.dry_run,
+                    "authorized": args.yes,
                     "notes": notes,
                 }
-            if not args.dry_run:
+            if changed and not args.yes:
+                print(f"SVF will update the project version from {current} to {next_version}.")
+                print(f"SVF will update configured version targets and the configured changelog.")
+                try:
+                    answer = input("Authorize these writes? [y/N] ").strip().lower()
+                except EOFError:
+                    answer = ""
+                if answer not in ("y", "yes"):
+                    raise ConfigError("operation cancelled")
+            if changed:
                 # Remember the processed Git boundary so the same commits are not
                 # counted again on the next invocation.
                 head = git.head(root)
@@ -960,8 +951,8 @@ def main(argv=None):
                 "impact": proposed["impact"],
                 "commit_count": len(proposed["commits"]),
                 "would_change": changed,
-                "changed": changed and not args.dry_run,
-                "dry_run": args.dry_run,
+                "changed": changed,
+                "authorized": args.yes,
                 "synchronization": sync_result,
                 "changelog": changelog_result,
             }
@@ -971,7 +962,7 @@ def main(argv=None):
                     if proposed["impact"]
                     else "no release-relevant commits; version remains unchanged"
                 )
-            record("INFO", "next", "dry-run" if args.dry_run else "completed")
+            record("INFO", "next", "completed")
             output(data, args.json)
         elif args.cmd == "sync":
             version = args.version or str(current)
@@ -1013,8 +1004,20 @@ def main(argv=None):
                         "proposed_targets": merged,
                         "changed": False,
                     }
-            result = sync(root, sync_cfg, version, args.dry_run)
-            record("INFO", "sync", "dry-run" if args.dry_run else "completed")
+            result = sync(root, sync_cfg, version, False)
+            if not args.yes:
+                print(f"SVF will synchronize metadata to version {version}.")
+                if discovered:
+                    print("Discovered targets:")
+                    for target in discovered:
+                        print(f"  {target}")
+                try:
+                    answer = input("Authorize these writes? [y/N] ").strip().lower()
+                except EOFError:
+                    answer = ""
+                if answer not in ("y", "yes"):
+                    raise ConfigError("operation cancelled")
+            record("INFO", "sync", "completed")
             if args.discover:
                 output(
                     {
