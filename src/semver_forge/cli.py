@@ -11,6 +11,7 @@ from pathlib import Path
 from . import __version__, git
 from .check import inspect_project
 from .changelog import release_notes, update_changelog
+from .commit import COMMIT_TYPES, format_message, generate_summary, infer_scope, infer_type
 from .config import find_config
 from .config_scopes import (
     config_edit,
