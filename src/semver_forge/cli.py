@@ -1014,7 +1014,7 @@ def main(argv=None):
                 "impact": proposed["impact"],
                 "commit_count": len(proposed["commits"]),
                 "changed": changed,
-                "authorized": args.yes,
+                "authorized": _writes_authorized(args, root),
                 "synchronization": sync_result,
                 "changelog": changelog_result,
             }
@@ -1082,7 +1082,7 @@ def main(argv=None):
                         "discovered_targets": discovered,
                         "configuration": config_changes,
                         "synchronization": result,
-                        "authorized": args.yes,
+                        "authorized": _writes_authorized(args, root),
                     },
                     args.json,
                 )
