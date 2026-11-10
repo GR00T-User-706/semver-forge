@@ -225,12 +225,6 @@ def _authorize_write(args, description, root=None):
 
 def _writes_authorized(args, root):
     return bool(args.yes or not _authorization_required(root))
-    try:
-        answer = input("Authorize these writes? [y/N] ").strip().lower()
-    except EOFError:
-        answer = ""
-    if answer not in ("y", "yes"):
-        raise ConfigError("operation cancelled")
 
 
 def _format_output(data, indent=0):
