@@ -10,6 +10,7 @@ from pathlib import Path
 
 from . import __version__, git
 from .check import inspect_project
+from .changelog import release_notes, update_changelog
 from .config import find_config
 from .config_scopes import (
     config_edit,
@@ -23,7 +24,7 @@ from .discovery import discover
 from .errors import ConfigError, ForgeError
 from .metadata_discovery import discover_sync_targets
 from .operation_log import record
-from .release import plan
+from .release import plan, resolve_changelog_path
 from .semver import Version
 from .synchronization import sync
 from .version_sources import read_version
@@ -904,8 +905,26 @@ def main(argv=None):
             next_version = proposed["next"]
             changed = next_version.compare(current) > 0
             sync_result = []
+            changelog_result = None
             if changed:
                 sync_result = sync(root, cfg, str(next_version), dry_run=args.dry_run)
+                notes_file = cfg.get("release", {}).get("notes_file", "CHANGELOG.md")
+                changelog_path = resolve_changelog_path(root, notes_file)
+                notes = release_notes(proposed["commits"], proposed["rules"])
+                changelog_text = update_changelog(
+                    changelog_path,
+                    str(next_version),
+                    notes,
+                    dry_run=args.dry_run,
+                )
+                changelog_result = {
+                    "path": str(changelog_path),
+                    "changed": changelog_text != changelog_path.read_text(encoding="utf-8")
+                    if changelog_path.is_file() and args.dry_run
+                    else not args.dry_run,
+                    "dry_run": args.dry_run,
+                    "notes": notes,
+                }
             if not args.dry_run:
                 # Remember the processed Git boundary so the same commits are not
                 # counted again on the next invocation.
@@ -945,6 +964,7 @@ def main(argv=None):
                 "changed": changed and not args.dry_run,
                 "dry_run": args.dry_run,
                 "synchronization": sync_result,
+                "changelog": changelog_result,
             }
             if args.explain:
                 data["reason"] = (
