@@ -270,8 +270,8 @@ class RecursiveMetadataDiscoveryTests(unittest.TestCase):
             (root / ".semver-forge.toml").write_text(
                 '[version]\ninitial = "1.2.3"\n'
                 'source = { type = "text", file = "VERSION" }\n\n'
-                '[sync]\n'
-                'targets = []\n'
+                "[sync]\n"
+                "targets = []\n"
                 'discovery_keys = ["SME_VERSION"]\n',
                 encoding="utf-8",
             )
