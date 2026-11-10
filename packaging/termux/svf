@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/sh
 # Primary package-managed launcher for Semantic Version Forge.
 : "${PREFIX:=/data/data/com.termux/files/usr}"
+export PYTHONDONTWRITEBYTECODE=1
 export PYTHONPATH="$PREFIX/lib/semver-forge/vendor:$PREFIX/lib/semver-forge${PYTHONPATH:+:$PYTHONPATH}"
 exec python -m semver_forge "$@"

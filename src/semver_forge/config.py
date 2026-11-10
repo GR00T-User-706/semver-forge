@@ -26,6 +26,7 @@ DEFAULTS = {
         "unknown": "ignore",
     },
     "sync": {"targets": [], "discovery_keys": []},
+    "authorization": {"require_confirmation": True},
     "release": {
         "commit_version": True,
         "annotated_tag": True,

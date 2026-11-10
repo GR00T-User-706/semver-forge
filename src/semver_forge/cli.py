@@ -158,9 +158,6 @@ def parser():
         "--edit", action="store_true", help="open the selected scope in VISUAL or EDITOR"
     )
     config_cmd.add_argument(
-        "--yes", action="store_true", help="authorize configuration writes without prompting"
-    )
-    config_cmd.add_argument(
         "--list", action="store_true", help="list configuration settings grouped by TOML table"
     )
     config_cmd.add_argument(
@@ -205,9 +202,17 @@ def parser():
     return p
 
 
-def _authorize_write(args, description):
-    """Require explicit authorization for a mutating operation unless --yes was supplied."""
+def _authorization_required(root):
+    cfg, _paths, _unknown = effective_config(root)
+    return cfg.get("authorization", {}).get("require_confirmation", True)
+
+
+def _authorize_write(args, description, root=None):
+    """Require explicit authorization unless --yes or config disables confirmation."""
     if args.yes:
+        return
+    root = root or Path(args.project or ".").expanduser().resolve()
+    if not _authorization_required(root):
         return
     print(description)
     try:
@@ -577,6 +582,7 @@ def main(argv=None):
             _authorize_write(
                 args,
                 "SVF will create/update: " + ", ".join(str(target) for target in generated),
+                root,
             )
             written = []
             try:
@@ -744,18 +750,15 @@ def main(argv=None):
             if args.edit:
                 if args.action or args.key or args.value or args.list or selected:
                     raise ConfigError("--edit cannot be combined with get, set, unset, or --list")
-                _authorize_write(args, f"SVF will open {scope} configuration for editing.")
                 output(config_edit(root, scope), args.json)
                 return 0
             if args.get_key:
                 output(config_get(root, args.get_key, read_scope), args.json)
                 return 0
             if args.set_pair:
-                _authorize_write(args, f"SVF will set configuration key {args.set_pair[0]}.")
                 output(config_write(root, scope, args.set_pair[0], args.set_pair[1]), args.json)
                 return 0
             if args.unset_key:
-                _authorize_write(args, f"SVF will remove configuration key {args.unset_key}.")
                 output(config_write(root, scope, args.unset_key, None, unset=True), args.json)
                 return 0
             if args.action == "get":
@@ -769,7 +772,6 @@ def main(argv=None):
             if args.action == "set":
                 if not args.key or args.value is None:
                     raise ConfigError("usage: svf config [--global|--system] set KEY TOML_VALUE")
-                _authorize_write(args, f"SVF will set configuration key {args.key}.")
                 output(
                     config_write(root, scope, args.key, args.value),
                     args.json,
@@ -778,7 +780,6 @@ def main(argv=None):
             if args.action == "unset":
                 if not args.key or args.value is not None:
                     raise ConfigError("usage: svf config [--global|--system] unset KEY")
-                _authorize_write(args, f"SVF will remove configuration key {args.key}.")
                 output(config_write(root, scope, args.key, None, unset=True), args.json)
                 return 0
             if args.action or args.key or args.value:
@@ -823,7 +824,7 @@ def main(argv=None):
                 output(preview, args.json)
                 return 0
 
-            if not args.yes:
+            if _authorization_required(root) and not args.yes:
                 try:
                     answer = (
                         input(
@@ -904,7 +905,7 @@ def main(argv=None):
             git.stage_all(root)
             if not git.staged_diff(root).strip():
                 raise ConfigError("no changes are staged for commit")
-            if not args.yes:
+            if _authorization_required(root) and not args.yes:
                 answer = input(f"Authorize commit {message!r}? [y/N] ").strip().lower()
                 if answer not in ("y", "yes"):
                     raise ConfigError("commit cancelled")
@@ -941,13 +942,11 @@ def main(argv=None):
                     f"SVF will record the current Git history boundary in {config_path}; "
                     f"the version remains {current}."
                 )
-            if not args.yes:
-                try:
-                    answer = input("Authorize these writes? [y/N] ").strip().lower()
-                except EOFError:
-                    answer = ""
-                if answer not in ("y", "yes"):
-                    raise ConfigError("operation cancelled")
+            _authorize_write(
+                args,
+                "SVF will update the version, metadata, changelog, and Git boundary.",
+                root,
+            )
 
             if changed:
                 sync_result = sync(root, cfg, str(next_version), dry_run=False)
@@ -1051,13 +1050,11 @@ def main(argv=None):
                 )
                 for target in discovered:
                     print(f"  {target}")
-            if not args.yes:
-                try:
-                    answer = input("Authorize these writes? [y/N] ").strip().lower()
-                except EOFError:
-                    answer = ""
-                if answer not in ("y", "yes"):
-                    raise ConfigError("operation cancelled")
+            _authorize_write(
+                args,
+                "SVF will synchronize metadata and update discovered synchronization targets in project configuration.",
+                root,
+            )
 
             if config_changes and config_changes["changed"]:
                 config_write(root, "project", "sync.targets", config_changes["proposed_targets"])
