@@ -202,9 +202,17 @@ def parser():
     return p
 
 
-def _authorize_write(args, description):
-    """Require explicit authorization for a mutating operation unless --yes was supplied."""
+def _authorization_required(root):
+    cfg, _paths, _unknown = effective_config(root)
+    return cfg.get("authorization", {}).get("require_confirmation", True)
+
+
+def _authorize_write(args, description, root=None):
+    """Require explicit authorization unless --yes or config disables confirmation."""
     if args.yes:
+        return
+    root = root or Path(args.project or ".").expanduser().resolve()
+    if not _authorization_required(root):
         return
     print(description)
     try:
@@ -574,6 +582,7 @@ def main(argv=None):
             _authorize_write(
                 args,
                 "SVF will create/update: " + ", ".join(str(target) for target in generated),
+                root,
             )
             written = []
             try:
@@ -815,7 +824,7 @@ def main(argv=None):
                 output(preview, args.json)
                 return 0
 
-            if not args.yes:
+            if _authorization_required(root) and not args.yes:
                 try:
                     answer = (
                         input(
@@ -896,7 +905,7 @@ def main(argv=None):
             git.stage_all(root)
             if not git.staged_diff(root).strip():
                 raise ConfigError("no changes are staged for commit")
-            if not args.yes:
+            if _authorization_required(root) and not args.yes:
                 answer = input(f"Authorize commit {message!r}? [y/N] ").strip().lower()
                 if answer not in ("y", "yes"):
                     raise ConfigError("commit cancelled")
@@ -933,13 +942,11 @@ def main(argv=None):
                     f"SVF will record the current Git history boundary in {config_path}; "
                     f"the version remains {current}."
                 )
-            if not args.yes:
-                try:
-                    answer = input("Authorize these writes? [y/N] ").strip().lower()
-                except EOFError:
-                    answer = ""
-                if answer not in ("y", "yes"):
-                    raise ConfigError("operation cancelled")
+            _authorize_write(
+                args,
+                "SVF will update the version, metadata, changelog, and Git boundary.",
+                root,
+            )
 
             if changed:
                 sync_result = sync(root, cfg, str(next_version), dry_run=False)
@@ -1043,13 +1050,11 @@ def main(argv=None):
                 )
                 for target in discovered:
                     print(f"  {target}")
-            if not args.yes:
-                try:
-                    answer = input("Authorize these writes? [y/N] ").strip().lower()
-                except EOFError:
-                    answer = ""
-                if answer not in ("y", "yes"):
-                    raise ConfigError("operation cancelled")
+            _authorize_write(
+                args,
+                "SVF will synchronize metadata and update discovered synchronization targets in project configuration.",
+                root,
+            )
 
             if config_changes and config_changes["changed"]:
                 config_write(root, "project", "sync.targets", config_changes["proposed_targets"])
