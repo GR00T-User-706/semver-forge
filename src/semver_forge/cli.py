@@ -919,9 +919,8 @@ def main(argv=None):
                 )
                 changelog_result = {
                     "path": str(changelog_path),
-                    "changed": changelog_text != changelog_path.read_text(encoding="utf-8")
-                    if changelog_path.is_file() and args.dry_run
-                    else not args.dry_run,
+                    "changed": not args.dry_run,
+                    "would_change": args.dry_run,
                     "dry_run": args.dry_run,
                     "notes": notes,
                 }
