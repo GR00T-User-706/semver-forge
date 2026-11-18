@@ -1,6 +1,6 @@
 # CLI Reference
 
-SemVer Forge exposes five project commands.
+SemVer Forge exposes seven project commands.
 
 ## Global options
 
