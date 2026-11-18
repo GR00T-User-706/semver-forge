@@ -30,7 +30,7 @@ def _text_pattern_regex(pattern):
         raise ConfigError(
             "text-pattern targets require a string pattern containing exactly one {version} placeholder"
         )
-    return re.compile(re.escape(pattern).replace(r"\{version\}", r"(?P<version>[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?)"))
+    return re.compile(re.escape(pattern).replace(r"\{version\}", r"(?P<version>[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?)"))
 
 
 def _text_pattern_matches(path, text, pattern):
