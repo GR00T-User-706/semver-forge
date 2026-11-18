@@ -43,6 +43,11 @@ and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+- Added explicit `text-pattern` synchronization targets for embedded project-version references in arbitrary text files.
+- Added validation and documentation for literal `{version}` patterns, including multiple references in one file and mixed-version rejection.
+
+
 ## [1.2.1] - 2026-11-04
 
 ### Fixed
