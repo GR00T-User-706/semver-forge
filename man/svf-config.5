@@ -137,6 +137,7 @@ Default:
 .B type
 String. One of
 .BR text ,
+.BR text-pattern ,
 .BR json ,
 .BR toml ,
 .BR yaml ,
@@ -258,6 +259,22 @@ is optional when the adapter supplies a default. Supported types are
 and
 .BR debian-changelog .
 The canonical version source is synchronized as well as these additional targets.
+.PP
+A
+.B text-pattern
+ target uses a literal text template with exactly one
+.B {version}
+placeholder. SVF replaces only the placeholder. Every match in the file must contain the same valid Semantic Versioning value; missing, invalid, or mixed matches are rejected. This target type is intended for embedded references such as man-page headers, README release lines, documented archive names, and shell or source-code assignments that are not represented by a structured metadata adapter.
+.PP
+For example:
+.nf
+[sync]
+targets = [
+  { type = "text-pattern", file = "man/grab.1", pattern = "grab {version}" },
+  { type = "text-pattern", file = "README.md", pattern = "Current release: {version}" },
+  { type = "text-pattern", file = "docs/example.md", pattern = "grab-{version}.tar.gz" },
+]
+.fi
 .TP
 .B discovery_keys
 Array of strings. Default: empty array. These are additional assignment keys searched by
