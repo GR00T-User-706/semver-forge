@@ -83,6 +83,9 @@ def effective_config(root: Path) -> tuple[dict, dict, list[str]]:
         or not isinstance(source.get("file"), str)
         or not source.get("file")
         or ("key" in source and not isinstance(source["key"], str))
+        or (source.get("type") == "text-pattern" and (
+            not isinstance(source.get("pattern"), str) or source["pattern"].count("{version}") != 1
+        ))
     ):
         raise ConfigError("effective config [version].source must define a supported type and file")
     targets = merged.get("sync", {}).get("targets", [])
