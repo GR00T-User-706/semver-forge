@@ -29,6 +29,9 @@ revert = "patch"
 
 [sync]
 targets = []
+# Embedded text references use a literal pattern with one {version} placeholder.
+# Example: { type = "text-pattern", file = "README.md", pattern = "Current release: {version}" }
+
 # Literal variable/assignment keys searched in all readable text files by svf sync --discover.
 # discovery_keys = ["SME_VERSION"]
 
