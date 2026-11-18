@@ -142,6 +142,7 @@ The supported source types are:
 | Type | Behavior | Default key |
 |---|---|---|
 | `text` | The whole file contains the version. | Not used |
+| `text-pattern` | Replaces the version captured by an explicit `{version}` placeholder inside text. All matches must contain the same valid SemVer. | `pattern` is required |
 | `json` | Read or update a JSON value. | `version` |
 | `toml` | Read or update a TOML value. | `project.version` |
 | `yaml` | Read or update a YAML value. | `version` |
@@ -151,7 +152,29 @@ The supported source types are:
 
 For JSON, TOML, and YAML, `key` is a dotted path through nested mappings.
 For shell, it identifies the variable. The text and Debian adapters do not
-use a dotted key.
+use a dotted key. A text-pattern target uses a literal text template with exactly
+one {version} placeholder. The placeholder is the only part SVF replaces. Every
+match in the file must contain the same valid Semantic Versioning value; mixed or
+missing matches are rejected instead of guessed.
+
+For example, these references can all be synchronized explicitly:
+
+```toml
+[sync]
+targets = [
+  { type = "text-pattern", file = "man/grab.1", pattern = "grab {version}" },
+  { type = "text-pattern", file = "README.md", pattern = "Current release: {version}" },
+  { type = "text-pattern", file = "docs/example.md", pattern = "grab-{version}.tar.gz" },
+  { type = "text-pattern", file = "some-script.sh", pattern = "VERSION=\"{version}\"" },
+]
+```
+
+The pattern is literal text, not a regular expression. This keeps synchronization
+predictable while allowing the same mechanism to cover man pages, documentation,
+filenames written into documentation, shell/Python-style assignments, and other
+project-owned text references. text-pattern may also be used as a canonical
+[version].source when a project intentionally stores its authoritative version
+inside embedded text.
 
 Example:
 
