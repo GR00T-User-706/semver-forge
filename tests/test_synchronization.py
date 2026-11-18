@@ -63,13 +63,24 @@ class SyncTests(unittest.TestCase):
             root = Path(directory)
             (root / "VERSION").write_text("1.2.3\\n", encoding="utf-8")
             path = root / "README.md"
-            path.write_text("Current release: 1.2.3\\nDownload: sample-1.2.3.tar.gz\\n", encoding="utf-8")
+            path.write_text(
+                "Current release: 1.2.3\\nDownload: sample-1.2.3.tar.gz\\n",
+                encoding="utf-8",
+            )
             cfg = {
                 "version": {"source": {"type": "text", "file": "VERSION"}},
                 "sync": {
                     "targets": [
-                        {"type": "text-pattern", "file": "README.md", "pattern": "Current release: {version}"},
-                        {"type": "text-pattern", "file": "README.md", "pattern": "sample-{version}.tar.gz"},
+                        {
+                            "type": "text-pattern",
+                            "file": "README.md",
+                            "pattern": "Current release: {version}",
+                        },
+                        {
+                            "type": "text-pattern",
+                            "file": "README.md",
+                            "pattern": "sample-{version}.tar.gz",
+                        },
                     ]
                 },
             }
@@ -87,12 +98,20 @@ class SyncTests(unittest.TestCase):
             root = Path(directory)
             (root / "VERSION").write_text("1.2.3\\n", encoding="utf-8")
             path = root / "man.1"
-            path.write_text('.TH SAMPLE 1 "2026-11-18" "sample 1.2.3" "User Commands"\\n.SH NAME\\nsample 1.2.3\\n', encoding="utf-8")
+            path.write_text(
+                '.TH SAMPLE 1 "2026-11-18" "sample 1.2.3" "User Commands"\\n'
+                ".SH NAME\\nsample 1.2.3\\n",
+                encoding="utf-8",
+            )
             cfg = {
                 "version": {"source": {"type": "text", "file": "VERSION"}},
                 "sync": {
                     "targets": [
-                        {"type": "text-pattern", "file": "man.1", "pattern": "sample {version}"},
+                        {
+                            "type": "text-pattern",
+                            "file": "man.1",
+                            "pattern": "sample {version}",
+                        },
                     ]
                 },
             }
@@ -101,7 +120,8 @@ class SyncTests(unittest.TestCase):
 
             self.assertEqual(
                 path.read_text(encoding="utf-8"),
-                '.TH SAMPLE 1 "2026-11-18" "sample 1.2.4" "User Commands"\\n.SH NAME\\nsample 1.2.4\\n',
+                '.TH SAMPLE 1 "2026-11-18" "sample 1.2.4" "User Commands"\\n'
+                ".SH NAME\\nsample 1.2.4\\n",
             )
 
     def test_text_pattern_rejects_mixed_versions(self):
@@ -109,12 +129,19 @@ class SyncTests(unittest.TestCase):
             root = Path(directory)
             (root / "VERSION").write_text("1.2.3\\n", encoding="utf-8")
             path = root / "README.md"
-            path.write_text("Current release: 1.2.3\\nCurrent release: 1.2.2\\n", encoding="utf-8")
+            path.write_text(
+                "Current release: 1.2.3\\nCurrent release: 1.2.2\\n",
+                encoding="utf-8",
+            )
             cfg = {
                 "version": {"source": {"type": "text", "file": "VERSION"}},
                 "sync": {
                     "targets": [
-                        {"type": "text-pattern", "file": "README.md", "pattern": "Current release: {version}"},
+                        {
+                            "type": "text-pattern",
+                            "file": "README.md",
+                            "pattern": "Current release: {version}",
+                        },
                     ]
                 },
             }
