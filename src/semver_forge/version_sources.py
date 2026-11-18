@@ -14,6 +14,7 @@ except ModuleNotFoundError:  # Python 3.10
     import tomli as tomllib
 
 from .errors import ConfigError
+from .semver import SemVerError, Version
 
 
 def _path(root, file):
@@ -83,6 +84,9 @@ def read_version(root, source):
     key = source.get("key")
     if kind == "text":
         return text.strip()
+    if kind == "text-pattern":
+        _regex, _matches, version = _text_pattern_matches(path, text, source.get("pattern"))
+        return version
     if kind in {"json", "toml"}:
         data = json.loads(text) if kind == "json" else tomllib.loads(text)
         dotted_key = key or ("version" if kind == "json" else "project.version")
@@ -131,6 +135,12 @@ def render_version(root, source, version):
     key = source.get("key")
     if kind == "text":
         return version + "\n"
+    if kind == "text-pattern":
+        regex, _matches, _old = _text_pattern_matches(path, text, source.get("pattern"))
+        return regex.sub(
+            lambda match: match.group(0).replace(match.group("version"), version, 1),
+            text,
+        )
     if kind == "json":
         data = json.loads(text)
         parts = (key or "version").split(".")
