@@ -22,13 +22,15 @@ def sync(root, cfg, version, dry_run=False):
         identity = (source["type"], file_name, source.get("key"), source.get("pattern"))
         previous = seen_sources.get(path)
         if previous is not None:
-            if previous != identity:
+            if previous == identity:
+                continue
+            if previous[0] != "text-pattern" or identity[0] != "text-pattern":
                 raise ConfigError(
                     f"conflicting synchronization definitions for {file_name}: "
                     f"{previous} and {identity}"
                 )
-            continue
-        seen_sources[path] = identity
+        else:
+            seen_sources[path] = identity
         sources.append(source)
 
     changes = []
