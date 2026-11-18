@@ -28,9 +28,11 @@ def _path(root, file):
 def _text_pattern_regex(pattern):
     if not isinstance(pattern, str) or pattern.count("{version}") != 1:
         raise ConfigError(
-            "text-pattern targets require a string pattern containing exactly one {version} placeholder"
+            "text-pattern targets require a string pattern containing exactly one "
+            "{version} placeholder"
         )
-    return re.compile(re.escape(pattern).replace(r"\{version\}", r"(?P<version>[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?)"))
+    version_pattern = r"(?P<version>[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?)"
+    return re.compile(re.escape(pattern).replace(r"\{version\}", version_pattern))
 
 
 def _text_pattern_matches(path, text, pattern):
@@ -50,7 +52,8 @@ def _text_pattern_matches(path, text, pattern):
         versions.append(candidate)
     if len(set(versions)) != 1:
         raise ConfigError(
-            f"{path}: text-pattern matched multiple different version values: {sorted(set(versions))}"
+            f"{path}: text-pattern matched multiple different version values: "
+            f"{sorted(set(versions))}"
         )
     return regex, matches, versions[0]
 
