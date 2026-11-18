@@ -19,7 +19,7 @@ def sync(root, cfg, version, dry_run=False):
     for source in [cfg["version"]["source"], *cfg.get("sync", {}).get("targets", [])]:
         path = _path(root, source["file"])
         file_name = str(path)
-        identity = (source["type"], file_name, source.get("key"))
+        identity = (source["type"], file_name, source.get("key"), source.get("pattern"))
         previous = seen_sources.get(path)
         if previous is not None:
             if previous != identity:
