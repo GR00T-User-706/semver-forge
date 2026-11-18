@@ -31,7 +31,10 @@ def _text_pattern_regex(pattern):
             "text-pattern targets require a string pattern containing exactly one "
             "{version} placeholder"
         )
-    version_pattern = r"(?P<version>[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?)"
+    version_pattern = (
+        r"(?P<version>[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?"
+        r"(?:\+[0-9A-Za-z.-]+)?)"
+    )
     return re.compile(re.escape(pattern).replace(r"\{version\}", version_pattern))
 
 
