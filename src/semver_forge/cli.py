@@ -113,7 +113,8 @@ def parser():
         help="synchronize configured metadata to the canonical version",
         description=(
             "Copy the canonical version into configured metadata fields. "
-            "--discover registers additional supported version fields before synchronization."
+            "Configured text-pattern targets can synchronize embedded project-version references using a literal "
+            "{version} placeholder. --discover registers additional supported version fields before synchronization."
         ),
         epilog="Examples: svf sync; svf sync --discover; svf sync --yes",
     )
