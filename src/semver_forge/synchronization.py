@@ -57,9 +57,12 @@ def sync(root, cfg, version, dry_run=False):
     originals = {path: path.read_bytes() for path, _, _, _ in changes}
     written = []
     try:
-        for path, old, new, _source in changes:
+        for path, old, _new, source in changes:
             if old == version:
                 continue
+            # Re-render from the current file contents so multiple text-pattern
+            # targets on one file accumulate instead of overwriting each other.
+            new = render_version(root, source, version)
             fd, temporary_path = tempfile.mkstemp(
                 prefix=".semver-forge-",
                 dir=path.parent,
