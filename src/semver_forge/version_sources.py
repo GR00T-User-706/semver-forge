@@ -24,6 +24,36 @@ def _path(root, file):
     return path
 
 
+def _text_pattern_regex(pattern):
+    if not isinstance(pattern, str) or pattern.count("{version}") != 1:
+        raise ConfigError(
+            "text-pattern targets require a string pattern containing exactly one {version} placeholder"
+        )
+    return re.compile(re.escape(pattern).replace(r"\\{version\\}", r"(?P<version>[^\\s]+?)"))
+
+
+def _text_pattern_matches(path, text, pattern):
+    regex = _text_pattern_regex(pattern)
+    matches = list(regex.finditer(text))
+    if not matches:
+        raise ConfigError(f"{path}: text-pattern did not match {pattern!r}")
+    versions = []
+    for match in matches:
+        candidate = match.group("version")
+        try:
+            Version.parse(candidate)
+        except SemVerError as exc:
+            raise ConfigError(
+                f"{path}: text-pattern matched invalid Semantic Versioning value {candidate!r}"
+            ) from exc
+        versions.append(candidate)
+    if len(set(versions)) != 1:
+        raise ConfigError(
+            f"{path}: text-pattern matched multiple different version values: {sorted(set(versions))}"
+        )
+    return regex, matches, versions[0]
+
+
 def _yaml_parser():
     try:
         from ruamel.yaml import YAML
