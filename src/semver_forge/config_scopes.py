@@ -112,9 +112,13 @@ def effective_config(root: Path) -> tuple[dict, dict, list[str]]:
             or not isinstance(target.get("file"), str)
             or not target.get("file")
             or ("key" in target and not isinstance(target["key"], str))
-            or (target.get("type") == "text-pattern" and (
-                not isinstance(target.get("pattern"), str) or target["pattern"].count("{version}") != 1
-            ))
+            or (
+                target.get("type") == "text-pattern"
+                and (
+                    not isinstance(target.get("pattern"), str)
+                    or target["pattern"].count("{version}") != 1
+                )
+            )
         ):
             raise ConfigError(f"effective config [sync].targets[{index}] is invalid")
     return merged, paths, unknown
