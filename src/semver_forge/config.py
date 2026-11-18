@@ -63,6 +63,7 @@ def load(path):
     source = cfg["version"].get("source")
     if not isinstance(source, dict) or source.get("type") not in (
         "text",
+        "text-pattern",
         "json",
         "toml",
         "shell",
@@ -75,6 +76,10 @@ def load(path):
         )
     if not source.get("file"):
         raise ConfigError("version.source.file is required")
+    if source.get("type") == "text-pattern" and (
+        not isinstance(source.get("pattern"), str) or source["pattern"].count("{version}") != 1
+    ):
+        raise ConfigError("version.source.pattern must contain exactly one {version} placeholder")
     known = {x: set(v) for x, v in DEFAULTS.items()}
     unknown = []
     for section, values in raw.items():
