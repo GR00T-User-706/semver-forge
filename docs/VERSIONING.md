@@ -16,7 +16,7 @@ Pre-release identifiers may be used for alpha, beta, and release-candidate build
 
 The canonical version source is the source configured by `[version].source` in `.semver-forge.toml`. SemVer Forge supports different source types because projects do not all use the same build system or metadata layout.
 
-Do not assume that `pyproject.toml`, `VERSION`, a package manifest, or a source-code constant is universally authoritative. The configured source is authoritative for the project being managed. Other version-bearing files belong in `[sync].targets` when they must mirror it.
+Do not assume that `pyproject.toml`, `VERSION`, a package manifest, or a source-code constant is universally authoritative. The configured source is authoritative for the project being managed. Other version-bearing files belong in `[sync].targets` when they must mirror it. For embedded references that are not structured metadata, use a `text-pattern` target with a literal pattern containing exactly one `{version}` placeholder.
 
 For SemVer Forge itself, the canonical source is `project.version` in `pyproject.toml`. The root `VERSION` file, the package's `__version__`, and the Termux manifest fallback are synchronized representations of that version. The Termux build script also derives its package version from the root `VERSION` file.
 
