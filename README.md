@@ -8,9 +8,13 @@ Automatic project version tracking. SemVer Forge provides five project commands:
 - `config`: inspect and manage system, user, and project configuration.
 - `check`: inspect project version synchronization and configuration without writing.
 
-There is no release or publishing workflow in this command interface.
 
 ## Install
+if you are operating this from the Android Linux terminal emulator application known as termux you may alternatively build from source yourself using the termux-create-package command if installed pointing it at the package manifest file located in packaging/termux/semver-forge.yaml
+you may alternatively as well use the build script that is in the same directory folder 
+if you would like to just download and install pre-built versions of this package or any other packages that I have built I invite you to check out https://github.com/GR00T-User-706/zencore.git 
+
+either way that you choose to install this application a functions the same unless you intentionally install older versions 
 
 SemVer Forge requires Python 3.10+ and Git.
 
@@ -18,7 +22,6 @@ SemVer Forge requires Python 3.10+ and Git.
 python -m pip install .
 svf --help
 ```
-
 The package exposes `svf` as its primary executable and retains `semver-forge` as a compatibility alias. The Python distribution remains `semver-forge`. Existing pipx installations can be upgraded from the repository with `pipx install --force .`.
 
 ## Initialize a project
